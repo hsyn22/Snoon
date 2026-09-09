@@ -149,6 +149,24 @@ Rules:
 - The patient must have a way to confirm whether contact actually happened. The student's
   word alone does not advance `MATCHED → CONTACTED` in a way that hides the case forever.
 
+### After contact
+
+`CONTACTED → APPOINTMENT_CONFIRMED → COMPLETED | NO_SHOW | CANCELLED` is driven by the
+student on the case they hold, in `src/lib/cases/lifecycle.ts`. Notes worth keeping:
+
+- **Appointment times are Baghdad time, always.** `<input type="datetime-local">` submits a
+  wall clock with no zone, so the server decides what it means — and trusting the browser's
+  zone would let a student whose phone is set elsewhere book a patient hours from the time
+  they typed. Iraq has no daylight saving, so a fixed `+03:00` is correct.
+- **Rescheduling supersedes rather than overwrites**, and a partial unique index allows only
+  one live appointment per case, so a patient is never shown two times at once.
+- **An outcome closes the claim** in the same transaction. Leaving it ACTIVE would keep a
+  finished case counting against the student and keep the expiry job looking at it.
+- **Contact details go away when the claim closes.** A student who has just completed a case
+  sees a closed summary, not the patient's number — the grant was for the active claim.
+- `expireStaleRequestedCases` only ever touches `REQUESTED`, so nothing mid-treatment can be
+  swept up.
+
 ### The contact window
 
 After claiming, the student has a limited window to contact the patient. **Start at 48

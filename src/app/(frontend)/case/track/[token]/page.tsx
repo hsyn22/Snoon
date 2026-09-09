@@ -1,10 +1,18 @@
 import type { Metadata } from 'next'
 import { headers } from 'next/headers'
 import Link from 'next/link'
-import { getCaseByTrackingToken } from '@/db/queries/cases'
+import { getCaseByTrackingToken, getCurrentAppointment } from '@/db/queries/cases'
 import { getAllTreatmentTypes, getCityById } from '@/lib/config'
-import { caseForm, caseStatus, caseTracking, common, patientConfirm, site } from '@/lib/copy'
-import { formatCaseDate } from '@/lib/dates'
+import {
+  caseForm,
+  caseStatus,
+  caseTracking,
+  common,
+  patientAppointment,
+  patientConfirm,
+  site,
+} from '@/lib/copy'
+import { formatAppointment, formatCaseDate } from '@/lib/dates'
 import { formatPhoneForDisplay } from '@/lib/phone'
 import { isTelegramConfigured } from '@/lib/telegram/config'
 import { isPatientLinked } from './telegram-actions'
@@ -76,6 +84,7 @@ export default async function TrackCasePage({
   // Only asked once a student has actually said they called — asking before that
   // would have the patient confirming something that has not happened.
   const awaitingConfirmation = await hasPendingContactAssertion(record.id)
+  const appointment = await getCurrentAppointment(record.id)
 
   const telegramAvailable = isTelegramConfigured()
   const patientLinked = telegramAvailable ? await isPatientLinked(record.id) : false
@@ -122,6 +131,16 @@ export default async function TrackCasePage({
           <p className="mt-2 text-xs text-foreground-muted">{caseTracking.linkHint}</p>
           <p className="mt-2 text-xs font-medium text-warning">{caseTracking.linkWarning}</p>
         </section>
+
+        {/* The appointment is the single most useful thing on this page once it
+            exists, so it sits above everything else. */}
+        {appointment ? (
+          <section className="mt-4 rounded-lg border border-border bg-accent-muted p-4">
+            <p className="text-xs text-foreground-muted">{patientAppointment.label}</p>
+            <p className="mt-1 text-base font-bold">{formatAppointment(appointment.scheduledFor)}</p>
+            <p className="mt-2 text-xs text-foreground-muted">{patientAppointment.hint}</p>
+          </section>
+        ) : null}
 
         {awaitingConfirmation ? <ConfirmContact trackingToken={token} /> : null}
 

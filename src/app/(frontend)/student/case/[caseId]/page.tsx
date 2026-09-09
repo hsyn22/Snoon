@@ -5,13 +5,18 @@ import Link from 'next/link'
 import { redirect } from 'next/navigation'
 import { db } from '@/db'
 import { students } from '@/db/schema'
-import { getCaseForClaimant } from '@/db/queries/cases'
+import {
+  getCaseForClaimant,
+  getClosedCaseForStudent,
+  getCurrentAppointment,
+} from '@/db/queries/cases'
 import { auth } from '@/lib/auth'
 import { getAllTreatmentTypes } from '@/lib/config'
-import { caseForm, site, studentClaim } from '@/lib/copy'
-import { formatCaseDateTime } from '@/lib/dates'
+import { caseForm, caseStatus, site, studentClaim, studentLifecycle } from '@/lib/copy'
+import { formatAppointment, formatCaseDateTime, toBaghdadInputValue } from '@/lib/dates'
 import { formatPhoneForDisplay } from '@/lib/phone'
 import { AssertContact } from './assert-contact'
+import { AppointmentStep, OutcomeStep } from './lifecycle-steps'
 
 export const metadata: Metadata = {
   title: studentClaim.title,
@@ -59,10 +64,33 @@ export default async function ClaimedCasePage({
   const record = await getCaseForClaimant(caseId, student.id)
 
   if (!record) {
+    // The claim closes when the case ends, so a student who just finished one
+    // would otherwise be told their case does not exist. Show the outcome
+    // instead — without contact details, which the closed claim no longer grants.
+    const closed = await getClosedCaseForStudent(caseId, student.id)
+
     return (
       <main className="mx-auto flex min-h-dvh max-w-md flex-col justify-center px-4">
-        <h1 className="text-2xl font-bold">{studentClaim.notFoundTitle}</h1>
-        <p className="mt-2 text-foreground-muted">{studentClaim.notFoundBody}</p>
+        {closed ? (
+          <>
+            <h1 className="text-2xl font-bold">{studentLifecycle.closedTitle}</h1>
+            <p className="reference-code mt-2 text-sm font-bold">{closed.referenceCode}</p>
+            <p className="mt-2 text-foreground-muted">
+              {closed.status === 'COMPLETED'
+                ? studentLifecycle.closedCompleted
+                : closed.status === 'NO_SHOW'
+                  ? studentLifecycle.closedNoShow
+                  : closed.status === 'CANCELLED'
+                    ? studentLifecycle.closedCancelled
+                    : caseStatus[closed.status]}
+            </p>
+          </>
+        ) : (
+          <>
+            <h1 className="text-2xl font-bold">{studentClaim.notFoundTitle}</h1>
+            <p className="mt-2 text-foreground-muted">{studentClaim.notFoundBody}</p>
+          </>
+        )}
         <Link href="/student" className="mt-6 text-sm text-accent underline">
           {studentClaim.backToQueue}
         </Link>
@@ -70,7 +98,10 @@ export default async function ClaimedCasePage({
     )
   }
 
-  const treatments = await getAllTreatmentTypes()
+  const [treatments, appointment] = await Promise.all([
+    getAllTreatmentTypes(),
+    getCurrentAppointment(caseId),
+  ])
   const treatmentNames = record.treatmentTypeIds
     .map((id) => treatments.find((t) => t.id === id)?.nameAr ?? id)
     .join('، ')
@@ -91,19 +122,24 @@ export default async function ClaimedCasePage({
         <h1 className="text-xl font-bold">{studentClaim.title}</h1>
         <p className="mt-2 text-sm text-foreground-muted">{studentClaim.intro}</p>
 
-        <section
-          className={`mt-4 rounded-lg border p-4 ${
-            record.isPastContactDeadline ? 'border-danger' : 'border-border bg-accent-muted'
-          }`}
-        >
-          <p className="text-xs text-foreground-muted">{studentClaim.deadlineLabel}</p>
-          <p className="mt-1 text-sm font-medium">
-            {record.isPastContactDeadline
-              ? studentClaim.deadlinePassed
-              : formatCaseDateTime(record.contactDeadlineAt)}
-          </p>
-          <p className="mt-2 text-xs text-foreground-muted">{studentClaim.deadlineHint}</p>
-        </section>
+        {/* The contact window only governs a case still waiting to be contacted.
+            Leaving it up after the patient confirmed would tell a student to
+            hurry towards a deadline that no longer applies to them. */}
+        {record.status === 'MATCHED' ? (
+          <section
+            className={`mt-4 rounded-lg border p-4 ${
+              record.isPastContactDeadline ? 'border-danger' : 'border-border bg-accent-muted'
+            }`}
+          >
+            <p className="text-xs text-foreground-muted">{studentClaim.deadlineLabel}</p>
+            <p className="mt-1 text-sm font-medium">
+              {record.isPastContactDeadline
+                ? studentClaim.deadlinePassed
+                : formatCaseDateTime(record.contactDeadlineAt)}
+            </p>
+            <p className="mt-2 text-xs text-foreground-muted">{studentClaim.deadlineHint}</p>
+          </section>
+        ) : null}
 
         <section className="mt-4 rounded-lg border border-border bg-surface p-4">
           <p className="text-xs text-foreground-muted">{studentClaim.phoneLabel}</p>
@@ -117,11 +153,38 @@ export default async function ClaimedCasePage({
           <p className="mt-3 text-xs font-medium text-warning">{studentClaim.phonePrivacy}</p>
         </section>
 
-        <AssertContact
-          caseId={caseId}
-          alreadyAsserted={record.contactAsserted}
-          confirmed={record.contactConfirmed}
-        />
+        {/* One step at a time: the case's own status decides what comes next,
+            so a student is never shown an action the lifecycle would refuse. */}
+        {record.status === 'MATCHED' ? (
+          <AssertContact
+            caseId={caseId}
+            alreadyAsserted={record.contactAsserted}
+            confirmed={record.contactConfirmed}
+          />
+        ) : null}
+
+        {record.status === 'CONTACTED' ? (
+          <AppointmentStep caseId={caseId} isReschedule={false} />
+        ) : null}
+
+        {record.status === 'APPOINTMENT_CONFIRMED' && appointment ? (
+          <>
+            <section className="mt-4 rounded-lg border border-border bg-accent-muted p-4">
+              <p className="text-xs text-foreground-muted">
+                {studentLifecycle.appointmentSetTitle}
+              </p>
+              <p className="mt-1 text-sm font-medium">{formatAppointment(appointment.scheduledFor)}</p>
+            </section>
+
+            <OutcomeStep caseId={caseId} />
+
+            <AppointmentStep
+              caseId={caseId}
+              isReschedule
+              currentValue={toBaghdadInputValue(appointment.scheduledFor)}
+            />
+          </>
+        ) : null}
 
         <dl className="mt-4 rounded-lg border border-border bg-surface px-4">
           <Row label={studentClaim.nameLabel} value={record.patientName} />

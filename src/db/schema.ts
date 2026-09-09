@@ -162,6 +162,43 @@ export const caseEvents = snoon.table(
   (table) => [index('case_events_case_id_created_idx').on(table.caseId, table.createdAt)],
 )
 
+export const appointments = snoon.table(
+  'appointments',
+  {
+    id: uuid('id').primaryKey().defaultRandom(),
+
+    caseId: uuid('case_id')
+      .notNull()
+      .references(() => cases.id, { onDelete: 'cascade' }),
+    /** The claim under which this appointment was arranged. */
+    claimId: uuid('claim_id')
+      .notNull()
+      .references(() => claims.id, { onDelete: 'restrict' }),
+
+    /**
+     * The appointment instant, stored with its zone.
+     *
+     * The student enters a wall-clock time, which is interpreted as Baghdad time
+     * rather than the device's — a phone set to another zone must not book a
+     * patient three hours out. See `src/lib/dates.ts`.
+     */
+    scheduledFor: timestamp('scheduled_for', { withTimezone: true }).notNull(),
+
+    /** Set when superseded by a reschedule, so the history is not overwritten. */
+    supersededAt: timestamp('superseded_at', { withTimezone: true }),
+
+    createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+  },
+  (table) => [
+    // At most one live appointment per case; a reschedule supersedes rather than
+    // replacing, so a patient cannot be shown two times at once.
+    uniqueIndex('one_live_appointment_per_case')
+      .on(table.caseId)
+      .where(sql`superseded_at is null`),
+    index('appointments_scheduled_idx').on(table.scheduledFor),
+  ],
+)
+
 /**
  * Who a Telegram chat belongs to. A patient is bound to one case; a student is
  * bound to their account.
@@ -333,6 +370,7 @@ export type StudentRow = typeof students.$inferSelect
 export type NewStudentRow = typeof students.$inferInsert
 export type ClaimRow = typeof claims.$inferSelect
 export type TelegramLinkRow = typeof telegramLinks.$inferSelect
+export type AppointmentRow = typeof appointments.$inferSelect
 
 /** Kept for migrations that need raw SQL alongside the schema. */
 export { sql }

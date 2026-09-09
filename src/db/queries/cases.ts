@@ -1,6 +1,6 @@
 import { and, arrayOverlaps, asc, eq, inArray, isNull } from 'drizzle-orm'
 import { db } from '@/db'
-import { caseEvents, cases, claims, students } from '@/db/schema'
+import { appointments, caseEvents, cases, claims, students } from '@/db/schema'
 import { studentPreviouslyReleased } from '@/db/queries/claims'
 import { generateReferenceCode } from '@/lib/reference-code'
 import { generateTrackingToken, hashTrackingToken } from '@/lib/tracking-token'
@@ -238,6 +238,8 @@ export async function listOpenCasesForStudent(
  * does not hold the case.
  */
 export type ClaimantCaseView = StudentCaseListItem & {
+  /** Drives which lifecycle step the claimant is shown next. */
+  status: (typeof cases.status.enumValues)[number]
   patientName: string
   patientPhone: string
   contactDeadlineAt: Date
@@ -280,13 +282,52 @@ export async function getCaseForClaimant(
 
   if (!row) return null
 
-  const { contactAssertedAt, status, ...rest } = row
+  const { contactAssertedAt, ...rest } = row
 
   return {
     ...rest,
     contactAsserted: contactAssertedAt !== null,
     // CONTACTED and everything after it means the patient confirmed.
-    contactConfirmed: status !== 'MATCHED',
+    contactConfirmed: row.status !== 'MATCHED',
     isPastContactDeadline: row.contactDeadlineAt.getTime() < now.getTime(),
   }
+}
+
+
+/** The live appointment on a case, if one has been agreed. */
+export async function getCurrentAppointment(caseId: string): Promise<{ scheduledFor: Date } | null> {
+  const [row] = await db
+    .select({ scheduledFor: appointments.scheduledFor })
+    .from(appointments)
+    .where(and(eq(appointments.caseId, caseId), isNull(appointments.supersededAt)))
+    .limit(1)
+
+  return row ?? null
+}
+
+/**
+ * A case a student used to hold, after it closed.
+ *
+ * Deliberately carries no contact details. Contact is granted while a claim is
+ * ACTIVE; finishing the case closes the claim, and the patient's number should
+ * not stay on a screen indefinitely afterwards. This exists so the student sees
+ * "case closed" rather than "not found" the moment they complete it.
+ */
+export type ClosedCaseSummary = {
+  referenceCode: string
+  status: (typeof cases.status.enumValues)[number]
+}
+
+export async function getClosedCaseForStudent(
+  caseId: string,
+  studentId: string,
+): Promise<ClosedCaseSummary | null> {
+  const [row] = await db
+    .select({ referenceCode: cases.referenceCode, status: cases.status })
+    .from(cases)
+    .innerJoin(claims, eq(claims.caseId, cases.id))
+    .where(and(eq(cases.id, caseId), eq(claims.studentId, studentId)))
+    .limit(1)
+
+  return row ?? null
 }

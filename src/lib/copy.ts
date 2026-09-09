@@ -372,6 +372,10 @@ export const telegramCopy = {
       'الطالب اللي حجزها ما تواصل وياك بالوقت المحدد، فرجعناها لطالب ثاني.',
     ].join('\n'),
 
+  /** Sent to the patient once a time is agreed. */
+  appointmentSet: (referenceCode: string, when: string) =>
+    [`تم تحديد موعدك لحالة ${referenceCode}.`, '', when, '', 'إذا ما تكدر تجي، اتصل بالطالب.'].join('\n'),
+
   /** Sent to the student when their contact window runs out. */
   claimExpired: 'انتهت مهلة التواصل وراحت الحالة لطالب ثاني. تكدر تحجز حالة جديدة من الموقع.',
 } as const
@@ -422,4 +426,42 @@ export const studentContact = {
   assertPending: 'دزّينا للمريض يأكد. ننتظر جوابه.',
   assertConfirmed: 'المريض أكّد التواصل.',
   assertFailed: 'ما كدرنا نسجّل. جرّب مرة لخ.',
+} as const
+
+/** The steps a student works through after contact is confirmed. */
+export const studentLifecycle = {
+  appointmentTitle: 'حدد الموعد',
+  appointmentBody: 'بعد ما تتفق وية المريض، حدد الموعد هنا.',
+  appointmentLabel: 'تاريخ ووقت الموعد',
+  appointmentHint: 'بتوقيت بغداد.',
+  appointmentAction: 'ثبّت الموعد',
+  appointmentSaving: 'قيد التثبيت…',
+
+  appointmentSetTitle: 'الموعد مثبّت',
+  rescheduleAction: 'غيّر الموعد',
+
+  outcomeTitle: 'شنو صار بالموعد؟',
+  outcomeBody: 'سجّل النتيجة حتى تنغلق الحالة.',
+  completed: 'تم العلاج',
+  noShow: 'المريض ما حضر',
+  cancelled: 'انلغى الموعد',
+  outcomeSaving: 'قيد التسجيل…',
+
+  closedTitle: 'الحالة منغلقة',
+  closedCompleted: 'تم العلاج. شكراً.',
+  closedNoShow: 'المريض ما حضر الموعد.',
+  closedCancelled: 'انلغى الموعد.',
+
+  errors: {
+    inPast: 'الموعد لازم يكون بالمستقبل.',
+    invalidDate: 'التاريخ مو صحيح.',
+    wrongStatus: 'ما نكدر نسوي هاي الخطوة هسه.',
+    generic: 'ما كدرنا نسجّل. جرّب مرة لخ.',
+  },
+} as const
+
+/** What the patient sees about their appointment. */
+export const patientAppointment = {
+  label: 'موعدك',
+  hint: 'بتوقيت بغداد. إذا ما تكدر تجي، اتصل بالطالب.',
 } as const
