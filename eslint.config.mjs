@@ -17,6 +17,16 @@ const config = [
   },
   ...nextCoreWebVitals,
   ...nextTypeScript,
+  {
+    rules: {
+      // Server actions must accept (previousState, formData) whether or not they
+      // use both. An underscore prefix is how the code says "required, unused".
+      '@typescript-eslint/no-unused-vars': [
+        'warn',
+        { argsIgnorePattern: '^_', varsIgnorePattern: '^_', caughtErrorsIgnorePattern: '^_' },
+      ],
+    },
+  },
 ]
 
 export default config

@@ -7,6 +7,8 @@ import { getPayload } from 'payload'
 import config from '@payload-config'
 import { db } from '@/db'
 import { students } from '@/db/schema'
+import { telegramStudentDoc } from '@/lib/copy'
+import { sendNotification } from '@/lib/notifications/send'
 
 /**
  * Approving, rejecting and suspending students.
@@ -48,6 +50,16 @@ export async function decideStudentVerification(
       updatedAt: new Date(),
     })
     .where(eq(students.id, studentId))
+
+  // Best-effort and after the decision is written: a student who never linked
+  // Telegram simply sees the outcome next time they open the site.
+  if (decision === 'VERIFIED' || decision === 'REJECTED') {
+    await sendNotification({
+      recipient: { kind: 'STUDENT', studentId },
+      text:
+        decision === 'VERIFIED' ? telegramStudentDoc.verified : telegramStudentDoc.rejected,
+    })
+  }
 
   revalidatePath('/admin/students')
 }

@@ -52,7 +52,6 @@ export async function submitProfileAction(
   )
 
   if (!validated.ok) return { errors: validated.errors, values }
-  if (!file) return { errors: { document: studentProfile.errors.documentRequired }, values }
 
   // One profile per account. Re-submitting must not create a second student row
   // or quietly reset a verification an admin has already decided.
@@ -65,21 +64,26 @@ export async function submitProfileAction(
   if (existing) return { formError: studentProfile.errors.alreadySubmitted, values }
 
   try {
-    const payload = await getPayload({ config })
+    let documentId: string | null = null
 
-    // Created through the Local API, which bypasses the collection's `create:
-    // false` rule deliberately and on the server. The rule keeps the REST API
-    // shut; this path is trusted and already knows who the student is.
-    const uploaded = await payload.create({
-      collection: 'student-documents',
-      data: {},
-      file: {
-        data: Buffer.from(await file.arrayBuffer()),
-        mimetype: file.type,
-        name: file.name,
-        size: file.size,
-      },
-    })
+    if (file && file.size > 0) {
+      const payload = await getPayload({ config })
+
+      // Created through the Local API, which bypasses the collection's `create:
+      // false` rule deliberately and on the server. The rule keeps the REST API
+      // shut; this path is trusted and already knows who the student is.
+      const uploaded = await payload.create({
+        collection: 'student-documents',
+        data: {},
+        file: {
+          data: Buffer.from(await file.arrayBuffer()),
+          mimetype: file.type,
+          name: file.name,
+          size: file.size,
+        },
+      })
+      documentId = String(uploaded.id)
+    }
 
     await db.insert(students).values({
       authUserId: session.user.id,
@@ -88,7 +92,7 @@ export async function submitProfileAction(
       collegeId: validated.value.collegeId,
       stageId: validated.value.stageId,
       verificationStatus: 'PENDING',
-      verificationDocumentPath: String(uploaded.id),
+      verificationDocumentPath: documentId,
     })
   } catch (error) {
     // The document is an identity paper; nothing about its contents is logged.

@@ -235,6 +235,7 @@ export const studentStatus = {
   suspendedTitle: 'حسابك موقوف',
   suspendedBody: 'تواصل وية إدارة سنون.',
 
+  uploadOnSite: 'ارفعها من الموقع',
   verifiedTitle: 'حسابك موثّق',
   verifiedBody: 'قائمة الحالات المتاحة اللي تناسب مرحلتك لسه قيد البناء.',
 } as const
@@ -464,4 +465,48 @@ export const studentLifecycle = {
 export const patientAppointment = {
   label: 'موعدك',
   hint: 'بتوقيت بغداد. إذا ما تكدر تجي، اتصل بالطالب.',
+} as const
+
+/** What the bot says to a student sending their enrolment document. */
+export const telegramStudentDoc = {
+  prompt: [
+    'دزّلي صورة هوية الطالب أو وثيقة التسجيل.',
+    '',
+    'تكدر تصوّرها بالموبايل ودزّها هنا مباشرة.',
+  ].join('\n'),
+
+  received: [
+    'وصلتنا وثيقتك.',
+    '',
+    'إدارة سنون راح تراجعها، وراح نعلمك أول ما ينطلع القرار.',
+  ].join('\n'),
+
+  alreadyVerified: 'حسابك موثّق من قبل. ما تحتاج تدز وثيقة.',
+  suspended: 'حسابك موقوف. تواصل وية إدارة سنون.',
+  tooLarge: 'الملف كبير كلش. لازم أقل من ٥ ميكا.',
+  wrongType: 'نوع الملف مو مقبول. دزّ صورة أو PDF.',
+  failed: 'ما كدرنا نستلم الوثيقة. جرّب مرة لخ.',
+  notAStudent: 'هذا الحساب مربوط بحالة مريض، مو بحساب طالب.',
+
+  /** Sent when an admin decides. */
+  verified: 'انقبل توثيقك. تكدر هسه تشوف الحالات المتاحة بالموقع.',
+  rejected: 'ما انقبلت وثيقتك. تكدر تدز وحدة أوضح، أو تراجع إدارة سنون.',
+} as const
+
+/** Offering the bot to a student. */
+export const studentTelegram = {
+  title: 'شغّل الإشعارات',
+  body: 'اربط تلگرام حتى نعلمك بالمهم — مثل قرار التوثيق ومهلة التواصل. اختياري.',
+
+  sendDocTitle: 'دزّ وثيقتك بتلگرام',
+  sendDocBody:
+    'أسهل طريقة: افتح البوت وصوّر هوية الطالب ودزّها. أو ارفعها من الموقع إذا تفضّل.',
+
+  action: 'اربط تلگرام',
+  open: 'افتح البوت',
+  linked: 'تلگرام مربوط.',
+  unavailable: 'الإشعارات لسه ما متوفرة.',
+
+  documentMissingTitle: 'ناقصة وثيقة التسجيل',
+  documentMissingBody: 'ما نكدر نوثّق حسابك بدون وثيقة تثبت إنك طالب.',
 } as const

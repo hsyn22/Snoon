@@ -246,11 +246,29 @@ include them in any list endpoint.
 **Students:** Better Auth with email and password. Email verification by link.
 
 Then a manual verification step, because university email is not reliably available in Iraq:
-the student uploads proof of enrolment (student ID or registration document), and an admin
+the student provides proof of enrolment (student ID or registration document), and an admin
 reviews it at `/admin/students` — a custom Payload view that reads across to the Drizzle
 `students` table rather than duplicating the record into Payload. The document itself is a
 Payload upload collection with `read` restricted to admins, stored outside the public
-directory. Status is `pending | verified | rejected | suspended`.
+directory.
+
+The document may arrive **two ways**: uploaded on the site, or photographed and sent to the
+Telegram bot — which is far less work on a cheap phone, and this is the step students drop
+off at. Both routes end in `attachVerificationDocument`, so the rules live in one place:
+
+- Accepted only while the student is `PENDING` or `REJECTED`. A `VERIFIED` student must not
+  be able to undo their own approval by sending another photograph, and a `SUSPENDED` one
+  must not re-enter the queue on their own — reversing that is an admin's decision.
+- A rejected student sending a clearer document returns to `PENDING` and the previous
+  reviewer is cleared, since that decision no longer describes what an admin is looking at.
+- Size is checked against Telegram's declared size *before* downloading and against the real
+  bytes after, because the declared size is a claim from the same message the file came in.
+
+Telegram never decides anything. It carries the photograph; the admin still approves.
+
+Nothing requires Telegram: the site upload at `/student/profile/document` is always
+available, and the document is optional at profile submission precisely so a student can
+choose the bot instead. Status is `pending | verified | rejected | suspended`.
 Only `verified` sees cases. Manual review is correct at this scale — do not build automated
 document checking.
 

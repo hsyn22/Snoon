@@ -2,7 +2,12 @@ import { eq } from 'drizzle-orm'
 import { db } from '@/db'
 import { cases } from '@/db/schema'
 import { linkChat, revokeLinksForChat, getSubjectForChat } from '@/db/queries/telegram'
-import { telegramConfirm, telegramCopy } from '@/lib/copy'
+import { telegramConfirm, telegramCopy, telegramStudentDoc } from '@/lib/copy'
+import {
+  attachVerificationDocument,
+  MAX_DOCUMENT_BYTES,
+} from '@/lib/students/document-intake'
+import { downloadTelegramFile } from './client'
 import { confirmContactByPatient, reportNoContactByPatient } from '@/lib/cases/contact'
 import { looksLikeInviteToken } from './invite-token'
 
@@ -18,10 +23,15 @@ import { looksLikeInviteToken } from './invite-token'
  * on a request already authenticated by the webhook secret.
  */
 
+export type TelegramPhotoSize = { file_id?: string; file_size?: number; width?: number }
+
 export type TelegramUpdate = {
   message?: {
     chat?: { id?: number | string }
     text?: string
+    /** Telegram sends several rendered sizes; the last is the largest. */
+    photo?: TelegramPhotoSize[]
+    document?: { file_id?: string; file_name?: string; mime_type?: string; file_size?: number }
   }
   callback_query?: {
     id?: string
@@ -82,6 +92,69 @@ async function handleContactCallback(
   }
 }
 
+/**
+ * A student sending their proof of enrolment.
+ *
+ * Photographing a card and sending it in Telegram is far less work on a cheap
+ * phone than a web file picker, and this is the step students drop off at. The
+ * decision is still an admin's — the bot only carries the photo.
+ *
+ * The student is identified by the chat binding, never by anything in the
+ * message: everything a stranger sends is attacker-controlled.
+ */
+async function handleStudentDocument(
+  chatId: string,
+  message: NonNullable<TelegramUpdate['message']>,
+): Promise<WebhookOutcome> {
+  const subject = await getSubjectForChat(chatId)
+  if (!subject) return { reply: { chatId, text: telegramCopy.startWithoutToken } }
+  if (subject.type !== 'STUDENT') {
+    return { reply: { chatId, text: telegramStudentDoc.notAStudent } }
+  }
+
+  // A photo comes as a list of rendered sizes; the last is the largest and the
+  // only one legible enough to read a student number off.
+  const largestPhoto = message.photo?.at(-1)
+  const fileId = largestPhoto?.file_id ?? message.document?.file_id
+  if (!fileId) return { reply: { chatId, text: telegramStudentDoc.prompt } }
+
+  const declaredType = largestPhoto ? 'image/jpeg' : (message.document?.mime_type ?? '')
+  const name = largestPhoto
+    ? 'telegram-photo.jpg'
+    : (message.document?.file_name ?? 'telegram-document')
+
+  const downloaded = await downloadTelegramFile(fileId, MAX_DOCUMENT_BYTES)
+  if (!downloaded.ok) {
+    return {
+      reply: {
+        chatId,
+        text:
+          downloaded.reason === 'too-large'
+            ? telegramStudentDoc.tooLarge
+            : telegramStudentDoc.failed,
+      },
+    }
+  }
+
+  const result = await attachVerificationDocument(subject.id, {
+    data: downloaded.file.data,
+    mimetype: declaredType,
+    name,
+    size: downloaded.file.size,
+  })
+
+  if (result.ok) return { reply: { chatId, text: telegramStudentDoc.received } }
+
+  const messages: Record<string, string> = {
+    ALREADY_VERIFIED: telegramStudentDoc.alreadyVerified,
+    SUSPENDED: telegramStudentDoc.suspended,
+    TOO_LARGE: telegramStudentDoc.tooLarge,
+    WRONG_TYPE: telegramStudentDoc.wrongType,
+  }
+
+  return { reply: { chatId, text: messages[result.reason] ?? telegramStudentDoc.failed } }
+}
+
 export async function handleTelegramUpdate(update: TelegramUpdate): Promise<WebhookOutcome> {
   const callback = update.callback_query
   if (callback) {
@@ -99,7 +172,14 @@ export async function handleTelegramUpdate(update: TelegramUpdate): Promise<Webh
   const chatIdRaw = update.message?.chat?.id
   const text = update.message?.text
 
-  if (chatIdRaw === undefined || chatIdRaw === null || typeof text !== 'string') return NO_REPLY
+  if (chatIdRaw === undefined || chatIdRaw === null) return NO_REPLY
+
+  // A photo or file carries no text, so this branch comes before the text one.
+  if (update.message && (update.message.photo || update.message.document)) {
+    return handleStudentDocument(String(chatIdRaw), update.message)
+  }
+
+  if (typeof text !== 'string') return NO_REPLY
 
   const chatId = String(chatIdRaw)
   const trimmed = text.trim()

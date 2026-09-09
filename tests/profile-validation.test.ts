@@ -72,15 +72,17 @@ describe('validateProfile', () => {
   })
 
   describe('the document', () => {
-    it('is required', () => {
+    it('is optional here, because it may arrive through the bot instead', () => {
+      // Photographing a card and sending it in Telegram is far less work on a
+      // cheap phone. What is not optional is an admin seeing one before the
+      // student is verified — that is enforced by the review, not this form.
       const result = validateProfile(fields(), PLACES, null)
-      expect(result.ok).toBe(false)
-      if (!result.ok) expect(result.errors.document).toBe(studentProfile.errors.documentRequired)
+      expect(result.ok).toBe(true)
     })
 
-    it('rejects an empty file', () => {
+    it('accepts an empty file the same way as none at all', () => {
       const result = validateProfile(fields(), PLACES, { size: 0, type: 'image/jpeg' })
-      expect(result.ok).toBe(false)
+      expect(result.ok).toBe(true)
     })
 
     it('rejects one over the size cap', () => {
@@ -118,7 +120,7 @@ describe('validateProfile', () => {
     const result = validateProfile(
       { universityId: '', collegeId: '', stageId: '' },
       PLACES,
-      null,
+      { size: 99, type: 'text/html' },
     )
     expect(result.ok).toBe(false)
     if (!result.ok) expect(Object.keys(result.errors).sort()).toEqual([

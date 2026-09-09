@@ -6,7 +6,10 @@ import { db } from '@/db'
 import { students } from '@/db/schema'
 import { getActiveClaimForStudent } from '@/db/queries/claims'
 import { auth } from '@/lib/auth'
-import { site, studentAuth, studentClaim, studentStatus } from '@/lib/copy'
+import { site, studentAuth, studentClaim, studentStatus, studentTelegram } from '@/lib/copy'
+import { isTelegramConfigured } from '@/lib/telegram/config'
+import { isStudentLinked } from './telegram-actions'
+import { TelegramLink } from './telegram-link'
 import { logoutAction } from './actions'
 import { CaseQueue } from './case-queue'
 
@@ -81,6 +84,7 @@ export default async function StudentHomePage() {
       collegeId: students.collegeId,
       stageId: students.stageId,
       verificationStatus: students.verificationStatus,
+      verificationDocumentPath: students.verificationDocumentPath,
     })
     .from(students)
     .where(eq(students.authUserId, session.user.id))
@@ -89,6 +93,12 @@ export default async function StudentHomePage() {
   // A student holds at most one case at a time, and the case they hold matters
   // more than the queue: someone is waiting for their call.
   const activeClaim = profile ? await getActiveClaimForStudent(profile.id) : null
+
+  // The bot is offered for two reasons: notifications, and — more usefully —
+  // sending the enrolment document without a web file picker.
+  const telegramAvailable = isTelegramConfigured()
+  const telegramLinked = telegramAvailable && profile ? await isStudentLinked(profile.id) : false
+  const needsDocument = Boolean(profile) && !profile?.verificationDocumentPath
 
   return (
     <div className="mx-auto flex min-h-dvh max-w-md flex-col px-4">
@@ -117,7 +127,22 @@ export default async function StudentHomePage() {
             action={{ href: '/student/profile', label: studentStatus.profileNeededAction }}
           />
         ) : profile.verificationStatus === 'PENDING' ? (
-          <Panel title={studentStatus.pendingTitle} body={studentStatus.pendingBody} />
+          <>
+            <Panel
+              title={
+                needsDocument ? studentTelegram.documentMissingTitle : studentStatus.pendingTitle
+              }
+              body={needsDocument ? studentTelegram.documentMissingBody : studentStatus.pendingBody}
+            />
+            {needsDocument ? (
+              <Link
+                href="/student/profile/document"
+                className="mt-3 flex min-h-11 items-center justify-center rounded-md border border-border px-4 text-sm font-medium"
+              >
+                {studentStatus.uploadOnSite}
+              </Link>
+            ) : null}
+          </>
         ) : profile.verificationStatus === 'REJECTED' ? (
           <Panel title={studentStatus.rejectedTitle} body={studentStatus.rejectedBody} />
         ) : profile.verificationStatus === 'SUSPENDED' ? (
@@ -140,6 +165,13 @@ export default async function StudentHomePage() {
             stageId={profile.stageId}
           />
         )}
+        {telegramAvailable && !telegramLinked && profile ? (
+          <TelegramLink needsDocument={needsDocument} />
+        ) : null}
+
+        {telegramLinked ? (
+          <p className="mt-4 text-xs text-foreground-muted">{studentTelegram.linked}</p>
+        ) : null}
       </main>
     </div>
   )

@@ -63,9 +63,11 @@ export function validateProfile(
   if (!fields.stageId) errors.stageId = e.stageRequired
   else if (!places.stages.some((s) => s.id === fields.stageId)) errors.stageId = e.stageUnknown
 
-  if (!document || document.size === 0) errors.document = e.documentRequired
-  else if (document.size > MAX_DOCUMENT_BYTES) errors.document = e.documentTooBig
-  else if (!(ALLOWED_DOCUMENT_TYPES as readonly string[]).includes(document.type)) {
+  // Optional: a student may send it to the bot instead, which is easier on a
+  // cheap phone. If they attach nothing here, the student page asks for it. What
+  // is NOT optional is that an admin sees one before the student is verified.
+  if (document && document.size > MAX_DOCUMENT_BYTES) errors.document = e.documentTooBig
+  else if (document && !(ALLOWED_DOCUMENT_TYPES as readonly string[]).includes(document.type)) {
     errors.document = e.documentWrongType
   }
 

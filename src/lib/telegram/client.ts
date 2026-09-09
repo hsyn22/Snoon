@@ -84,3 +84,64 @@ export async function answerCallbackQuery(callbackQueryId: string, text?: string
     // Cosmetic. A failure here must not affect the decision already recorded.
   }
 }
+
+/**
+ * Download a file a person sent to the bot.
+ *
+ * Two steps by Telegram's design: `getFile` resolves an opaque file id to a
+ * path, then the file is fetched from a separate host. The size is checked
+ * before downloading, not after, so a large file is refused rather than pulled
+ * into memory first.
+ */
+export type DownloadedFile = {
+  data: Buffer
+  /** Telegram's own name for it, used only to derive an extension. */
+  path: string
+  size: number
+}
+
+export type DownloadResult =
+  | { ok: true; file: DownloadedFile }
+  | { ok: false; reason: 'not-configured' | 'too-large' | 'unavailable' }
+
+export async function downloadTelegramFile(
+  fileId: string,
+  maxBytes: number,
+): Promise<DownloadResult> {
+  const config = getTelegramConfig()
+  if (!config) return { ok: false, reason: 'not-configured' }
+
+  try {
+    const lookup = await fetch(
+      `https://api.telegram.org/bot${config.botToken}/getFile?file_id=${encodeURIComponent(fileId)}`,
+      { signal: AbortSignal.timeout(API_TIMEOUT_MS) },
+    )
+    const body = (await lookup.json()) as {
+      ok?: boolean
+      result?: { file_path?: string; file_size?: number }
+    }
+
+    const filePath = body.result?.file_path
+    if (!body.ok || !filePath) return { ok: false, reason: 'unavailable' }
+
+    const declaredSize = body.result?.file_size
+    if (typeof declaredSize === 'number' && declaredSize > maxBytes) {
+      return { ok: false, reason: 'too-large' }
+    }
+
+    const download = await fetch(
+      `https://api.telegram.org/file/bot${config.botToken}/${filePath}`,
+      { signal: AbortSignal.timeout(API_TIMEOUT_MS * 3) },
+    )
+    if (!download.ok) return { ok: false, reason: 'unavailable' }
+
+    const data = Buffer.from(await download.arrayBuffer())
+    // Checked again against what actually arrived: the declared size is a claim
+    // from the same message the file came in.
+    if (data.byteLength > maxBytes) return { ok: false, reason: 'too-large' }
+
+    return { ok: true, file: { data, path: filePath, size: data.byteLength } }
+  } catch {
+    return { ok: false, reason: 'unavailable' }
+  }
+}
