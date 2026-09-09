@@ -49,6 +49,8 @@ export function CaseForm({
 }) {
   const [state, formAction] = useActionState(submitCaseAction, INITIAL)
   const errors = state.errors ?? {}
+  // Re-submitting after an error must not mean typing everything again.
+  const values = state.values
 
   return (
     <form action={formAction} className="space-y-6" noValidate>
@@ -59,10 +61,14 @@ export function CaseForm({
         <select
           id="cityId"
           name="cityId"
+          // React re-applies a changed defaultValue to a text input but not to a
+          // mounted <select>, so without a key the restored city silently does
+          // not stick. Keying on the value remounts it with the right default.
+          key={`city-${values?.cityId ?? ''}`}
           className={controlClass}
           aria-invalid={Boolean(errors.cityId)}
           aria-describedby={errors.cityId ? 'cityId-error' : undefined}
-          defaultValue=""
+          defaultValue={values?.cityId ?? ''}
         >
           <option value="" disabled>
             {caseForm.cityPlaceholder}
@@ -86,6 +92,7 @@ export function CaseForm({
                 type="checkbox"
                 name="treatmentTypeIds"
                 value={treatment.id}
+                defaultChecked={values?.treatmentTypeIds.includes(treatment.id)}
                 className="size-4"
               />
               {treatment.nameAr}
@@ -101,7 +108,13 @@ export function CaseForm({
         <div className="mt-2 grid grid-cols-2 gap-2">
           {WEEK_DAYS.map((day) => (
             <label key={day} className={optionClass}>
-              <input type="checkbox" name="availabilityDays" value={day} className="size-4" />
+              <input
+                type="checkbox"
+                name="availabilityDays"
+                value={day}
+                defaultChecked={values?.availabilityDays.includes(day)}
+                className="size-4"
+              />
               {caseForm.weekDays[day]}
             </label>
           ))}
@@ -119,6 +132,7 @@ export function CaseForm({
           name="patientName"
           type="text"
           autoComplete="name"
+          defaultValue={values?.patientName ?? ''}
           className={controlClass}
           aria-invalid={Boolean(errors.patientName)}
           aria-describedby={errors.patientName ? 'patientName-error' : undefined}
@@ -139,6 +153,7 @@ export function CaseForm({
           autoComplete="tel"
           dir="ltr"
           placeholder="07701234567"
+          defaultValue={values?.patientPhone ?? ''}
           className={`${controlClass} text-start`}
           aria-invalid={Boolean(errors.patientPhone)}
           aria-describedby={errors.patientPhone ? 'patientPhone-error' : undefined}
@@ -156,6 +171,7 @@ export function CaseForm({
           name="notes"
           rows={3}
           maxLength={1000}
+          defaultValue={values?.notes ?? ''}
           className={`${controlClass} py-2`}
           aria-invalid={Boolean(errors.notes)}
           aria-describedby={errors.notes ? 'notes-error' : undefined}

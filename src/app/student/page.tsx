@@ -1,0 +1,106 @@
+import type { Metadata } from 'next'
+import { eq } from 'drizzle-orm'
+import { headers } from 'next/headers'
+import Link from 'next/link'
+import { db } from '@/db'
+import { students } from '@/db/schema'
+import { auth } from '@/lib/auth'
+import { site, studentAuth, studentStatus } from '@/lib/copy'
+import { logoutAction } from './actions'
+
+export const metadata: Metadata = { title: studentAuth.loginTitle }
+
+/** Session state is read per request; nothing about a student is cached. */
+export const dynamic = 'force-dynamic'
+
+function Panel({ title, body, note }: { title: string; body: string; note?: string }) {
+  return (
+    <section className="rounded-lg border border-border bg-surface p-5">
+      <h1 className="text-xl font-bold">{title}</h1>
+      <p className="mt-2 text-sm text-foreground-muted">{body}</p>
+      {note ? <p className="mt-3 text-xs text-foreground-muted">{note}</p> : null}
+    </section>
+  )
+}
+
+export default async function StudentHomePage() {
+  const session = await auth.api.getSession({ headers: await headers() })
+
+  if (!session) {
+    return (
+      <div className="mx-auto flex min-h-dvh max-w-md flex-col px-4">
+        <header className="py-6">
+          <Link href="/" className="text-sm text-foreground-muted">
+            {site.name}
+          </Link>
+        </header>
+        <main id="main" className="grow space-y-3">
+          <h1 className="text-2xl font-bold">{studentAuth.loginTitle}</h1>
+          <Link
+            href="/student/login"
+            className="mt-4 flex min-h-11 items-center justify-center rounded-md bg-accent px-4 font-medium text-accent-foreground"
+          >
+            {studentAuth.loginAction}
+          </Link>
+          <Link
+            href="/student/signup"
+            className="flex min-h-11 items-center justify-center rounded-md border border-border px-4 font-medium"
+          >
+            {studentAuth.signUpAction}
+          </Link>
+        </main>
+      </div>
+    )
+  }
+
+  // Logging in is not the same as being allowed to see cases. The verification
+  // status below is read from the database, never inferred from the session.
+  const [profile] = await db
+    .select({ verificationStatus: students.verificationStatus })
+    .from(students)
+    .where(eq(students.authUserId, session.user.id))
+    .limit(1)
+
+  return (
+    <div className="mx-auto flex min-h-dvh max-w-md flex-col px-4">
+      <header className="flex items-center justify-between py-6">
+        <Link href="/" className="text-sm text-foreground-muted">
+          {site.name}
+        </Link>
+        <form action={logoutAction}>
+          <button type="submit" className="text-sm text-foreground-muted underline">
+            {studentAuth.logout}
+          </button>
+        </form>
+      </header>
+
+      <main id="main" className="grow pb-10">
+        {!session.user.emailVerified ? (
+          <Panel
+            title={studentStatus.checkEmailTitle}
+            body={studentStatus.checkEmailBody}
+            note={session.user.email}
+          />
+        ) : !profile ? (
+          <Panel
+            title={studentStatus.profileNeededTitle}
+            body={studentStatus.profileNeededBody}
+            note={studentStatus.profileNeededSoon}
+          />
+        ) : profile.verificationStatus === 'PENDING' ? (
+          <Panel title={studentStatus.pendingTitle} body={studentStatus.pendingBody} />
+        ) : profile.verificationStatus === 'REJECTED' ? (
+          <Panel title={studentStatus.rejectedTitle} body={studentStatus.rejectedBody} />
+        ) : profile.verificationStatus === 'SUSPENDED' ? (
+          <Panel title={studentStatus.suspendedTitle} body={studentStatus.suspendedBody} />
+        ) : (
+          // VERIFIED. The case queue replaces this panel once the stage-capability
+          // mapping exists — it decides which cases this student may see. Until
+          // then say so plainly rather than showing a verified student a
+          // "under review" message that is not true.
+          <Panel title={studentStatus.verifiedTitle} body={studentStatus.verifiedBody} />
+        )}
+      </main>
+    </div>
+  )
+}

@@ -169,3 +169,65 @@ export const caseTracking = {
   invalidTitle: 'الرابط مو صحيح',
   invalidBody: 'رابط المتابعة هذا مو شغّال. تأكد إنك ناسخه كامل.',
 } as const
+
+/** Student sign-up, login, and the states between signing up and seeing cases. */
+export const studentAuth = {
+  signUpTitle: 'حساب جديد للطلبة',
+  signUpIntro: 'الحساب للطلبة المرحلة الرابعة والخامسة بطب الأسنان.',
+  loginTitle: 'دخول الطلبة',
+
+  nameLabel: 'الاسم الكامل',
+  nameHint: 'مثل ما هو بهوية الطالب.',
+  emailLabel: 'الإيميل',
+  passwordLabel: 'كلمة السر',
+  passwordHint: '٨ حروف أو أكثر.',
+
+  signUpAction: 'سجّل حساب',
+  loginAction: 'دخول',
+  signingIn: 'قيد الدخول…',
+
+  haveAccount: 'عندك حساب؟',
+  goToLogin: 'ادخل من هنا',
+  noAccount: 'ما عندك حساب؟',
+  goToSignUp: 'سجّل حساب جديد',
+  logout: 'خروج',
+
+  errors: {
+    nameRequired: 'اكتب اسمك الكامل.',
+    nameTooShort: 'الاسم قصير كلش.',
+    emailRequired: 'اكتب إيميلك.',
+    emailInvalid: 'الإيميل مو صحيح.',
+    passwordRequired: 'اكتب كلمة السر.',
+    passwordTooShort: 'كلمة السر لازم ٨ حروف أو أكثر.',
+    badCredentials: 'الإيميل أو كلمة السر غلط.',
+    emailNotVerified: 'فعّل إيميلك أول. شوف الرسالة اللي وصلتك.',
+    generic: 'ما كدرنا نكمل. جرّب مرة لخ بعد شوية.',
+  },
+} as const
+
+/** Where a student stands between signing up and being able to see cases. */
+export const studentStatus = {
+  checkEmailTitle: 'فعّل إيميلك',
+  checkEmailBody: 'دزّينالك رابط على إيميلك. افتحه حتى تفعّل حسابك.',
+  checkEmailSpam: 'إذا ما وصلتك، شوف بمجلد الرسائل غير المرغوب فيها.',
+  // Sign-up never says whether an address is already registered, so this is how
+  // a student who forgot they had an account finds their way back.
+  checkEmailAlready: 'إذا عندك حساب من قبل، ما راح توصلك رسالة جديدة — ادخل بحسابك.',
+
+  profileNeededTitle: 'ناقص معلومات دراستك',
+  profileNeededBody: 'لازم تحدد جامعتك وكليتك ومرحلتك حتى نكدر نوثّق حسابك.',
+  profileNeededSoon: 'هذي الخطوة لسه ما جاهزة.',
+
+  pendingTitle: 'حسابك قيد المراجعة',
+  pendingBody:
+    'إدارة سنون راح تراجع وثيقة تسجيلك. أول ما تنقبل راح تشوف الحالات المتاحة اللي تناسب مرحلتك.',
+
+  rejectedTitle: 'ما انقبل التوثيق',
+  rejectedBody: 'راجع إدارة سنون حتى تعرف السبب وتكدر تعيد المحاولة.',
+
+  suspendedTitle: 'حسابك موقوف',
+  suspendedBody: 'تواصل وية إدارة سنون.',
+
+  verifiedTitle: 'حسابك موثّق',
+  verifiedBody: 'قائمة الحالات المتاحة اللي تناسب مرحلتك لسه قيد البناء.',
+} as const

@@ -55,7 +55,8 @@ to change without a deployment:
 - academic stages (4th year, 5th year, …)
 - treatment types
 - clinic schedules (which stage, which days, which hours, at which clinic)
-- treatment capability per stage per clinic
+- treatment capability per stage per clinic — **this now decides what a student can see**,
+  not merely what they may do, so an incomplete mapping silently hides cases
 - static pages, FAQ, announcements, Arabic copy blocks
 
 **Drizzle owns transactional and user-generated data** — the things with invariants:
@@ -205,6 +206,17 @@ reviews it in the Payload admin. Status is `pending | verified | rejected | susp
 Only `verified` sees cases. Manual review is correct at this scale — do not build automated
 document checking.
 
+Sign-up does not reveal whether an address is already registered: Better Auth accepts the
+request and quietly does nothing, so the form cannot be used to enumerate accounts. It also
+creates no session while email verification is required. Both shape the flow — sign-up
+redirects to a "check your email" page that also tells a student who already has an account
+to log in instead, which covers the dead end without adding an oracle.
+
+Email itself is **not configured**. `src/lib/email.ts` prints to the console in development
+and throws in production, so a verification link is never silently dropped. Sending real mail
+costs money or needs an account: SES is the obvious choice given the AWS instance already in
+use, Resend the simpler one. Nothing else works in production until that is decided.
+
 **Patients:** no account at MVP. Friction here directly costs the people the platform exists
 to serve.
 
@@ -231,6 +243,12 @@ tokens are long, random, single-case scoped, and revocable.
 - shadcn/ui on Base UI. Check an existing component before adding a dependency.
 - Mobile-first. Design the narrow viewport, then widen.
 - Server Components by default; Client Components only where interaction requires it.
+- **A rejected form must never empty itself.** React 19 resets a form after an action runs,
+  back to each input's *default*, so an action that fails validation has to hand the
+  submitted values back and the inputs must render them as `defaultValue` / `defaultChecked`.
+  A `<select>` additionally needs a `key` tied to the value — React re-applies a changed
+  `defaultValue` to a text input but not to a mounted select. Losing a filled-in case form
+  over one mistyped digit is where a patient on a slow phone gives up.
 - The student dashboard is a **tool**, not an experience. Repeat visitors need speed and
   density: fast filtering, clear case status, minimal chrome. Visual novelty here is a cost.
 - Do not invent brand colours or pick fonts. The visual identity is still being decided.
@@ -319,8 +337,12 @@ These are genuinely unresolved. If a task depends on one, stop and ask rather th
 2. **External cases.** Students also find patients outside سنون. Self-reported external
    counts should be visibly marked as unverified and should not gate eligibility — but
    whether to collect them at all is open.
-3. **Case visibility scope.** Does a student see every case in their city, or only cases
-   matching their clinic and stage capability? Leaning toward the latter.
+3. ~~**Case visibility scope.**~~ **Decided:** a student sees only cases whose treatments
+   their stage is permitted to perform at their clinic. They never open a case they cannot
+   take. The consequence to watch: a wrong capability mapping makes cases invisible rather
+   than merely inconvenient, so the mapping is admin-editable in Payload and worth auditing
+   against cases that sit unclaimed. `listOpenCasesForStudent` already takes the scope as an
+   explicit filter, so this is a call-site policy, not a data-layer change.
 4. **Patient confirmation mechanism.** How the patient confirms contact happened, without
    an account and without SMS. Leading candidate: the Telegram bot asks them directly. Still
    open is what happens for a patient who never opts in — the tracking link can carry a
@@ -398,3 +420,13 @@ respective plugins ship support.
 - Tests accompany anything touching claiming, state transitions, or access control. Those
   three are where a bug harms a real person.
 - Be direct about what costs money, needs approval, or is not possible.
+
+<!-- BEGIN:nextjs-agent-rules -->
+
+# This is NOT the Next.js you know
+
+This version has breaking changes — APIs, conventions, and file structure may all differ from your training data. Read the relevant guide in `node_modules/next/dist/docs/` (resolved from this file's directory; in monorepos the `next` package may not be visible from the repo root) before writing any code. Heed deprecation notices.
+
+This block is written and re-added by `next dev` — verify at `node_modules/next/dist/server/lib/generate-agent-files.js`. Removing it from a diff only re-creates the uncommitted change; committing it with your work keeps the tree clean.
+
+<!-- END:nextjs-agent-rules -->

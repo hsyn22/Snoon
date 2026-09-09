@@ -3,11 +3,22 @@
 import { redirect } from 'next/navigation'
 import { submitCase } from '@/db/queries/cases'
 import { caseForm } from '@/lib/copy'
-import { readCaseForm, validateCaseForm, type FieldErrors } from '@/lib/cases/validation'
+import {
+  readCaseForm,
+  validateCaseForm,
+  type CaseFormFields,
+  type FieldErrors,
+} from '@/lib/cases/validation'
 
 export type CaseFormState = {
   errors?: FieldErrors
   formError?: string
+  /**
+   * What the patient typed, handed back so a rejected submission does not empty
+   * the form. React 19 resets a form after an action, so the only values that
+   * survive are the ones re-rendered as each input's default.
+   */
+  values?: CaseFormFields
 }
 
 export async function submitCaseAction(
@@ -17,7 +28,7 @@ export async function submitCaseAction(
   const fields = readCaseForm(formData)
   const validated = await validateCaseForm(fields)
 
-  if (!validated.ok) return { errors: validated.errors }
+  if (!validated.ok) return { errors: validated.errors, values: fields }
 
   let trackingToken: string
   try {
@@ -27,7 +38,7 @@ export async function submitCaseAction(
     // Log that a submission failed, never what was in it — the form data holds
     // the patient's name and phone number.
     console.error('Case submission failed:', error instanceof Error ? error.message : 'unknown error')
-    return { formError: caseForm.errors.submitFailed }
+    return { formError: caseForm.errors.submitFailed, values: fields }
   }
 
   // redirect() signals by throwing, so it must sit outside the try/catch above —

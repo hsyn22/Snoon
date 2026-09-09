@@ -1,6 +1,9 @@
 import { drizzle } from 'drizzle-orm/postgres-js'
 import postgres from 'postgres'
-import * as schema from './schema'
+import * as authSchema from './auth-schema'
+import * as caseSchema from './schema'
+
+const schema = { ...caseSchema, ...authSchema }
 
 /**
  * Next.js hot-reloads modules in development, which would open a new connection

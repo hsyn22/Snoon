@@ -15,6 +15,13 @@
       "when": 1788919686021,
       "tag": "0001_slippery_darkhawk",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1788920246141,
+      "tag": "0002_living_zuras",
+      "breakpoints": true
     }
   ]
 }
