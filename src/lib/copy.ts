@@ -202,7 +202,14 @@ export const studentAuth = {
     badCredentials: 'الإيميل أو كلمة السر غلط.',
     emailNotVerified: 'فعّل إيميلك أول. شوف الرسالة اللي وصلتك.',
     generic: 'ما كدرنا نكمل. جرّب مرة لخ بعد شوية.',
+    signUpClosed: 'تسجيل الطلبة لسه ما مفتوح. راجعنا بعدين.',
   },
+} as const
+
+/** Shown instead of the sign-up form while student registration cannot work. */
+export const studentSignUpClosed = {
+  title: 'تسجيل الطلبة لسه ما مفتوح',
+  body: 'تسجيل حسابات الطلبة راح ينفتح قريباً. إذا عندك حساب من قبل، تكدر تدخل بيه.',
 } as const
 
 /** Where a student stands between signing up and being able to see cases. */

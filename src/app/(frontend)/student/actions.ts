@@ -5,6 +5,7 @@ import { headers } from 'next/headers'
 import { redirect } from 'next/navigation'
 import { auth } from '@/lib/auth'
 import { studentAuth } from '@/lib/copy'
+import { isEmailConfigured } from '@/lib/email'
 
 export type AuthFormState = {
   errors?: Partial<Record<'name' | 'email' | 'password', string>>
@@ -34,6 +35,12 @@ export async function signUpAction(
   _previous: AuthFormState,
   formData: FormData,
 ): Promise<AuthFormState> {
+  // Checked before anything is written. Better Auth sends the verification email
+  // as a background task, so a delivery failure never surfaces to the caller —
+  // sign-up would look successful while leaving an account nobody can ever
+  // verify or log into.
+  if (!isEmailConfigured()) return { formError: studentAuth.errors.signUpClosed }
+
   const name = read(formData, 'name')
   const email = read(formData, 'email').toLowerCase()
   // Not trimmed: a password may legitimately begin or end with a space.

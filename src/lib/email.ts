@@ -20,6 +20,24 @@ export type OutboundEmail = {
   text: string
 }
 
+/**
+ * Whether email can actually be delivered right now.
+ *
+ * Callers must check this BEFORE starting a flow that depends on a message
+ * arriving. Better Auth sends its verification email as a background task, so a
+ * failure inside `sendEmail` never reaches the caller: sign-up appears to
+ * succeed, the account row is written, no message goes out, and the student is
+ * left with an account they can never verify or log into. Failing loudly inside
+ * the sender is not enough — the flow has to refuse up front.
+ *
+ * Development counts as configured because the sender prints to the console,
+ * which is a real delivery channel for a developer. Production does not, until a
+ * provider is actually implemented in `sendEmail`.
+ */
+export function isEmailConfigured(): boolean {
+  return process.env.NODE_ENV !== 'production'
+}
+
 export class EmailNotConfiguredError extends Error {
   constructor() {
     super('No email provider is configured. Set one up before running in production.')

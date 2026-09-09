@@ -228,10 +228,23 @@ creates no session while email verification is required. Both shape the flow —
 redirects to a "check your email" page that also tells a student who already has an account
 to log in instead, which covers the dead end without adding an oracle.
 
-Email itself is **not configured**. `src/lib/email.ts` prints to the console in development
-and throws in production, so a verification link is never silently dropped. Sending real mail
-costs money or needs an account: SES is the obvious choice given the AWS instance already in
-use, Resend the simpler one. Nothing else works in production until that is decided.
+Email itself is **not configured**, and this blocks student sign-up in production.
+
+`src/lib/email.ts` prints to the console in development and throws in production. Throwing is
+NOT sufficient on its own: Better Auth sends its verification email as a **background task**,
+so the failure never reaches the caller. Sign-up appeared to succeed, the account row was
+written, no message went out, and the student was left holding an account they could never
+verify or log into — silently. Verified by probing it.
+
+So any flow that depends on a message arriving must check `isEmailConfigured()` **before**
+writing anything. Sign-up does, and refuses with an Arabic "registration is not open yet"
+notice rather than creating an unverifiable account. `tests/email-guard.test.ts` holds that
+line.
+
+Sending real mail costs money or needs an account: SES is the obvious choice given the AWS
+instance already in use, Resend the simpler one. Until one is implemented in `sendEmail`,
+`isEmailConfigured()` returns false in production and student registration stays closed —
+the patient side is unaffected and works fully.
 
 **Patients:** no account at MVP. Friction here directly costs the people the platform exists
 to serve.
