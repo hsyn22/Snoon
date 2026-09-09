@@ -4,6 +4,7 @@ import * as migration_20260909_045900_student_documents from './20260909_045900_
 import * as migration_20260909_063032_case_expiry from './20260909_063032_case_expiry';
 import * as migration_20260909_063652_case_photos from './20260909_063652_case_photos';
 import * as migration_20260909_064124_photo_retention from './20260909_064124_photo_retention';
+import * as migration_20260909_130322_case_photo_thumb from './20260909_130322_case_photo_thumb';
 
 export const migrations = [
   {
@@ -34,6 +35,11 @@ export const migrations = [
   {
     up: migration_20260909_064124_photo_retention.up,
     down: migration_20260909_064124_photo_retention.down,
-    name: '20260909_064124_photo_retention'
+    name: '20260909_064124_photo_retention',
+  },
+  {
+    up: migration_20260909_130322_case_photo_thumb.up,
+    down: migration_20260909_130322_case_photo_thumb.down,
+    name: '20260909_130322_case_photo_thumb'
   },
 ];

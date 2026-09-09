@@ -24,9 +24,13 @@ export function CasePhotoGrid({
       <h2 className="text-xs text-foreground-muted">{label}</h2>
       <div className="mt-2 grid grid-cols-2 gap-2">
         {photos.map((photo, index) => {
-          const src = trackingToken
-            ? `/api/case-photos/${photo.id}?t=${encodeURIComponent(trackingToken)}`
-            : `/api/case-photos/${photo.id}`
+          const token = trackingToken ? `t=${encodeURIComponent(trackingToken)}` : ''
+          const src = token ? `/api/case-photos/${photo.id}?${token}` : `/api/case-photos/${photo.id}`
+          const query = token ? `&${token}` : ''
+          // The grid slot is about 170px wide on a phone; the full image is
+          // 1600px. Measured on Slow 3G, sending the full one put a case with
+          // photographs 18 seconds behind every other page.
+          const thumb = `/api/case-photos/${photo.id}?size=thumb${query}`
 
           return (
             <a
@@ -41,7 +45,7 @@ export function CasePhotoGrid({
                   outside it. */}
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img
-                src={src}
+                src={thumb}
                 alt={`${copy.studentLabel} ${index + 1}`}
                 loading="lazy"
                 className="h-32 w-full object-cover"

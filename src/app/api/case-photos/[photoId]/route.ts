@@ -64,7 +64,22 @@ export async function GET(
       overrideAccess: true,
     })
 
-    const filename = media?.filename
+    /**
+     * `?size=thumb` serves the small variant Payload generated on upload.
+     *
+     * The grid on a case shows these at about 170px wide on a phone, and sending
+     * the full 1600px file to fill it took a case with photographs to 23 seconds
+     * on Slow 3G. Falls back to the original when no variant exists — photographs
+     * uploaded before the size was configured have none — so a missing thumbnail
+     * is slow, never broken.
+     *
+     * Authorisation is unchanged: the same check above gates both, and neither
+     * has a URL that works for anyone else.
+     */
+    const wantsThumb = new URL(request.url).searchParams.get('size') === 'thumb'
+    const thumbName = wantsThumb ? media?.sizes?.thumb?.filename : null
+
+    const filename = thumbName ?? media?.filename
     if (!filename) return NextResponse.json({ ok: false }, { status: 404 })
 
     const { readFile } = await import('node:fs/promises')

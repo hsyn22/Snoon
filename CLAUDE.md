@@ -437,6 +437,36 @@ it was saved. Three files now cover it, and they are not interchangeable:
   from. It needs `experimental.globalNotFound` in `next.config.ts`, and it bypasses the
   layout, so it imports the stylesheet itself.
 
+### Measured on a slow phone
+
+Non-negotiable 7 is a claim, so it was measured rather than assumed: a production build,
+Chrome throttled to Slow 3G (400kbps, 400ms RTT) with the CPU at 4x, on a 360px viewport.
+Transfer is the wire size — `content-length` is reported decoded and overstates a gzipped
+response several times over, which is the whole question on a slow connection.
+
+| page | transferred | first paint | loaded |
+|---|---|---|---|
+| landing | 167 KB | 1.7s | 4.8s |
+| `/case/new` | 172 KB | 1.7s | 4.9s |
+| tracking, with a photograph | 194 KB | 1.7s | 5.3s |
+| `/case/new`, second visit | 1 KB | 0.5s | 0.6s |
+
+The one real failure it found: **a case with photographs took 23 seconds and 1.1MB**, because
+the grid showed them at about 170px wide and was sending the full 1600px file. Payload now
+generates a 480px `thumb` on upload and `/api/case-photos/[id]?size=thumb` serves it —
+same authorisation, falling back to the original when a photograph predates the size, so a
+missing thumbnail is slow rather than broken. That is 194KB and 5.3s.
+
+Worth knowing when changing anything here:
+
+- **A new image size needs a Payload migration.** The sizes are columns on the upload
+  collection; without `payload migrate` the size is silently not generated.
+- **A stale `.next` will lie to you.** Twice during this work a build served an older bundle
+  and the thumbnail appeared not to be generated at all. `rm -rf .next` before measuring
+  anything.
+- Upload is the patient's cost, not download: at 400kbps a 12MB photograph is roughly four
+  minutes. The per-photo limit is worth revisiting against real Iraqi connections.
+
 ### The landing page
 
 A cinematic 3D clinic scene is described in the product vision. **It is not in the MVP.**
