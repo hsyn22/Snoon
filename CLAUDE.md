@@ -326,7 +326,17 @@ These are genuinely unresolved. If a task depends on one, stop and ask rather th
    open is what happens for a patient who never opts in — the tracking link can carry a
    confirm button, but an unanswered case must not stall forever.
 5. **Photo requirement.** Optional at submission — but should some treatments require them?
-6. **Retention periods** for cases, photos and contact details after completion.
+6. **University choice by the patient.** Raised and deliberately deferred, not rejected: after
+   picking a city, should the patient narrow their case to particular universities they can
+   actually reach? Transport across a city is the real obstacle in Iraq, so the information
+   has value — but any filter here shrinks the pool of students who can see a case, so the
+   leaning is optional-and-multi-select with "any" as the default, never required. Blocked on
+   real data: which universities have dental colleges, and in which cities. Do not invent that
+   list.
+7. **Which cities to launch in.** The current 18-city list in `src/lib/config/index.ts` is a
+   placeholder written by Claude, not a decision. Realistically the launch is one or two
+   cities.
+8. **Retention periods** for cases, photos and contact details after completion.
 
 ---
 
