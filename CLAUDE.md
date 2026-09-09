@@ -75,11 +75,14 @@ The join key is each config document's **`slug`**, not Payload's numeric id. A c
 `city_id` and `treatment_type_ids` as plain text in another schema, so the key has to stay
 readable in the database and survive the config being edited, re-seeded or restored.
 
-`src/lib/config/` is split along the client/server line and must stay that way.
+`src/lib/config/` is split three ways and must stay that way.
 `schema.ts` holds types and the fixed week and is safe for a Client Component;
 `index.ts` reads Payload and is marked `server-only`, because importing it from a
 Client Component pulls `fs`, `child_process` and the whole CMS into the browser
-bundle and fails the build.
+bundle and fails the build; `settings.ts` reads Payload but is **not** marked
+`server-only`, because that guard also makes a module unloadable from plain Node —
+which rules out scheduled jobs and CLI scripts. The contact-window expiry is
+exactly such a job, so a guard there would break the thing it governs.
 
 **A custom Payload admin view must authorise itself.** Payload's admin gates the
 *interface* — an unauthenticated visitor is shown a login screen — but a custom view is
@@ -350,7 +353,13 @@ Rules the implementation holds to:
 
 Setup needs three environment variables (`TELEGRAM_BOT_TOKEN`, `TELEGRAM_BOT_USERNAME`,
 `TELEGRAM_WEBHOOK_SECRET`) from a bot created with @BotFather, and the webhook pointed at
-`/api/telegram/webhook`. Still to come: the patient confirming contact through the bot,
+`/api/telegram/webhook`.
+
+**Locally there is no public URL for a webhook**, so `pnpm telegram:poll` long-polls
+`getUpdates` instead and feeds them through the same `handleTelegramUpdate` the route uses —
+only the delivery differs. Never run it while a webhook is registered: Telegram refuses
+`getUpdates` in that case, which is a useful safeguard against two consumers racing for the
+same updates. Still to come: the patient confirming contact through the bot,
 which is the leading answer to open decision 4.
 
 ---

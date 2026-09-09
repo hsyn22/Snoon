@@ -23,6 +23,9 @@ import type { City, College, Stage, TreatmentType, University } from './schema'
  */
 
 export type { City, College, Stage, TreatmentType, University, WeekDay } from './schema'
+// Lives outside this module because it is read by a scheduled job, which cannot
+// load a `server-only` module. See ./settings.ts.
+export { getContactWindowHours } from './settings'
 
 /** Only `active` rows are offered. Inactive ones stay resolvable so existing
  *  cases still display the name of a treatment that has since been retired. */
@@ -99,25 +102,6 @@ export async function getCityById(id: string): Promise<City | undefined> {
 export async function getTreatmentTypeById(id: string): Promise<TreatmentType | undefined> {
   return (await getAllTreatmentTypes()).find((treatment) => treatment.id === id)
 }
-
-/**
- * How long a student has to contact the patient after claiming a case.
- *
- * Read from the Payload settings global so it can be tuned from the admin. 48
- * hours is the default, not a constant: students are in clinic during the day
- * and patients may not answer first try.
- */
-const FALLBACK_CONTACT_WINDOW_HOURS = 48
-
-export const getContactWindowHours = cache(async (): Promise<number> => {
-  const payload = await getPayload({ config })
-  const settings = await payload.findGlobal({ slug: 'settings' })
-  const value = settings.contactWindowHours
-  // A misconfigured or missing value must not mean a zero-length window, which
-  // would expire every claim the instant it was made.
-  return typeof value === 'number' && value > 0 ? value : FALLBACK_CONTACT_WINDOW_HOURS
-})
-
 
 /**
  * Relationship fields come back as an id or a populated document depending on
@@ -224,7 +208,6 @@ export async function hasStudentPlacesConfigured(): Promise<boolean> {
   ])
   return universities.length > 0 && colleges.length > 0 && stages.length > 0
 }
-
 
 /**
  * The city a college sits in, resolved college → university → city.

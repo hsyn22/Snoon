@@ -1,7 +1,7 @@
 import { and, eq, inArray, lte, notExists, sql } from 'drizzle-orm'
 import { db } from '@/db'
 import { caseEvents, cases, claims, students } from '@/db/schema'
-import { getContactWindowHours } from '@/lib/config'
+import { getContactWindowHours } from '@/lib/config/settings'
 
 /**
  * Claiming, and the contact window that follows it.
