@@ -16,15 +16,26 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "db:generate": "drizzle-kit generate",
-    "db:migrate": "drizzle-kit migrate"
+    "db:migrate": "drizzle-kit migrate",
+    "payload": "payload",
+    "payload:migrate": "payload migrate",
+    "payload:types": "payload generate:types",
+    "payload:importmap": "payload generate:importmap"
   },
   "dependencies": {
+    "@payloadcms/db-postgres": "3.88.0",
+    "@payloadcms/next": "3.88.0",
+    "@payloadcms/richtext-lexical": "3.88.0",
+    "@payloadcms/translations": "3.88.0",
     "better-auth": "1.7.3",
     "drizzle-orm": "^0.45.2",
+    "graphql": "^16.14.2",
     "next": "16.3.4",
+    "payload": "3.88.0",
     "postgres": "^3.4.9",
     "react": "^19.2.8",
-    "react-dom": "^19.2.8"
+    "react-dom": "^19.2.8",
+    "sharp": "^0.35.4"
   },
   "devDependencies": {
     "@tailwindcss/postcss": "^4.3.3",

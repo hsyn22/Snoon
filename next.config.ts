@@ -1,3 +1,4 @@
+import { withPayload } from '@payloadcms/next/withPayload'
 import type { NextConfig } from 'next'
 
 const nextConfig: NextConfig = {
@@ -8,4 +9,5 @@ const nextConfig: NextConfig = {
   },
 }
 
-export default nextConfig
+// Payload wraps the config to register its admin bundle and server externals.
+export default withPayload(nextConfig)

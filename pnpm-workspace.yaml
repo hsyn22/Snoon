@@ -1,0 +1,6 @@
+# esbuild is needed by Payload's admin bundler and must be allowed to run its
+# install script; sharp compiles the image pipeline used for intraoral photos.
+onlyBuiltDependencies:
+  - esbuild
+  - sharp
+  - unrs-resolver
