@@ -21,8 +21,6 @@ export type City = {
 export type TreatmentType = {
   id: string
   nameAr: string
-  /** Shown under the name so a patient who does not know the clinical term can still choose. */
-  descriptionAr: string
 }
 
 const CITIES: readonly City[] = [
@@ -47,14 +45,15 @@ const CITIES: readonly City[] = [
 ] as const
 
 const TREATMENT_TYPES: readonly TreatmentType[] = [
-  { id: 'filling', nameAr: 'حشوة', descriptionAr: 'علاج التسوس وحشو السن' },
-  { id: 'extraction', nameAr: 'قلع', descriptionAr: 'سحب سن أو ضرس' },
-  { id: 'scaling', nameAr: 'تنظيف وتقليح', descriptionAr: 'إزالة الجير وتنظيف الأسنان' },
-  { id: 'root-canal', nameAr: 'علاج عصب', descriptionAr: 'سحب العصب وحشو الجذور' },
-  { id: 'fixed-prosthesis', nameAr: 'تركيبات ثابتة', descriptionAr: 'تلبيسة أو جسر ثابت' },
-  { id: 'removable-prosthesis', nameAr: 'تركيبات متحركة', descriptionAr: 'طقم أسنان كامل أو جزئي' },
-  { id: 'periodontal', nameAr: 'علاج اللثة', descriptionAr: 'التهاب اللثة ونزفها' },
-  { id: 'paediatric', nameAr: 'أسنان الأطفال', descriptionAr: 'علاج أسنان الأطفال' },
+  { id: 'examination', nameAr: 'فحص' },
+  { id: 'filling', nameAr: 'حشوة' },
+  { id: 'extraction', nameAr: 'قلع' },
+  { id: 'scaling', nameAr: 'تنظيف' },
+  { id: 'root-canal', nameAr: 'علاج عصب' },
+  { id: 'partial-denture', nameAr: 'طقم جزئي' },
+  { id: 'complete-denture', nameAr: 'طقم كامل' },
+  { id: 'orthodontics', nameAr: 'تقويم أسنان' },
+  { id: 'paediatric', nameAr: 'أسنان الأطفال' },
 ] as const
 
 export async function getCities(): Promise<readonly City[]> {
@@ -82,8 +81,11 @@ export async function getTreatmentTypeById(id: string): Promise<TreatmentType | 
   return TREATMENT_TYPES.find((treatment) => treatment.id === id)
 }
 
-/** Days of the week, starting Saturday as Iraqi clinics do. */
-export const WEEK_DAYS = ['sat', 'sun', 'mon', 'tue', 'wed', 'thu', 'fri'] as const
+/**
+ * Clinic days, starting Saturday as Iraqi clinics do. Friday is always a
+ * holiday, so it is not offered — a patient cannot pick a day no clinic runs.
+ */
+export const WEEK_DAYS = ['sat', 'sun', 'mon', 'tue', 'wed', 'thu'] as const
 export type WeekDay = (typeof WEEK_DAYS)[number]
 
 export function isWeekDay(value: string): value is WeekDay {

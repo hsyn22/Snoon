@@ -30,9 +30,8 @@ describe.skipIf(!hasDatabase)('case data access', async () => {
   async function submit(overrides: Partial<Parameters<typeof submitCase>[0]> = {}) {
     const result = await submitCase({
       cityId: 'basra',
-      treatmentTypeId: 'root-canal',
+      treatmentTypeIds: ['root-canal'],
       availabilityDays: ['sun', 'tue'],
-      availabilityPeriod: 'MORNING',
       patientName: 'مريض تجريبي',
       patientPhone: '07701234567',
       notes: null,
@@ -93,6 +92,14 @@ describe.skipIf(!hasDatabase)('case data access', async () => {
       .where(eq(caseEvents.caseId, row!.id))
 
     expect(events).toEqual([{ fromStatus: null, toStatus: 'REQUESTED', actorType: 'PATIENT' }])
+  })
+
+  it('stores every treatment the patient selected, in order', async () => {
+    const selected = ['examination', 'scaling', 'filling']
+    const { trackingToken } = await submit({ treatmentTypeIds: selected })
+
+    const record = await getCaseByTrackingToken(trackingToken)
+    expect(record?.treatmentTypeIds).toEqual(selected)
   })
 
   it('gives each case its own reference code and token', async () => {

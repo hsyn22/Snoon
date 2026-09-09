@@ -18,9 +18,9 @@ import type { WeekDay } from '@/lib/config'
 
 export type SubmitCaseInput = {
   cityId: string
-  treatmentTypeId: string
+  /** One or more treatments; a patient often needs several at once. */
+  treatmentTypeIds: string[]
   availabilityDays: WeekDay[]
-  availabilityPeriod: 'MORNING' | 'AFTERNOON' | 'EITHER'
   patientName: string
   /** Already normalised to 07XXXXXXXXX by the caller. */
   patientPhone: string
@@ -66,9 +66,8 @@ export async function submitCase(input: SubmitCaseInput): Promise<SubmitCaseResu
           .values({
             referenceCode,
             cityId: input.cityId,
-            treatmentTypeId: input.treatmentTypeId,
+            treatmentTypeIds: input.treatmentTypeIds,
             availabilityDays: input.availabilityDays,
-            availabilityPeriod: input.availabilityPeriod,
             patientName: input.patientName,
             patientPhone: input.patientPhone,
             notes: input.notes,
@@ -107,9 +106,8 @@ export type PatientCaseView = {
   referenceCode: string
   status: (typeof cases.status.enumValues)[number]
   cityId: string
-  treatmentTypeId: string
+  treatmentTypeIds: string[]
   availabilityDays: string[]
-  availabilityPeriod: 'MORNING' | 'AFTERNOON' | 'EITHER'
   patientName: string
   patientPhone: string
   notes: string | null
@@ -131,9 +129,8 @@ export async function getCaseByTrackingToken(token: string): Promise<PatientCase
       referenceCode: cases.referenceCode,
       status: cases.status,
       cityId: cases.cityId,
-      treatmentTypeId: cases.treatmentTypeId,
+      treatmentTypeIds: cases.treatmentTypeIds,
       availabilityDays: cases.availabilityDays,
-      availabilityPeriod: cases.availabilityPeriod,
       patientName: cases.patientName,
       patientPhone: cases.patientPhone,
       notes: cases.notes,

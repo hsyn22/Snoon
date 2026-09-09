@@ -6,9 +6,8 @@ import { caseForm } from '@/lib/copy'
 function validFields(overrides: Partial<CaseFormFields> = {}): CaseFormFields {
   return {
     cityId: 'basra',
-    treatmentTypeId: 'root-canal',
+    treatmentTypeIds: ['root-canal'],
     availabilityDays: ['sun', 'tue'],
-    availabilityPeriod: 'MORNING',
     patientName: 'أم علي',
     patientPhone: '07701234567',
     notes: '',
@@ -27,6 +26,47 @@ describe('validateCaseForm', () => {
     expect(result.ok && result.value.patientPhone).toBe('07701234567')
   })
 
+  it('accepts several treatments at once', async () => {
+    const result = await validateCaseForm(
+      validFields({ treatmentTypeIds: ['examination', 'scaling', 'filling'] }),
+    )
+    expect(result.ok && result.value.treatmentTypeIds).toEqual([
+      'examination',
+      'scaling',
+      'filling',
+    ])
+  })
+
+  it('removes duplicate treatments', async () => {
+    const result = await validateCaseForm(
+      validFields({ treatmentTypeIds: ['filling', 'filling', 'extraction'] }),
+    )
+    expect(result.ok && result.value.treatmentTypeIds).toEqual(['filling', 'extraction'])
+  })
+
+  it('accepts every treatment currently offered', async () => {
+    const all = [
+      'examination',
+      'filling',
+      'extraction',
+      'scaling',
+      'root-canal',
+      'partial-denture',
+      'complete-denture',
+      'orthodontics',
+      'paediatric',
+    ]
+    const result = await validateCaseForm(validFields({ treatmentTypeIds: all }))
+    expect(result.ok && result.value.treatmentTypeIds).toEqual(all)
+  })
+
+  it('accepts every clinic day, Saturday through Thursday', async () => {
+    const result = await validateCaseForm(
+      validFields({ availabilityDays: ['sat', 'sun', 'mon', 'tue', 'wed', 'thu'] }),
+    )
+    expect(result.ok).toBe(true)
+  })
+
   it('removes duplicate days', async () => {
     const result = await validateCaseForm(
       validFields({ availabilityDays: ['sun', 'sun', 'tue'] }),
@@ -42,12 +82,18 @@ describe('validateCaseForm', () => {
   it.each([
     ['cityId', { cityId: '' }, caseForm.errors.cityRequired],
     ['cityId', { cityId: 'atlantis' }, caseForm.errors.cityUnknown],
-    ['treatmentTypeId', { treatmentTypeId: '' }, caseForm.errors.treatmentRequired],
-    ['treatmentTypeId', { treatmentTypeId: 'implant' }, caseForm.errors.treatmentUnknown],
+    ['treatmentTypeIds', { treatmentTypeIds: [] }, caseForm.errors.treatmentRequired],
+    ['treatmentTypeIds', { treatmentTypeIds: ['implant'] }, caseForm.errors.treatmentUnknown],
+    [
+      'treatmentTypeIds',
+      { treatmentTypeIds: ['filling', 'implant'] },
+      caseForm.errors.treatmentUnknown,
+    ],
     ['availabilityDays', { availabilityDays: [] }, caseForm.errors.daysRequired],
     ['availabilityDays', { availabilityDays: ['someday'] }, caseForm.errors.daysInvalid],
-    ['availabilityPeriod', { availabilityPeriod: '' }, caseForm.errors.periodRequired],
-    ['availabilityPeriod', { availabilityPeriod: 'MIDNIGHT' }, caseForm.errors.periodRequired],
+    // Friday is a holiday, so no clinic runs and it is not a selectable day.
+    ['availabilityDays', { availabilityDays: ['fri'] }, caseForm.errors.daysInvalid],
+    ['availabilityDays', { availabilityDays: ['sun', 'fri'] }, caseForm.errors.daysInvalid],
     ['patientName', { patientName: '' }, caseForm.errors.nameRequired],
     ['patientName', { patientName: 'أ' }, caseForm.errors.nameTooShort],
     ['patientName', { patientName: 'ا'.repeat(81) }, caseForm.errors.nameTooLong],

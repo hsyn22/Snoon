@@ -37,6 +37,8 @@ const labelClass = 'block text-sm font-medium text-foreground'
 const hintClass = 'mt-1 text-xs text-foreground-muted'
 const controlClass =
   'mt-2 min-h-11 w-full rounded-md border border-border bg-surface px-3 text-foreground'
+const optionClass =
+  'flex min-h-11 items-center gap-2 rounded-md border border-border bg-surface px-3 text-sm'
 
 export function CaseForm({
   cities,
@@ -74,62 +76,37 @@ export function CaseForm({
         <FieldError id="cityId-error" message={errors.cityId} />
       </div>
 
-      <div>
-        <label htmlFor="treatmentTypeId" className={labelClass}>
-          {caseForm.treatmentLabel}
-        </label>
+      <fieldset>
+        <legend className={labelClass}>{caseForm.treatmentLabel}</legend>
         <p className={hintClass}>{caseForm.treatmentHint}</p>
-        <select
-          id="treatmentTypeId"
-          name="treatmentTypeId"
-          className={controlClass}
-          aria-invalid={Boolean(errors.treatmentTypeId)}
-          aria-describedby={errors.treatmentTypeId ? 'treatmentTypeId-error' : undefined}
-          defaultValue=""
-        >
-          <option value="" disabled>
-            {caseForm.treatmentPlaceholder}
-          </option>
+        <div className="mt-2 grid grid-cols-2 gap-2">
           {treatmentTypes.map((treatment) => (
-            <option key={treatment.id} value={treatment.id}>
-              {treatment.nameAr} — {treatment.descriptionAr}
-            </option>
+            <label key={treatment.id} className={optionClass}>
+              <input
+                type="checkbox"
+                name="treatmentTypeIds"
+                value={treatment.id}
+                className="size-4"
+              />
+              {treatment.nameAr}
+            </label>
           ))}
-        </select>
-        <FieldError id="treatmentTypeId-error" message={errors.treatmentTypeId} />
-      </div>
+        </div>
+        <FieldError id="treatmentTypeIds-error" message={errors.treatmentTypeIds} />
+      </fieldset>
 
       <fieldset>
         <legend className={labelClass}>{caseForm.daysLabel}</legend>
         <p className={hintClass}>{caseForm.daysHint}</p>
         <div className="mt-2 grid grid-cols-2 gap-2">
           {WEEK_DAYS.map((day) => (
-            <label
-              key={day}
-              className="flex min-h-11 items-center gap-2 rounded-md border border-border bg-surface px-3 text-sm"
-            >
+            <label key={day} className={optionClass}>
               <input type="checkbox" name="availabilityDays" value={day} className="size-4" />
               {caseForm.weekDays[day]}
             </label>
           ))}
         </div>
         <FieldError id="availabilityDays-error" message={errors.availabilityDays} />
-      </fieldset>
-
-      <fieldset>
-        <legend className={labelClass}>{caseForm.periodLabel}</legend>
-        <div className="mt-2 space-y-2">
-          {(['MORNING', 'AFTERNOON', 'EITHER'] as const).map((period) => (
-            <label
-              key={period}
-              className="flex min-h-11 items-center gap-2 rounded-md border border-border bg-surface px-3 text-sm"
-            >
-              <input type="radio" name="availabilityPeriod" value={period} className="size-4" />
-              {caseForm.periodOptions[period]}
-            </label>
-          ))}
-        </div>
-        <FieldError id="availabilityPeriod-error" message={errors.availabilityPeriod} />
       </fieldset>
 
       <div>

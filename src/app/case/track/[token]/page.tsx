@@ -2,7 +2,7 @@ import type { Metadata } from 'next'
 import { headers } from 'next/headers'
 import Link from 'next/link'
 import { getCaseByTrackingToken } from '@/db/queries/cases'
-import { getCityById, getTreatmentTypeById } from '@/lib/config'
+import { getCityById, getTreatmentTypes } from '@/lib/config'
 import { caseForm, caseStatus, caseTracking, common, site } from '@/lib/copy'
 import { formatCaseDate } from '@/lib/dates'
 import { formatPhoneForDisplay } from '@/lib/phone'
@@ -53,10 +53,13 @@ export default async function TrackCasePage({
     )
   }
 
-  const [city, treatment] = await Promise.all([
-    getCityById(record.cityId),
-    getTreatmentTypeById(record.treatmentTypeId),
-  ])
+  const [city, allTreatments] = await Promise.all([getCityById(record.cityId), getTreatmentTypes()])
+
+  // Resolve the stored IDs to Arabic names, keeping any unknown ID visible
+  // rather than silently dropping a treatment the patient asked for.
+  const treatments = record.treatmentTypeIds
+    .map((id) => allTreatments.find((treatment) => treatment.id === id)?.nameAr ?? id)
+    .join('، ')
 
   const headerList = await headers()
   const host = headerList.get('host') ?? ''
@@ -104,12 +107,8 @@ export default async function TrackCasePage({
         <dl className="mt-6 rounded-lg border border-border bg-surface px-4">
           <Row label={caseTracking.statusLabel} value={caseStatus[record.status]} />
           <Row label={caseTracking.cityLabel} value={city?.nameAr ?? record.cityId} />
-          <Row label={caseTracking.treatmentLabel} value={treatment?.nameAr ?? record.treatmentTypeId} />
+          <Row label={caseTracking.treatmentLabel} value={treatments} />
           <Row label={caseTracking.daysLabel} value={days} />
-          <Row
-            label={caseTracking.periodLabel}
-            value={caseForm.periodOptions[record.availabilityPeriod]}
-          />
           <Row label={caseTracking.nameLabel} value={record.patientName} />
           <Row
             label={caseTracking.phoneLabel}

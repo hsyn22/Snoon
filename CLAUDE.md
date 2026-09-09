@@ -73,8 +73,14 @@ the Local API and joins by stable IDs. Never write case or claim data through Pa
 
 ## Domain model
 
-A **patient** submits a **case**: city, treatment wanted, availability, contact details,
-optional intraoral photographs, free-text notes.
+A **patient** submits a **case**: city, one or more treatments wanted, the clinic days they
+can attend, contact details, optional intraoral photographs, free-text notes.
+
+A patient often needs several things at once, so treatment is a **set**, not a single value —
+a student matches on any overlap with what their stage may treat. Availability is days only:
+clinic sessions run in the morning, so there is no time-of-day question, and Friday is never
+offered because it is always a holiday. Session times belong to the Payload-managed clinic
+schedule, not to a patient's case.
 
 A **student** belongs to a university, a college/clinic and a stage, and has a verification
 status. A verified student sees cases that match their clinic's location and their stage's
@@ -243,6 +249,31 @@ If asked to build it anyway, raise the performance cost on low-end Android first
 
 ---
 
+## Notifications — Telegram bot
+
+Notifications go through a **Telegram bot**, for both patients and students. Telegram is
+free to send on, which is the whole point: it gives the platform a push channel without the
+per-message cost that rules out SMS.
+
+Shape:
+
+- Each audience gets a "turn on notifications" link that opens the bot with a deep-link
+  payload (`https://t.me/<bot>?start=<payload>`), binding that chat to their case or their
+  student account. The payload is single-use and scoped, like the tracking token.
+- Opting in is optional. Nothing in the product may *require* Telegram — a patient without
+  it must still be reachable by phone, and must still be able to use the tracking link.
+- The bot is also an input channel, not just an output one. It is the most promising answer
+  to the patient-confirmation problem: the bot can ask the patient "did a student contact
+  you?" and take a yes/no, which advances `MATCHED → CONTACTED` on the patient's word rather
+  than the student's.
+- Bot tokens are secrets; they live in the environment, never in the repo.
+- This does not weaken the no-SMS rule — it is what replaces SMS.
+
+Not built yet. When it is, the send path belongs behind an interface so a case status change
+does not know or care which channel carried it.
+
+---
+
 ## Future: the supplies store
 
 A dental products marketplace is planned for later — oral hygiene products for patients,
@@ -291,7 +322,9 @@ These are genuinely unresolved. If a task depends on one, stop and ask rather th
 3. **Case visibility scope.** Does a student see every case in their city, or only cases
    matching their clinic and stage capability? Leaning toward the latter.
 4. **Patient confirmation mechanism.** How the patient confirms contact happened, without
-   an account and without SMS.
+   an account and without SMS. Leading candidate: the Telegram bot asks them directly. Still
+   open is what happens for a patient who never opts in — the tracking link can carry a
+   confirm button, but an unanswered case must not stall forever.
 5. **Photo requirement.** Optional at submission — but should some treatments require them?
 6. **Retention periods** for cases, photos and contact details after completion.
 

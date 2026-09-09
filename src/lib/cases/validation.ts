@@ -15,9 +15,8 @@ import type { SubmitCaseInput } from '@/db/queries/cases'
 
 export type CaseFormFields = {
   cityId: string
-  treatmentTypeId: string
+  treatmentTypeIds: string[]
   availabilityDays: string[]
-  availabilityPeriod: string
   patientName: string
   patientPhone: string
   notes: string
@@ -33,19 +32,19 @@ const NAME_MIN = 2
 const NAME_MAX = 80
 const NOTES_MAX = 1000
 
-const PERIODS = ['MORNING', 'AFTERNOON', 'EITHER'] as const
-
 export function readCaseForm(formData: FormData): CaseFormFields {
   const text = (key: string) => {
     const value = formData.get(key)
     return typeof value === 'string' ? value.trim() : ''
   }
 
+  const strings = (key: string) =>
+    formData.getAll(key).filter((value): value is string => typeof value === 'string')
+
   return {
     cityId: text('cityId'),
-    treatmentTypeId: text('treatmentTypeId'),
-    availabilityDays: formData.getAll('availabilityDays').filter((v): v is string => typeof v === 'string'),
-    availabilityPeriod: text('availabilityPeriod'),
+    treatmentTypeIds: strings('treatmentTypeIds'),
+    availabilityDays: strings('availabilityDays'),
     patientName: text('patientName'),
     patientPhone: text('patientPhone'),
     notes: text('notes'),
@@ -59,17 +58,18 @@ export async function validateCaseForm(fields: CaseFormFields): Promise<Validati
   if (!fields.cityId) errors.cityId = e.cityRequired
   else if (!(await isKnownCityId(fields.cityId))) errors.cityId = e.cityUnknown
 
-  if (!fields.treatmentTypeId) errors.treatmentTypeId = e.treatmentRequired
-  else if (!(await isKnownTreatmentTypeId(fields.treatmentTypeId)))
-    errors.treatmentTypeId = e.treatmentUnknown
+  let treatmentTypeIds: string[] = []
+  if (fields.treatmentTypeIds.length === 0) errors.treatmentTypeIds = e.treatmentRequired
+  else {
+    treatmentTypeIds = [...new Set(fields.treatmentTypeIds)]
+    const known = await Promise.all(treatmentTypeIds.map(isKnownTreatmentTypeId))
+    if (known.some((isKnown) => !isKnown)) errors.treatmentTypeIds = e.treatmentUnknown
+  }
 
   let availabilityDays: WeekDay[] = []
   if (fields.availabilityDays.length === 0) errors.availabilityDays = e.daysRequired
   else if (!fields.availabilityDays.every(isWeekDay)) errors.availabilityDays = e.daysInvalid
   else availabilityDays = [...new Set(fields.availabilityDays.filter(isWeekDay))]
-
-  const period = PERIODS.find((p) => p === fields.availabilityPeriod)
-  if (!period) errors.availabilityPeriod = e.periodRequired
 
   if (!fields.patientName) errors.patientName = e.nameRequired
   else if (fields.patientName.length < NAME_MIN) errors.patientName = e.nameTooShort
@@ -85,16 +85,15 @@ export async function validateCaseForm(fields: CaseFormFields): Promise<Validati
 
   if (Object.keys(errors).length > 0) return { ok: false, errors }
 
-  // Every branch above proved these are present; the guards satisfy the compiler.
-  if (!period || !phone) return { ok: false, errors: { patientPhone: e.phoneInvalid } }
+  // The branch above proved this is present; the guard satisfies the compiler.
+  if (!phone) return { ok: false, errors: { patientPhone: e.phoneInvalid } }
 
   return {
     ok: true,
     value: {
       cityId: fields.cityId,
-      treatmentTypeId: fields.treatmentTypeId,
+      treatmentTypeIds,
       availabilityDays,
-      availabilityPeriod: period,
       patientName: fields.patientName,
       patientPhone: phone,
       notes: fields.notes || null,

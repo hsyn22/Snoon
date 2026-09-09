@@ -1,7 +1,6 @@
 CREATE SCHEMA "snoon";
 --> statement-breakpoint
 CREATE TYPE "snoon"."actor_type" AS ENUM('PATIENT', 'STUDENT', 'ADMIN', 'SYSTEM');--> statement-breakpoint
-CREATE TYPE "snoon"."availability_period" AS ENUM('MORNING', 'AFTERNOON', 'EITHER');--> statement-breakpoint
 CREATE TYPE "snoon"."case_status" AS ENUM('REQUESTED', 'MATCHED', 'CONTACTED', 'APPOINTMENT_CONFIRMED', 'COMPLETED', 'NO_CONTACT', 'RETURNED_TO_QUEUE', 'NO_SHOW', 'CANCELLED', 'EXPIRED');--> statement-breakpoint
 CREATE TABLE "snoon"."case_events" (
 	"id" uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
@@ -19,9 +18,8 @@ CREATE TABLE "snoon"."cases" (
 	"reference_code" text NOT NULL,
 	"status" "snoon"."case_status" DEFAULT 'REQUESTED' NOT NULL,
 	"city_id" text NOT NULL,
-	"treatment_type_id" text NOT NULL,
+	"treatment_type_ids" text[] NOT NULL,
 	"availability_days" text[] NOT NULL,
-	"availability_period" "snoon"."availability_period" NOT NULL,
 	"patient_name" text NOT NULL,
 	"patient_phone" text NOT NULL,
 	"notes" text,
@@ -35,4 +33,5 @@ ALTER TABLE "snoon"."case_events" ADD CONSTRAINT "case_events_case_id_cases_id_f
 CREATE INDEX "case_events_case_id_created_idx" ON "snoon"."case_events" USING btree ("case_id","created_at");--> statement-breakpoint
 CREATE UNIQUE INDEX "cases_reference_code_key" ON "snoon"."cases" USING btree ("reference_code");--> statement-breakpoint
 CREATE UNIQUE INDEX "cases_tracking_token_hash_key" ON "snoon"."cases" USING btree ("tracking_token_hash");--> statement-breakpoint
-CREATE INDEX "cases_status_city_created_idx" ON "snoon"."cases" USING btree ("status","city_id","created_at");
+CREATE INDEX "cases_status_city_created_idx" ON "snoon"."cases" USING btree ("status","city_id","created_at");--> statement-breakpoint
+CREATE INDEX "cases_treatment_type_ids_idx" ON "snoon"."cases" USING gin ("treatment_type_ids");

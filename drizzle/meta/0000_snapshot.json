@@ -1,5 +1,5 @@
 {
-  "id": "9f9962ee-efed-4b89-8184-82abde0312be",
+  "id": "cb5319fc-477a-49c5-8411-93b5645a596d",
   "prevId": "00000000-0000-0000-0000-000000000000",
   "version": "7",
   "dialect": "postgresql",
@@ -138,22 +138,15 @@
           "primaryKey": false,
           "notNull": true
         },
-        "treatment_type_id": {
-          "name": "treatment_type_id",
-          "type": "text",
+        "treatment_type_ids": {
+          "name": "treatment_type_ids",
+          "type": "text[]",
           "primaryKey": false,
           "notNull": true
         },
         "availability_days": {
           "name": "availability_days",
           "type": "text[]",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "availability_period": {
-          "name": "availability_period",
-          "type": "availability_period",
-          "typeSchema": "snoon",
           "primaryKey": false,
           "notNull": true
         },
@@ -259,6 +252,21 @@
           "concurrently": false,
           "method": "btree",
           "with": {}
+        },
+        "cases_treatment_type_ids_idx": {
+          "name": "cases_treatment_type_ids_idx",
+          "columns": [
+            {
+              "expression": "treatment_type_ids",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "gin",
+          "with": {}
         }
       },
       "foreignKeys": {},
@@ -278,15 +286,6 @@
         "STUDENT",
         "ADMIN",
         "SYSTEM"
-      ]
-    },
-    "snoon.availability_period": {
-      "name": "availability_period",
-      "schema": "snoon",
-      "values": [
-        "MORNING",
-        "AFTERNOON",
-        "EITHER"
       ]
     },
     "snoon.case_status": {

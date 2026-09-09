@@ -32,13 +32,6 @@ export const caseStatus = snoon.enum('case_status', [
   'EXPIRED',
 ])
 
-/** When the patient can attend. Clinic sessions run morning or afternoon. */
-export const availabilityPeriod = snoon.enum('availability_period', [
-  'MORNING',
-  'AFTERNOON',
-  'EITHER',
-])
-
 /** Who caused an event. `SYSTEM` covers scheduled jobs such as contact-window expiry. */
 export const actorType = snoon.enum('actor_type', ['PATIENT', 'STUDENT', 'ADMIN', 'SYSTEM'])
 
@@ -62,11 +55,21 @@ export const cases = snoon.table(
      * city being renamed or retired must never cascade into a patient's case.
      */
     cityId: text('city_id').notNull(),
-    treatmentTypeId: text('treatment_type_id').notNull(),
 
-    /** Days of the week the patient can attend, as 'sat' … 'fri'. */
+    /**
+     * One or more treatments the patient wants. A patient often needs several
+     * things at once, and a student matches on any overlap with what their stage
+     * is allowed to treat — so this is a set, not a single value.
+     */
+    treatmentTypeIds: text('treatment_type_ids').array().notNull(),
+
+    /**
+     * Clinic days the patient can attend, as 'sat' … 'thu'. Friday is a holiday
+     * and is never offered. There is no time-of-day column: clinic sessions run
+     * in the morning, and session times belong to the Payload-managed clinic
+     * schedule rather than to a patient's case.
+     */
     availabilityDays: text('availability_days').array().notNull(),
-    availabilityPeriod: availabilityPeriod('availability_period').notNull(),
 
     /**
      * Contact details. The most sensitive columns in the system: they exist to be
@@ -98,6 +101,9 @@ export const cases = snoon.table(
     uniqueIndex('cases_tracking_token_hash_key').on(table.trackingTokenHash),
     // The student-facing queue: open cases in a city, oldest first.
     index('cases_status_city_created_idx').on(table.status, table.cityId, table.createdAt),
+    // Matching a student's stage capability against a case means asking whether
+    // the treatment sets overlap, which needs a GIN index to stay fast.
+    index('cases_treatment_type_ids_idx').using('gin', table.treatmentTypeIds),
   ],
 )
 

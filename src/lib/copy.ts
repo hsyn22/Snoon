@@ -102,18 +102,10 @@ export const caseForm = {
   cityPlaceholder: 'اختر مدينتك',
 
   treatmentLabel: 'شنو العلاج اللي تحتاجه؟',
-  treatmentPlaceholder: 'اختر نوع العلاج',
-  treatmentHint: 'إذا مو متأكد، اختر الأقرب لحالتك والطالب راح يشخّص.',
+  treatmentHint: 'تكدر تختار أكثر من وحدة. إذا مو متأكد، اختر الأقرب لحالتك والطالب راح يشخّص.',
 
   daysLabel: 'أي أيام تكدر تجي؟',
   daysHint: 'اختر كل الأيام اللي تناسبك — كل ما تختار أكثر، تلكى طالب أسرع.',
-
-  periodLabel: 'الوقت المناسب',
-  periodOptions: {
-    MORNING: 'صباحاً',
-    AFTERNOON: 'بعد الظهر',
-    EITHER: 'الاثنين يناسبني',
-  },
 
   nameLabel: 'الاسم',
   nameHint: 'الاسم اللي يناديك بيه الطالب.',
@@ -134,17 +126,15 @@ export const caseForm = {
     tue: 'الثلاثاء',
     wed: 'الأربعاء',
     thu: 'الخميس',
-    fri: 'الجمعة',
   },
 
   errors: {
     cityRequired: 'اختر مدينتك.',
     cityUnknown: 'هاي المدينة مو متوفرة حالياً.',
-    treatmentRequired: 'اختر نوع العلاج.',
-    treatmentUnknown: 'نوع العلاج هذا مو متوفر حالياً.',
+    treatmentRequired: 'اختر نوع علاج واحد على الأقل.',
+    treatmentUnknown: 'واحد من أنواع العلاج المختارة مو متوفر حالياً.',
     daysRequired: 'اختر يوم واحد على الأقل.',
     daysInvalid: 'في يوم مو صحيح بالاختيار.',
-    periodRequired: 'اختر الوقت المناسب.',
     nameRequired: 'اكتب اسمك.',
     nameTooShort: 'الاسم قصير كلش.',
     nameTooLong: 'الاسم طويل كلش.',
@@ -172,7 +162,6 @@ export const caseTracking = {
   cityLabel: 'المدينة',
   treatmentLabel: 'العلاج المطلوب',
   daysLabel: 'الأيام المتاحة',
-  periodLabel: 'الوقت',
   nameLabel: 'الاسم',
   phoneLabel: 'رقم الموبايل',
   notesLabel: 'ملاحظات',
