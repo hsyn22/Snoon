@@ -23,9 +23,31 @@ function requiredEnv(name: string): string {
   return value
 }
 
+/**
+ * The site's own public URL. Verification links are built from it, so it must be
+ * the address a student will actually open — not the per-deployment hostname if a
+ * stable one exists.
+ */
+function resolveBaseUrl(): string {
+  if (process.env.BETTER_AUTH_URL) return process.env.BETTER_AUTH_URL
+
+  // Set by Vercel. The project production URL is stable across deployments;
+  // VERCEL_URL changes every push and would break a link sent yesterday.
+  const vercelHost = process.env.VERCEL_PROJECT_PRODUCTION_URL ?? process.env.VERCEL_URL
+  if (vercelHost) return `https://${vercelHost}`
+
+  return 'http://localhost:3000'
+}
+
+const baseURL = resolveBaseUrl()
+
 export const auth = betterAuth({
   secret: requiredEnv('BETTER_AUTH_SECRET'),
-  baseURL: process.env.BETTER_AUTH_URL ?? 'http://localhost:3000',
+  baseURL,
+
+  // Server actions post from the site's own origin; naming it explicitly keeps
+  // Better Auth's origin check from rejecting them behind Vercel's proxy.
+  trustedOrigins: [baseURL],
 
   database: drizzleAdapter(db, {
     provider: 'pg',

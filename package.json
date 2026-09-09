@@ -21,7 +21,8 @@
     "payload:migrate": "payload migrate",
     "payload:types": "payload generate:types",
     "payload:importmap": "payload generate:importmap",
-    "payload:seed": "payload run src/payload/seed-cli.ts"
+    "payload:seed": "payload run src/payload/seed-cli.ts",
+    "vercel-build": "pnpm db:migrate && pnpm payload:migrate && pnpm payload:seed && next build"
   },
   "dependencies": {
     "@payloadcms/db-postgres": "3.88.0",
