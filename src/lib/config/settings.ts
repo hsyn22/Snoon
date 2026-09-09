@@ -30,3 +30,20 @@ export const getContactWindowHours = cache(async (): Promise<number> => {
   const value = settings.contactWindowHours
   return typeof value === 'number' && value > 0 ? value : FALLBACK_CONTACT_WINDOW_HOURS
 })
+
+
+const FALLBACK_CASE_EXPIRY_DAYS = 30
+
+/**
+ * How long a case may sit unclaimed before it expires.
+ *
+ * A patient who submitted months ago has usually found treatment elsewhere or
+ * given up. Leaving the case in the queue wastes a student's claim and, worse,
+ * has them ring someone who no longer wants to be rung.
+ */
+export const getCaseExpiryDays = cache(async (): Promise<number> => {
+  const payload = await getPayload({ config })
+  const settings = await payload.findGlobal({ slug: 'settings' })
+  const value = settings.caseExpiryDays
+  return typeof value === 'number' && value > 0 ? value : FALLBACK_CASE_EXPIRY_DAYS
+})

@@ -176,6 +176,24 @@ try. Make it a Payload-configurable setting, not a constant.
 Expiry runs as a scheduled job, not a cron of one-off timers. Compute from
 `claims.created_at`; never rely on a timer surviving a deploy.
 
+**Both timed jobs run from one endpoint:** `GET|POST /api/cron`, which releases claims whose
+contact window ran out and expires cases nobody ever claimed. It is a plain HTTP route on
+purpose — a Vercel cron, a Dokploy cron running curl, or a systemd timer all drive the same
+code, and where سنون ends up hosted is still open. `vercel.json` schedules it hourly if
+deployed there.
+
+It changes case state, so it is not public: `CRON_SECRET` must match, compared in constant
+time, accepted either as `Authorization: Bearer` or `x-cron-secret`. It **fails closed** — an
+unset or implausibly short secret refuses everything, because a deployment that forgot the
+variable should have a job that does not run rather than an endpoint anyone can trigger.
+`src/lib/cron-auth.ts` holds that logic so it is testable rather than buried in a route.
+
+Running it twice changes nothing the first run did: every transition inside is a conditional
+update guarded by the status it may come from, so two schedulers racing is safe.
+
+**Nothing schedules it until the site is deployed.** Until then contact windows do not
+expire on their own, and a case can sit claimed indefinitely.
+
 ### Claiming must be atomic
 
 The claim is a conditional update inside a transaction:

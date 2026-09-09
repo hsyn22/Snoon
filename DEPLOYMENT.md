@@ -52,6 +52,20 @@ API access to set them from a tool, so they are entered by hand.
 | `PAYLOAD_SECRET` | Signs admin sessions. Rotating it logs admins out |
 | `TRACKING_TOKEN_SECRET` | Keys the HMAC over patient tracking tokens. **Rotating it invalidates every outstanding tracking link** |
 | `BETTER_AUTH_URL` | Optional. Falls back to the Vercel production URL |
+| `CRON_SECRET` | Authorises `/api/cron`. Without it the scheduled jobs refuse to run |
+| `TELEGRAM_BOT_TOKEN` / `_USERNAME` / `_WEBHOOK_SECRET` | Optional. Without them notifications are off and the opt-in sections do not appear |
+
+## Scheduled jobs
+
+`/api/cron` releases claims whose contact window expired and expires cases nobody claimed.
+`vercel.json` runs it hourly on Vercel; on any other host, point a cron at it:
+
+```
+curl -fsS -H "x-cron-secret: $CRON_SECRET" https://<site>/api/cron
+```
+
+**Until something calls it, contact windows never expire** — a student who never rings holds
+a patient's case indefinitely. This is the first thing to check after any deploy.
 
 ## Before this stops being a preview
 

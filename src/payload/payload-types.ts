@@ -552,6 +552,10 @@ export interface Setting {
    * كم ساعة عند الطالب حتى يتواصل وية المريض بعد ما ياخذ الحالة. إذا انتهت المهلة، الحالة ترجع للقائمة لطالب ثاني. الافتراضي ٤٨ ساعة — الطلبة بالعيادة أثناء النهار والمريض ممكن ما يرد أول مرة.
    */
   contactWindowHours: number;
+  /**
+   * إذا مرت هذي المدة وما حجز أي طالب الحالة، تنتهي صلاحيتها وتنشال من القائمة. المريض غالباً يكون لكه علاج بمكان ثاني، وما نريد طالب يتصل بيه بعد شهور.
+   */
+  caseExpiryDays: number;
   updatedAt?: string | null;
   createdAt?: string | null;
 }
@@ -561,6 +565,7 @@ export interface Setting {
  */
 export interface SettingsSelect<T extends boolean = true> {
   contactWindowHours?: T;
+  caseExpiryDays?: T;
   updatedAt?: T;
   createdAt?: T;
   globalType?: T;
