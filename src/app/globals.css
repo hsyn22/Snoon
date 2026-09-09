@@ -1,0 +1,83 @@
+@import 'tailwindcss';
+@import '../styles/tokens.css';
+
+/*
+ * Expose the tokens as Tailwind utilities. `inline` means the utilities resolve
+ * to the var() reference rather than copying the value, so overriding a token
+ * at runtime (a theme, a future brand drop-in) re-themes everything.
+ */
+@theme inline {
+  --font-sans: var(--font-sans);
+  --font-mono: var(--font-mono);
+
+  --color-background: var(--color-background);
+  --color-surface: var(--color-surface);
+  --color-surface-muted: var(--color-surface-muted);
+  --color-border: var(--color-border);
+  --color-foreground: var(--color-foreground);
+  --color-foreground-muted: var(--color-foreground-muted);
+
+  --color-accent: var(--color-accent);
+  --color-accent-foreground: var(--color-accent-foreground);
+  --color-accent-muted: var(--color-accent-muted);
+
+  --color-positive: var(--color-positive);
+  --color-warning: var(--color-warning);
+  --color-danger: var(--color-danger);
+
+  --radius-sm: var(--radius-sm);
+  --radius-md: var(--radius-md);
+  --radius-lg: var(--radius-lg);
+}
+
+@layer base {
+  html {
+    /* RTL is the default direction, set on <html> in layout.tsx. */
+    -webkit-text-size-adjust: 100%;
+  }
+
+  body {
+    background-color: var(--color-background);
+    color: var(--color-foreground);
+    font-family: var(--font-sans);
+    /* Arabic sits taller than Latin; give it room. */
+    line-height: 1.75;
+  }
+
+  :focus-visible {
+    outline: 2px solid var(--color-focus-ring);
+    outline-offset: 2px;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+      animation-duration: 0.01ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 0.01ms !important;
+      scroll-behavior: auto !important;
+    }
+  }
+}
+
+@layer utilities {
+  /*
+   * Numerals, reference codes, phone numbers and times are LTR runs inside RTL
+   * paragraphs. Without an explicit direction the bidi algorithm reorders them
+   * against surrounding punctuation. Wrap them in this.
+   */
+  .ltr-run {
+    direction: ltr;
+    unicode-bidi: isolate;
+    display: inline-block;
+  }
+
+  .reference-code {
+    direction: ltr;
+    unicode-bidi: isolate;
+    display: inline-block;
+    font-family: var(--font-reference);
+    letter-spacing: 0.08em;
+  }
+}

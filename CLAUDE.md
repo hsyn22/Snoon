@@ -299,17 +299,32 @@ These are genuinely unresolved. If a task depends on one, stop and ask rather th
 
 ## Commands
 
-<!-- Fill in once the repo is scaffolded. -->
+```
+pnpm dev            # local development, http://localhost:3000
+pnpm build          # production build
+pnpm start          # serve the production build
+pnpm lint           # eslint (next/core-web-vitals + next/typescript)
+pnpm typecheck      # tsc --noEmit
+pnpm test           # vitest run
+pnpm test:watch     # vitest, watching
+```
+
+Not wired up yet — these arrive with the data layer:
 
 ```
-pnpm dev            # local development
-pnpm build
-pnpm lint
-pnpm typecheck
-pnpm test
 pnpm payload migrate
 pnpm drizzle-kit generate
 ```
+
+### Toolchain pins
+
+- **ESLint 9, not 10.** `eslint-config-next` pulls in `eslint-plugin-react` 7.x,
+  which uses the rule API ESLint 10 removed. Upgrading ESLint breaks `pnpm lint`.
+- **TypeScript 6, not 7.** `typescript-eslint` 8.x refuses to load against the
+  TS 7 API. `tsc` itself is happy on 7; the linter is not.
+
+Both are upstream compatibility gaps, not preferences. Revisit when the
+respective plugins ship support.
 
 ---
 

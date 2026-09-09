@@ -1,0 +1,57 @@
+/*
+ * Design tokens — PLACEHOLDER VALUES.
+ *
+ * The سنون visual identity is not decided yet. Every value below is a neutral
+ * stand-in chosen so the interface is legible, not because it is the brand.
+ * When the identity lands, it drops in HERE and nowhere else — components must
+ * only ever reference var(--…), never a literal colour, font or radius.
+ *
+ * Do not add a colour to a component. Add a token.
+ */
+
+:root {
+  /* ---- Typography -------------------------------------------------------
+   * No typeface has been chosen. This is the platform's own Arabic UI font,
+   * which costs nothing to download — important on a slow connection.       */
+  --font-sans:
+    system-ui, -apple-system, 'Segoe UI', 'Noto Sans Arabic', 'Noto Kufi Arabic',
+    Tahoma, Arial, sans-serif;
+  --font-mono: ui-monospace, 'SFMono-Regular', Menlo, Consolas, monospace;
+
+  /* Case reference codes and phone numbers are read digit by digit, so they
+     get their own token and stay LTR inside RTL text. */
+  --font-reference: var(--font-mono);
+
+  /* ---- Colour -----------------------------------------------------------
+   * Neutral ramp + one placeholder accent. Not the brand.                   */
+  --color-background: oklch(99% 0 0);
+  --color-surface: oklch(100% 0 0);
+  --color-surface-muted: oklch(96.5% 0.003 260);
+  --color-border: oklch(90% 0.004 260);
+  --color-foreground: oklch(22% 0.01 260);
+  --color-foreground-muted: oklch(50% 0.01 260);
+
+  --color-accent: oklch(55% 0.11 200);
+  --color-accent-foreground: oklch(99% 0 0);
+  --color-accent-muted: oklch(95% 0.03 200);
+
+  /* Case status needs to read at a glance on a small screen. */
+  --color-positive: oklch(55% 0.11 155);
+  --color-warning: oklch(70% 0.13 75);
+  --color-danger: oklch(55% 0.17 25);
+
+  --color-focus-ring: var(--color-accent);
+
+  /* ---- Shape and space --------------------------------------------------- */
+  --radius-sm: 0.25rem;
+  --radius-md: 0.5rem;
+  --radius-lg: 0.75rem;
+
+  /* Minimum comfortable tap target on a phone. */
+  --size-tap: 2.75rem;
+
+  /* ---- Elevation ---------------------------------------------------------
+   * Deliberately restrained. The student dashboard is a tool, not a showcase. */
+  --shadow-sm: 0 1px 2px oklch(0% 0 0 / 0.06);
+  --shadow-md: 0 2px 8px oklch(0% 0 0 / 0.08);
+}
