@@ -187,12 +187,42 @@ export const getStageCapabilityTreatmentIds = cache(
     })
 
     const capability = result.docs[0]
-    if (!capability) return []
+    const treatments = capability?.treatmentTypes
 
-    const treatments = capability.treatmentTypes
-    if (!Array.isArray(treatments)) return []
+    if (Array.isArray(treatments) && treatments.length > 0) {
+      return treatments.flatMap((treatment) => {
+        const slug = relatedSlug(treatment)
+        return slug ? [slug] : []
+      })
+    }
 
-    return treatments.flatMap((treatment) => {
+    // No row for this clinic, so fall back to what the stage can do anywhere.
+    //
+    // Without this, adding a college hid every case from its students until
+    // someone filled in the whole matrix by hand — and the symptom is an empty
+    // queue, which reads as "no patients" rather than as a missing row. What a
+    // fourth year may treat barely varies between clinics; the per-clinic row
+    // stays for the ones where it does.
+    return getStageDefaultTreatmentIds(stageId)
+  },
+)
+
+/** What a stage may treat where no clinic-specific row overrides it. */
+export const getStageDefaultTreatmentIds = cache(
+  async (stageId: string): Promise<readonly string[]> => {
+    const payload = await getPayload({ config })
+    const result = await payload.find({
+      collection: 'stages',
+      where: { slug: { equals: stageId } },
+      depth: 1,
+      limit: 1,
+      pagination: false,
+    })
+
+    const defaults = result.docs[0]?.defaultTreatmentTypes
+    if (!Array.isArray(defaults)) return []
+
+    return defaults.flatMap((treatment) => {
       const slug = relatedSlug(treatment)
       return slug ? [slug] : []
     })

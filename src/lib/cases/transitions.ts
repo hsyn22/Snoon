@@ -25,7 +25,11 @@ export const ALLOWED_TRANSITIONS: Readonly<Record<CaseStatus, readonly CaseStatu
 
   // A wrong number can surface after the first call as easily as during it.
   CONTACTED: ['APPOINTMENT_CONFIRMED', 'CANCELLED'],
-  APPOINTMENT_CONFIRMED: ['COMPLETED', 'NO_SHOW', 'CANCELLED'],
+  // Back to REQUESTED when one student finished their part and the case still
+  // needs treatments their stage may not perform — a fifth year does the root
+  // canal, and the partial denture goes back for a fourth year. The case is not
+  // completed: it is a smaller case now.
+  APPOINTMENT_CONFIRMED: ['COMPLETED', 'NO_SHOW', 'CANCELLED', 'REQUESTED'],
 
   // Terminal.
   COMPLETED: [],

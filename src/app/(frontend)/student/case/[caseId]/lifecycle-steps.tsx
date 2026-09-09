@@ -8,6 +8,7 @@ import {
   recordOutcomeAction,
   type LifecycleState,
 } from './lifecycle-actions'
+import { returnRemainderAction, type RemainderState } from './remainder-actions'
 
 const INITIAL: LifecycleState = {}
 
@@ -121,5 +122,62 @@ export function OutcomeStep({ caseId }: { caseId: string }) {
         <Error message={state.error} />
       </form>
     </section>
+  )
+}
+
+/**
+ * Handing the remaining treatments to another stage.
+ *
+ * Shown only when the case actually asks for something this student's stage may
+ * not perform. `remaining` is computed on the server from the stage capability
+ * and repeated here so the student can see exactly what they are passing on
+ * before they do it.
+ */
+export function RemainderStep({
+  caseId,
+  remaining,
+}: {
+  caseId: string
+  remaining: readonly string[]
+}) {
+  const [state, formAction] = useActionState(returnRemainderAction, {} as RemainderState)
+
+  if (state.done) {
+    return (
+      <section className="mt-4 rounded-lg border border-border bg-surface p-4">
+        <p className="text-sm font-medium">{studentLifecycle.remainderDone}</p>
+      </section>
+    )
+  }
+
+  return (
+    <section className="mt-4 rounded-lg border border-border bg-surface p-4">
+      <h2 className="font-semibold">{studentLifecycle.remainderTitle}</h2>
+      <p className="mt-1 text-sm text-foreground-muted">{studentLifecycle.remainderBody}</p>
+
+      <p className="mt-3 text-xs text-foreground-muted">
+        {studentLifecycle.remainderListLabel}
+      </p>
+      <p className="text-sm font-medium">{remaining.join('، ')}</p>
+
+      <form action={formAction} className="mt-3">
+        <input type="hidden" name="caseId" value={caseId} />
+        <RemainderButton />
+        <Error message={state.error} />
+      </form>
+    </section>
+  )
+}
+
+function RemainderButton() {
+  const { pending } = useFormStatus()
+  return (
+    <button
+      type="submit"
+      disabled={pending}
+      className="min-h-11 w-full rounded-md border border-border px-4 text-sm font-medium disabled:opacity-60"
+    >
+      {pending ? studentLifecycle.remainderSaving : studentLifecycle.remainderAction}
+    </button>
   )
 }

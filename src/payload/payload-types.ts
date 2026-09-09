@@ -230,6 +230,10 @@ export interface Stage {
   slug: string;
   order: number;
   /**
+   * شنو تكدر تعالج هذي المرحلة بشكل عام. تنطبق على أي عيادة ما محدد إلها صلاحيات خاصة. بدون هذا، إضافة عيادة جديدة تخلي كل الحالات مخفية عن طلابها لحد ما أحد يملي الجدول.
+   */
+  defaultTreatmentTypes?: (number | TreatmentType)[] | null;
+  /**
    * إذا مطفي، ما يظهر بالخيارات الجديدة — بس الحالات القديمة تبقى.
    */
   active?: boolean | null;
@@ -496,6 +500,7 @@ export interface StagesSelect<T extends boolean = true> {
   nameAr?: T;
   slug?: T;
   order?: T;
+  defaultTreatmentTypes?: T;
   active?: T;
   updatedAt?: T;
   createdAt?: T;

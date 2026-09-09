@@ -11,7 +11,7 @@ import {
   getCurrentAppointment,
 } from '@/db/queries/cases'
 import { auth } from '@/lib/auth'
-import { getAllTreatmentTypes } from '@/lib/config'
+import { getAllTreatmentTypes, getStageCapabilityTreatmentIds } from '@/lib/config'
 import {
   caseForm,
   casePhotos as photoCopy,
@@ -20,13 +20,14 @@ import {
   studentClaim,
   studentLifecycle,
 } from '@/lib/copy'
+import { CASE_REASON } from '@/lib/cases/reasons'
 import { formatAppointment, formatCaseDateTime, toBaghdadInputValue } from '@/lib/dates'
 import { formatPhoneForDisplay } from '@/lib/phone'
 import { listCasePhotos } from '@/db/queries/case-photos'
 import { CasePhotoGrid } from '@/components/case-photo-grid'
 import { AssertContact } from './assert-contact'
 import { WrongNumberReport } from './wrong-number'
-import { AppointmentStep, OutcomeStep } from './lifecycle-steps'
+import { AppointmentStep, OutcomeStep, RemainderStep } from './lifecycle-steps'
 
 export const metadata: Metadata = {
   title: studentClaim.title,
@@ -65,7 +66,7 @@ export default async function ClaimedCasePage({
   if (!session) redirect('/student/login')
 
   const [student] = await db
-    .select({ id: students.id })
+    .select({ id: students.id, collegeId: students.collegeId, stageId: students.stageId })
     .from(students)
     .where(eq(students.authUserId, session.user.id))
     .limit(1)
@@ -83,16 +84,26 @@ export default async function ClaimedCasePage({
       <main className="mx-auto flex min-h-dvh max-w-md flex-col justify-center px-4">
         {closed ? (
           <>
-            <h1 className="text-2xl font-bold">{studentLifecycle.closedTitle}</h1>
+            <h1 className="text-2xl font-bold">
+              {closed.releaseReason === CASE_REASON.PART_COMPLETED
+                ? studentLifecycle.handedOnTitle
+                : studentLifecycle.closedTitle}
+            </h1>
             <p className="reference-code mt-2 text-sm font-bold">{closed.referenceCode}</p>
             <p className="mt-2 text-foreground-muted">
-              {closed.status === 'COMPLETED'
-                ? studentLifecycle.closedCompleted
-                : closed.status === 'NO_SHOW'
-                  ? studentLifecycle.closedNoShow
-                  : closed.status === 'CANCELLED'
-                    ? studentLifecycle.closedCancelled
-                    : caseStatus[closed.status]}
+              {/* A shared case does not close when the first student finishes:
+                  it goes back to the queue carrying what their stage may not
+                  treat. "Waiting for a student" is the case's status, not this
+                  student's, so their claim says what happened to them. */}
+              {closed.releaseReason === CASE_REASON.PART_COMPLETED
+                ? studentLifecycle.closedHandedOn
+                : closed.status === 'COMPLETED'
+                  ? studentLifecycle.closedCompleted
+                  : closed.status === 'NO_SHOW'
+                    ? studentLifecycle.closedNoShow
+                    : closed.status === 'CANCELLED'
+                      ? studentLifecycle.closedCancelled
+                      : caseStatus[closed.status]}
             </p>
           </>
         ) : (
@@ -108,14 +119,26 @@ export default async function ClaimedCasePage({
     )
   }
 
-  const [treatments, appointment, photos] = await Promise.all([
+  const [treatments, appointment, photos, capable] = await Promise.all([
     getAllTreatmentTypes(),
     getCurrentAppointment(caseId),
     listCasePhotos(caseId),
+    getStageCapabilityTreatmentIds(student.collegeId, student.stageId),
   ])
-  const treatmentNames = record.treatmentTypeIds
-    .map((id) => treatments.find((t) => t.id === id)?.nameAr ?? id)
-    .join('، ')
+  const nameOfTreatment = (id: string) => treatments.find((t) => t.id === id)?.nameAr ?? id
+  const treatmentNames = record.treatmentTypeIds.map(nameOfTreatment).join('، ')
+
+  /**
+   * What this case still needs that this student's stage may not perform.
+   *
+   * A root canal is fifth year and a partial denture is fourth, so a case asking
+   * for both needs two students. Computed here rather than passed from the
+   * client, and passed to the step that hands it on.
+   */
+  const capableSet = new Set(capable)
+  const remainingForOtherStage = record.treatmentTypeIds
+    .filter((id) => !capableSet.has(id))
+    .map(nameOfTreatment)
   const days = record.availabilityDays
     .filter((day): day is keyof typeof caseForm.weekDays => day in caseForm.weekDays)
     .map((day) => caseForm.weekDays[day])
@@ -187,6 +210,10 @@ export default async function ClaimedCasePage({
               </p>
               <p className="mt-1 text-sm font-medium">{formatAppointment(appointment.scheduledFor)}</p>
             </section>
+
+            {remainingForOtherStage.length > 0 ? (
+              <RemainderStep caseId={caseId} remaining={remainingForOtherStage} />
+            ) : null}
 
             <OutcomeStep caseId={caseId} />
 

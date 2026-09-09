@@ -49,9 +49,44 @@ const TREATMENT_TYPES = [
   { slug: 'paediatric', nameAr: 'أسنان الأطفال' },
 ]
 
+/**
+ * Which treatments each stage may perform.
+ *
+ * From Haider, who is a dentist — not a guess. Most work is shared between the
+ * two years; the exceptions run both ways, which is the whole reason a case can
+ * need two students:
+ *
+ *   fifth year only   root canal, complete denture, orthodontics, paediatrics
+ *   fourth year only  partial denture
+ *   both              examination, filling, extraction, scaling
+ *
+ * A patient wanting a partial denture and a root canal therefore needs a fourth
+ * year AND a fifth year. One claims it, does their part, and hands the rest back
+ * to the queue — see `returnRemainderToQueue`.
+ *
+ * Seeded as the stage's default rather than per clinic, so adding a college does
+ * not hide every case from its students until someone fills in a matrix. A
+ * clinic that genuinely differs gets its own row in stage-capabilities.
+ */
+const SHARED_TREATMENTS = ['examination', 'filling', 'extraction', 'scaling']
+
 const STAGES = [
-  { slug: 'stage-4', nameAr: 'المرحلة الرابعة' },
-  { slug: 'stage-5', nameAr: 'المرحلة الخامسة' },
+  {
+    slug: 'stage-4',
+    nameAr: 'المرحلة الرابعة',
+    treatments: [...SHARED_TREATMENTS, 'partial-denture'],
+  },
+  {
+    slug: 'stage-5',
+    nameAr: 'المرحلة الخامسة',
+    treatments: [
+      ...SHARED_TREATMENTS,
+      'root-canal',
+      'complete-denture',
+      'orthodontics',
+      'paediatric',
+    ],
+  },
 ]
 
 export async function seed(): Promise<{ created: number; existing: number }> {
@@ -77,12 +112,51 @@ export async function seed(): Promise<{ created: number; existing: number }> {
     created += 1
   }
 
+  /**
+   * Fill in a stage's default treatments, but only if nobody has set them.
+   *
+   * Re-seeding must not overwrite an administrator's decision — the whole point
+   * of this config living in Payload is that it can be corrected without a
+   * deployment, and a seed that stomps corrections makes that a lie.
+   */
+  async function ensureStageDefaults(stageSlug: string, treatmentSlugs: string[]) {
+    const found = await payload.find({
+      collection: 'stages',
+      where: { slug: { equals: stageSlug } },
+      limit: 1,
+      pagination: false,
+    })
+
+    const stage = found.docs[0]
+    if (!stage) return
+
+    const current = stage.defaultTreatmentTypes
+    if (Array.isArray(current) && current.length > 0) return
+
+    const treatments = await payload.find({
+      collection: 'treatment-types',
+      where: { slug: { in: treatmentSlugs } },
+      limit: 100,
+      pagination: false,
+    })
+
+    if (treatments.docs.length === 0) return
+
+    await payload.update({
+      collection: 'stages',
+      id: stage.id,
+      data: { defaultTreatmentTypes: treatments.docs.map((doc) => doc.id) },
+    })
+  }
+
   for (const city of CITIES) await ensure('cities', city)
   for (const [index, treatment] of TREATMENT_TYPES.entries()) {
     await ensure('treatment-types', { ...treatment, order: index + 1 })
   }
   for (const [index, stage] of STAGES.entries()) {
-    await ensure('stages', { ...stage, order: index + 4 })
+    const { treatments, ...fields } = stage
+    await ensure('stages', { ...fields, order: index + 4 })
+    await ensureStageDefaults(stage.slug, treatments)
   }
 
   return { created, existing }

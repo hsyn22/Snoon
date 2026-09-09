@@ -156,6 +156,13 @@ REQUESTED ──claim──> MATCHED ──student confirms contact──> CONTA
 
 Also: `EXPIRED` for cases that sit in `REQUESTED` past their useful life.
 
+Two edges the diagram does not show, both added later and both real:
+
+- `MATCHED | CONTACTED → CANCELLED` when the claimant reports that whoever answered never
+  asked for treatment. See "Nobody proves they own the phone number".
+- `APPOINTMENT_CONFIRMED → REQUESTED` when one student finished the treatments their stage
+  may perform and the case still needs another stage. See "Cases that need two stages".
+
 Rules:
 
 - Every transition is written to the case event log with actor, timestamp and reason.
@@ -183,6 +190,39 @@ student on the case they hold, in `src/lib/cases/lifecycle.ts`. Notes worth keep
   sees a closed summary, not the patient's number — the grant was for the active claim.
 - `expireStaleRequestedCases` only ever touches `REQUESTED`, so nothing mid-treatment can be
   swept up.
+
+### Cases that need two stages
+
+The two years do not treat the same things. From Haider, and seeded as each stage's default
+in `src/payload/seed.ts`:
+
+| | treatments |
+|---|---|
+| both years | فحص · حشوة · قلع · تنظيف |
+| fourth year only | طقم جزئي |
+| fifth year only | علاج عصب · طقم كامل · تقويم أسنان · أسنان الأطفال |
+
+So a patient wanting a partial denture **and** a root canal needs a fourth year *and* a fifth
+year, and neither can finish the case alone. Three consequences, all built:
+
+1. **Visibility is overlap, not containment.** A case wanting a filling and a root canal is a
+   fourth year's case for the filling. Hiding it because of the root canal would leave the
+   patient waiting for a student who can do everything, and there is no such student. What
+   their stage may not perform is **marked** in the queue rather than removed.
+2. **The remainder is handed on, not duplicated.** `returnRemainderToQueue` puts the case
+   back to `REQUESTED` carrying only what is still outstanding, and closes the first
+   student's claim as COMPLETED. The case is not finished — it is a smaller case. Keeping one
+   row keeps the patient's tracking link working, their number in one place, the photographs
+   attached and the whole story in one event log. The visibility filter then does the rest:
+   with only a partial denture left, only fourth years see it.
+3. **What counts as "my part" is read from the server**, never from the form — a value a
+   client could set would let a student hand back work their stage can perfectly well do.
+
+**Capability falls back to the stage's default.** `stage-capabilities` still holds per-clinic
+rows for clinics that genuinely differ, but an absent row now means "whatever this stage can
+do anywhere" rather than "nothing". Without that, adding a college hid every case from its
+students until someone filled in the whole matrix by hand — and the symptom is an empty
+queue, which reads as "no patients" rather than as a missing row.
 
 ### The contact window
 
@@ -289,9 +329,46 @@ and `admins` to an unauthenticated caller; the upload file routes return 403; ev
 action resolves the acting student from the session and never from the form; nothing logs a
 phone number, a document or a photograph.
 
-**Still open, and needing a decision:** there is no rate limiting on the public endpoints —
-case submission accepts photographs and writes rows for anyone. Better Auth rate-limits its
-own routes in production; nothing else is limited.
+**Rate limiting** covers the case form, sign-up, login, Telegram invites and the patient's
+contact answer — `src/lib/rate-limit.ts`, keyed by the proxy's `x-forwarded-for`. In memory
+on purpose: a shared store survives restarts and covers several instances and is worth
+adding the day سنون runs on more than one, but a limiter that costs nothing and holds for a
+single server beats a correct one that is not built. Successful attempts count too — limiting
+only failures leaves the case that actually fills a disk unlimited. Login is keyed by address
+rather than by email, because an email-keyed limit lets anyone lock a student out of their
+own account.
+
+### Nobody proves they own the phone number
+
+A patient needs no account, which is the point — friction there costs the people this
+exists to serve. It also means a case can name a number its owner never gave, and the first
+that person hears of سنون is a student ringing about treatment they never asked for.
+
+**There is no free way to prove ownership of a phone number.** An SMS code is exactly what
+this project excludes and costs money per message. So the number is not verified, and the
+design says so plainly: cap the damage before the call, and stop it in one tap after.
+
+- **Before.** A number may hold a few open cases at once — a household shares a phone, and a
+  mother submitting for herself and her child is ordinary — but not dozens, and not many in a
+  day. Both caps are Payload settings. With the per-address rate limit, nobody can queue
+  fifty calls to a stranger.
+- **During.** The claimant's screen opens with what to say: identify yourself and سنون, and
+  check the person actually submitted the request before discussing their case. That sentence
+  is the real mitigation for the human moment.
+- **After.** `reportWrongNumber` closes the case for good, releases the claim so it counts as
+  neither finished nor failed, revokes the tracking token so whoever submitted it stops
+  watching a stranger's data, and puts the number on a cooldown (`snoon.phone_blocks`).
+
+The cooldown falls on the person who did nothing wrong. That is uncomfortable and still
+right: it is the only handle that stops the same submission an hour later, it lifts by
+itself, and an admin can lift it from `/admin/cases`. The refusal message is written for the
+**real owner** rather than for whoever misused the number — if they ever come to سنون
+themselves, they learn why they are refused and who to ask.
+
+Deliberately **not** recorded: the submitter's IP on the case. It would be the only handle on
+the person actually responsible, and logging every patient's address for a rare event is not
+a trade data minimisation allows. Volume is already capped per address without storing
+anything.
 
 ## Privacy rules
 
@@ -376,10 +453,18 @@ writing anything. Sign-up does, and refuses with an Arabic "registration is not 
 notice rather than creating an unverifiable account. `tests/email-guard.test.ts` holds that
 line.
 
-Sending real mail costs money or needs an account: SES is the obvious choice given the AWS
-instance already in use, Resend the simpler one. Until one is implemented in `sendEmail`,
-`isEmailConfigured()` returns false in production and student registration stays closed —
-the patient side is unaffected and works fully.
+**The provider is Resend** — free to 3,000 messages a month against a flow that will produce
+a few dozen, and no AWS setup. Sent with plain `fetch`; one POST is the whole API surface
+used, and a dependency in the server bundle to build one request is not worth it.
+`isEmailConfigured()` now means `RESEND_API_KEY` and `EMAIL_FROM` are both set — neither half
+alone counts, because a key with no from address cannot send and a from address with no key
+is a deployment that believes it can.
+
+The thing to know before launch is not in the code: **Resend delivers to arbitrary addresses
+only once a sending domain is verified** in their dashboard. Until then it accepts mail only
+to the account owner's own address — enough to test, not enough to open registration. So a
+domain is now on the critical path for the student side. The patient side is unaffected and
+works fully.
 
 **Patients:** no account at MVP. Friction here directly costs the people the platform exists
 to serve.
@@ -465,7 +550,9 @@ Worth knowing when changing anything here:
   and the thumbnail appeared not to be generated at all. `rm -rf .next` before measuring
   anything.
 - Upload is the patient's cost, not download: at 400kbps a 12MB photograph is roughly four
-  minutes. The per-photo limit is worth revisiting against real Iraqi connections.
+  minutes. Raised with Haider and **kept at 12MB** — photographs are optional, so a patient
+  on a slow connection can simply not send one, and a limit that rejects a real photo is
+  worse than one that is occasionally slow.
 
 ### The landing page
 
@@ -578,12 +665,11 @@ These are genuinely unresolved. If a task depends on one, stop and ask rather th
 2. **External cases.** Students also find patients outside سنون. Self-reported external
    counts should be visibly marked as unverified and should not gate eligibility — but
    whether to collect them at all is open.
-3. ~~**Case visibility scope.**~~ **Decided:** a student sees only cases whose treatments
-   their stage is permitted to perform at their clinic. They never open a case they cannot
-   take. The consequence to watch: a wrong capability mapping makes cases invisible rather
-   than merely inconvenient, so the mapping is admin-editable in Payload and worth auditing
-   against cases that sit unclaimed. `listOpenCasesForStudent` already takes the scope as an
-   explicit filter, so this is a call-site policy, not a data-layer change.
+3. ~~**Case visibility scope.**~~ **Decided and revised — see "Cases that need two stages".**
+   A student sees any case that *overlaps* what their stage may treat, not only cases wholly
+   within it. The consequence to watch is unchanged: a wrong capability mapping makes cases
+   invisible rather than merely inconvenient, so it is admin-editable and worth auditing
+   against cases that sit unclaimed.
 4. ~~**Patient confirmation mechanism.**~~ **Built.** The student reports having called,
    which is recorded but moves nothing; the patient is then asked, and only their answer
    advances `MATCHED → CONTACTED`. Asked two ways, because Telegram is optional: inline

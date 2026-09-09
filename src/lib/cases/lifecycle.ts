@@ -20,6 +20,9 @@ export type LifecycleFailure =
   | 'WRONG_STATUS'
   | 'NOT_FOUND'
   | 'APPOINTMENT_IN_PAST'
+  /** Nothing on the case is outside this student's stage, so there is no
+   *  remainder to hand on — the ordinary outcome buttons apply. */
+  | 'NOTHING_TO_RETURN'
 
 export type LifecycleResult<T = void> =
   | ({ ok: true } & (T extends void ? Record<never, never> : { value: T }))
@@ -278,4 +281,83 @@ export async function reportWrongNumber(
   })
 
   return { ok: true }
+}
+
+/**
+ * One student finished their part; the rest goes back to the queue.
+ *
+ * A patient often needs several things at once, and the two years do not treat
+ * the same set — a root canal is fifth year, a partial denture is fourth. So a
+ * case asking for both needs two students, and neither of them can finish it
+ * alone. Rather than making that the patient's problem, the student who holds
+ * the case does what their stage permits and hands the remainder on.
+ *
+ * The case is **not** completed and is **not** duplicated. It returns to
+ * REQUESTED carrying only the treatments still outstanding, which is what a case
+ * is: one patient's remaining need. That keeps the patient's tracking link
+ * working, keeps their phone number in one row, keeps the photographs attached,
+ * and keeps the whole story in one event log. The visibility filter then does
+ * the rest — with only a partial denture left, only fourth years see it.
+ *
+ * The remainder is computed here from what this student's stage may perform, and
+ * never taken from the caller: a value in a form would let a student hand back
+ * work they were perfectly able to do.
+ */
+export async function returnRemainderToQueue(
+  studentId: string,
+  caseId: string,
+  capableTreatmentIds: readonly string[],
+): Promise<LifecycleResult<{ referenceCode: string; remaining: string[] }>> {
+  assertTransition('APPOINTMENT_CONFIRMED', 'REQUESTED')
+
+  const claim = await activeClaimFor(caseId, studentId)
+  if (!claim) return { ok: false, reason: 'NO_ACTIVE_CLAIM' }
+  if (claim.status !== 'APPOINTMENT_CONFIRMED') return { ok: false, reason: 'WRONG_STATUS' }
+
+  const [record] = await db
+    .select({ treatmentTypeIds: cases.treatmentTypeIds, referenceCode: cases.referenceCode })
+    .from(cases)
+    .where(eq(cases.id, caseId))
+    .limit(1)
+
+  if (!record) return { ok: false, reason: 'NOT_FOUND' }
+
+  const capable = new Set(capableTreatmentIds)
+  const remaining = record.treatmentTypeIds.filter((id) => !capable.has(id))
+
+  // Everything on the case was this student's to do, so there is nothing to hand
+  // on and this is an ordinary completion.
+  if (remaining.length === 0) return { ok: false, reason: 'NOTHING_TO_RETURN' }
+
+  const moved = await db.transaction(async (tx) => {
+    const updated = await tx
+      .update(cases)
+      .set({ status: 'REQUESTED', treatmentTypeIds: remaining, updatedAt: new Date() })
+      .where(and(eq(cases.id, caseId), eq(cases.status, 'APPOINTMENT_CONFIRMED')))
+      .returning({ id: cases.id })
+
+    if (updated.length === 0) return false
+
+    // COMPLETED, not RELEASED: this student finished what they took on. The
+    // case being unfinished is a fact about the case, not about them.
+    await tx
+      .update(claims)
+      .set({ status: 'COMPLETED', releasedAt: new Date(), releaseReason: CASE_REASON.PART_COMPLETED })
+      .where(eq(claims.id, claim.claimId))
+
+    await tx.insert(caseEvents).values({
+      caseId,
+      fromStatus: 'APPOINTMENT_CONFIRMED',
+      toStatus: 'REQUESTED',
+      actorType: 'STUDENT',
+      actorId: studentId,
+      reason: CASE_REASON.REMAINDER_QUEUED,
+    })
+
+    return true
+  })
+
+  if (!moved) return { ok: false, reason: 'WRONG_STATUS' }
+
+  return { ok: true, value: { referenceCode: record.referenceCode, remaining } }
 }

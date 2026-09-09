@@ -1,4 +1,4 @@
-import { and, arrayOverlaps, asc, eq, inArray, isNull } from 'drizzle-orm'
+import { and, arrayOverlaps, asc, desc, eq, inArray, isNull } from 'drizzle-orm'
 import { db } from '@/db'
 import { appointments, caseEvents, casePhotos, cases, claims, students } from '@/db/schema'
 import { studentPreviouslyReleased } from '@/db/queries/claims'
@@ -321,6 +321,15 @@ export async function getCurrentAppointment(caseId: string): Promise<{ scheduled
 export type ClosedCaseSummary = {
   referenceCode: string
   status: (typeof cases.status.enumValues)[number]
+  /**
+   * Why this student's claim ended.
+   *
+   * Needed because the case's own status no longer describes what happened to
+   * them: a student who finished their part of a shared case leaves it back in
+   * REQUESTED for the next stage, and "waiting for a student" is not the message
+   * for the person who just treated the patient.
+   */
+  releaseReason: string | null
 }
 
 export async function getClosedCaseForStudent(
@@ -328,10 +337,15 @@ export async function getClosedCaseForStudent(
   studentId: string,
 ): Promise<ClosedCaseSummary | null> {
   const [row] = await db
-    .select({ referenceCode: cases.referenceCode, status: cases.status })
+    .select({
+      referenceCode: cases.referenceCode,
+      status: cases.status,
+      releaseReason: claims.releaseReason,
+    })
     .from(cases)
     .innerJoin(claims, eq(claims.caseId, cases.id))
     .where(and(eq(cases.id, caseId), eq(claims.studentId, studentId)))
+    .orderBy(desc(claims.createdAt))
     .limit(1)
 
   return row ?? null

@@ -100,10 +100,22 @@ export const Stages: CollectionConfig = {
   labels: { singular: 'مرحلة', plural: 'المراحل الدراسية' },
   admin: { useAsTitle: 'nameAr', defaultColumns: ['nameAr', 'order', 'active'], group: 'الإعدادات' },
   access: { read: () => true },
+  hooks: revalidateHooks,
   fields: [
     nameArField,
     slugField,
     { name: 'order', type: 'number', required: true, defaultValue: 1, label: 'الترتيب' },
+    {
+      name: 'defaultTreatmentTypes',
+      type: 'relationship',
+      relationTo: 'treatment-types',
+      hasMany: true,
+      label: 'العلاجات الافتراضية لهذي المرحلة',
+      admin: {
+        description:
+          'شنو تكدر تعالج هذي المرحلة بشكل عام. تنطبق على أي عيادة ما محدد إلها صلاحيات خاصة. بدون هذا، إضافة عيادة جديدة تخلي كل الحالات مخفية عن طلابها لحد ما أحد يملي الجدول.',
+      },
+    },
     activeField,
   ],
 }

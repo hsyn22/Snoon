@@ -313,6 +313,10 @@ export const studentQueue = {
 
   caseReference: 'رمز الحالة',
   caseTreatments: 'العلاج المطلوب',
+  /** Marks a treatment on a case that this student's stage may not perform. */
+  otherStageTag: 'مرحلة ثانية',
+  otherStageHint:
+    'العلاجات المعلّمة بـ «مرحلة ثانية» مو من مرحلتك. تكدر تاخذ الحالة وتسوي اللي يخصك، وبعدين ترجّع الباقي للقائمة لطالب من المرحلة الثانية.',
   caseDays: 'الأيام المتاحة',
   caseNotes: 'ملاحظات المريض',
   caseSubmitted: 'قُدّمت',
@@ -414,6 +418,19 @@ export const telegramCopy = {
   appointmentSet: (referenceCode: string, when: string) =>
     [`تم تحديد موعدك لحالة ${referenceCode}.`, '', when, '', 'إذا ما تكدر تجي، اتصل بالطالب.'].join('\n'),
 
+  /**
+   * Sent when one student finished their part and the rest went back to the
+   * queue. Without it a patient sees their case "waiting" again and assumes
+   * something went wrong.
+   */
+  remainderQueued: (referenceCode: string) =>
+    [
+      `خلص جزء من علاجك بحالة ${referenceCode}.`,
+      '',
+      'باقي العلاج يحتاج طالب من مرحلة ثانية، فرجعنا الحالة للقائمة.',
+      'راح نعلمك أول ما ياخذها طالب.',
+    ].join('\n'),
+
   /** Sent to the student when their contact window runs out. */
   claimExpired: 'انتهت مهلة التواصل وراحت الحالة لطالب ثاني. تكدر تحجز حالة جديدة من الموقع.',
 } as const
@@ -478,6 +495,20 @@ export const studentLifecycle = {
   appointmentSetTitle: 'الموعد مثبّت',
   rescheduleAction: 'غيّر الموعد',
 
+  /**
+   * Handing the rest of a case to another stage.
+   *
+   * The two years do not treat the same things, so a case wanting a root canal
+   * and a partial denture needs both a fifth year and a fourth. This is how the
+   * one who holds it passes on the part they may not do.
+   */
+  remainderTitle: 'باقي علاجات مو من مرحلتك',
+  remainderBody: 'إذا خلصت اللي يخص مرحلتك، رجّع الباقي للقائمة حتى ياخذه طالب من مرحلة ثانية.',
+  remainderListLabel: 'اللي راح يرجع للقائمة',
+  remainderAction: 'خلصت حصتي — رجّع الباقي',
+  remainderSaving: 'قيد الإرسال…',
+  remainderDone: 'رجّعنا الباقي للقائمة. شكراً.',
+
   outcomeTitle: 'شنو صار بالموعد؟',
   outcomeBody: 'سجّل النتيجة حتى تنغلق الحالة.',
   completed: 'تم العلاج',
@@ -486,7 +517,10 @@ export const studentLifecycle = {
   outcomeSaving: 'قيد التسجيل…',
 
   closedTitle: 'الحالة منغلقة',
+  handedOnTitle: 'خلصت حصتك من الحالة',
   closedCompleted: 'تم العلاج. شكراً.',
+  /** Shown to the student who did their half of a shared case. */
+  closedHandedOn: 'خلصت اللي يخص مرحلتك. باقي العلاج رجع للقائمة لطالب من مرحلة ثانية.',
   closedNoShow: 'المريض ما حضر الموعد.',
   closedCancelled: 'انلغى الموعد.',
 
