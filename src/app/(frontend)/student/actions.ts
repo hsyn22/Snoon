@@ -6,6 +6,7 @@ import { redirect } from 'next/navigation'
 import { auth } from '@/lib/auth'
 import { studentAuth } from '@/lib/copy'
 import { isEmailConfigured } from '@/lib/email'
+import { checkRateLimit, clientIp, RATE_LIMITS } from '@/lib/rate-limit'
 
 export type AuthFormState = {
   errors?: Partial<Record<'name' | 'email' | 'password', string>>
@@ -40,6 +41,16 @@ export async function signUpAction(
   // sign-up would look successful while leaving an account nobody can ever
   // verify or log into.
   if (!isEmailConfigured()) return { formError: studentAuth.errors.signUpClosed }
+
+  // Better Auth rate-limits its own HTTP routes, but this is a server action
+  // calling its API directly, which does not pass through them.
+  const limited = checkRateLimit(`sign-up:${clientIp(await headers())}`, RATE_LIMITS.signUp)
+  if (!limited.ok) {
+    return {
+      formError: studentAuth.errors.tooMany,
+      values: { name: read(formData, 'name'), email: read(formData, 'email') },
+    }
+  }
 
   const name = read(formData, 'name')
   const email = read(formData, 'email').toLowerCase()
@@ -94,6 +105,12 @@ export async function loginAction(
   if (!email) errors.email = e.emailRequired
   if (!password) errors.password = e.passwordRequired
   if (Object.keys(errors).length > 0) return { errors, values: { email } }
+
+  // Keyed by address as well as by address-and-IP would be better against a
+  // spray, but an address-keyed limit lets anyone lock a student out of their
+  // own account by guessing at it. The IP is the safe key.
+  const limited = checkRateLimit(`login:${clientIp(await headers())}`, RATE_LIMITS.login)
+  if (!limited.ok) return { formError: e.tooMany, values: { email } }
 
   try {
     await auth.api.signInEmail({ body: { email, password } })

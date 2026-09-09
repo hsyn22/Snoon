@@ -1,9 +1,11 @@
 'use server'
 
+import { headers } from 'next/headers'
 import { redirect } from 'next/navigation'
 import { attachCasePhoto, submitCase } from '@/db/queries/cases'
 import { caseForm, casePhotos as photoCopy } from '@/lib/copy'
 import { MAX_PHOTOS_PER_CASE, processCasePhoto } from '@/lib/images/process'
+import { checkRateLimit, clientIp, RATE_LIMITS } from '@/lib/rate-limit'
 import {
   readCaseForm,
   validateCaseForm,
@@ -30,6 +32,17 @@ export async function submitCaseAction(
   formData: FormData,
 ): Promise<CaseFormState> {
   const fields = readCaseForm(formData)
+
+  // Before validation and before any photograph is decoded: the expensive part
+  // of this action is the image work, so the limit has to sit in front of it.
+  // The submitted values are still handed back, so a patient caught by a shared
+  // address does not lose what they typed.
+  const limited = checkRateLimit(
+    `case-submission:${clientIp(await headers())}`,
+    RATE_LIMITS.caseSubmission,
+  )
+  if (!limited.ok) return { formError: caseForm.errors.tooMany, values: fields }
+
   const validated = await validateCaseForm(fields)
 
   if (!validated.ok) return { errors: validated.errors, values: fields }

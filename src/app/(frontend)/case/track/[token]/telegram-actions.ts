@@ -1,11 +1,13 @@
 'use server'
 
 import { and, eq, isNull } from 'drizzle-orm'
+import { headers } from 'next/headers'
 import { db } from '@/db'
 import { cases } from '@/db/schema'
 import { createInvite } from '@/db/queries/telegram'
 import { hashTrackingToken } from '@/lib/tracking-token'
 import { buildDeepLink, getTelegramConfig } from '@/lib/telegram/config'
+import { checkRateLimit, clientIp, RATE_LIMITS } from '@/lib/rate-limit'
 
 export type InviteState = { deepLink?: string; error?: string }
 
@@ -25,6 +27,14 @@ export async function createPatientInviteAction(
 
   const trackingToken = String(formData.get('trackingToken') ?? '')
   if (!trackingToken) return { error: 'unavailable' }
+
+  // Minting an invite writes a row and costs a Telegram round trip; a token
+  // holder refreshing is normal, a script is not.
+  const limited = checkRateLimit(
+    `telegram-invite:${clientIp(await headers())}`,
+    RATE_LIMITS.telegramInvite,
+  )
+  if (!limited.ok) return { error: 'unavailable' }
 
   const [record] = await db
     .select({ id: cases.id })

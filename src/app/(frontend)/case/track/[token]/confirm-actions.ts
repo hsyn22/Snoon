@@ -1,11 +1,13 @@
 'use server'
 
 import { and, eq, isNull } from 'drizzle-orm'
+import { headers } from 'next/headers'
 import { revalidatePath } from 'next/cache'
 import { db } from '@/db'
 import { cases } from '@/db/schema'
 import { confirmContactByPatient, reportNoContactByPatient } from '@/lib/cases/contact'
 import { hashTrackingToken } from '@/lib/tracking-token'
+import { checkRateLimit, clientIp, RATE_LIMITS } from '@/lib/rate-limit'
 
 export type ConfirmState = { done?: 'YES' | 'NO'; error?: boolean }
 
@@ -25,6 +27,14 @@ export async function answerContactAction(
   const trackingToken = String(formData.get('trackingToken') ?? '')
   const answer = String(formData.get('answer') ?? '')
   if (!trackingToken || (answer !== 'YES' && answer !== 'NO')) return { error: true }
+
+  // Generous: a patient tapping twice, or answering for a second case, is
+  // ordinary. This is here to stop a script walking tokens, not to police taps.
+  const limited = checkRateLimit(
+    `patient-answer:${clientIp(await headers())}`,
+    RATE_LIMITS.patientAnswer,
+  )
+  if (!limited.ok) return { error: true }
 
   const [record] = await db
     .select({ id: cases.id })

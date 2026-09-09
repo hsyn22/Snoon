@@ -1,5 +1,5 @@
 import { eq } from 'drizzle-orm'
-import { afterAll, describe, expect, it } from 'vitest'
+import { afterAll, afterEach, describe, expect, it } from 'vitest'
 
 /**
  * Sign-up must refuse when email cannot be delivered.
@@ -75,5 +75,97 @@ describe.skipIf(!hasDatabase)('sign-up with no email provider', async () => {
       body: { name: 'اسم', email, password: 'a-proper-password-123' },
     })
     expect(result.user.email).toBe(email)
+  })
+})
+
+/**
+ * The provider itself. No database needed — this is about configuration, and it
+ * is the piece that decides whether student registration is open at all.
+ */
+describe('the Resend provider', () => {
+  const keys = ['RESEND_API_KEY', 'EMAIL_FROM'] as const
+  const saved = Object.fromEntries(keys.map((key) => [key, process.env[key]]))
+
+  function restoreEnv() {
+    for (const key of keys) {
+      if (saved[key] === undefined) delete process.env[key]
+      else process.env[key] = saved[key]
+    }
+  }
+
+  afterEach(restoreEnv)
+
+  it('counts as configured only when the key and the from address are both set', async () => {
+    const { isEmailConfigured } = await import('@/lib/email')
+    const originalEnv = process.env.NODE_ENV
+
+    // @ts-expect-error - the guard keys off NODE_ENV
+    process.env.NODE_ENV = 'production'
+
+    delete process.env.RESEND_API_KEY
+    delete process.env.EMAIL_FROM
+    expect(isEmailConfigured()).toBe(false)
+
+    // A key with no from address cannot send; a from address with no key is a
+    // deployment that believes it can send and cannot. Neither counts.
+    process.env.RESEND_API_KEY = 're_test_key'
+    expect(isEmailConfigured()).toBe(false)
+
+    delete process.env.RESEND_API_KEY
+    process.env.EMAIL_FROM = 'سنون <no-reply@example.com>'
+    expect(isEmailConfigured()).toBe(false)
+
+    process.env.RESEND_API_KEY = 're_test_key'
+    expect(isEmailConfigured()).toBe(true)
+
+    // @ts-expect-error - restore
+    process.env.NODE_ENV = originalEnv
+  })
+
+  it('posts the message to Resend and never puts the address in an error', async () => {
+    const { sendEmail, EmailSendError } = await import('@/lib/email')
+
+    process.env.RESEND_API_KEY = 're_test_key'
+    process.env.EMAIL_FROM = 'سنون <no-reply@example.com>'
+
+    const calls: { url: string; body: unknown; auth: string | undefined }[] = []
+    const originalFetch = globalThis.fetch
+
+    globalThis.fetch = (async (url: string, init: RequestInit) => {
+      calls.push({
+        url: String(url),
+        body: JSON.parse(String(init.body)),
+        auth: new Headers(init.headers).get('authorization') ?? undefined,
+      })
+      return new Response('', { status: 200 })
+    }) as unknown as typeof fetch
+
+    await sendEmail({ to: 'student@example.com', subject: 'تفعيل', text: 'رابط' })
+
+    expect(calls).toHaveLength(1)
+    expect(calls[0]!.url).toBe('https://api.resend.com/emails')
+    expect(calls[0]!.auth).toBe('Bearer re_test_key')
+    expect(calls[0]!.body).toEqual({
+      from: 'سنون <no-reply@example.com>',
+      to: ['student@example.com'],
+      subject: 'تفعيل',
+      text: 'رابط',
+    })
+
+    globalThis.fetch = (async () =>
+      new Response('domain not verified', { status: 403 })) as unknown as typeof fetch
+
+    await expect(
+      sendEmail({ to: 'student@example.com', subject: 'تفعيل', text: 'رابط' }),
+    ).rejects.toThrow(EmailSendError)
+
+    // An address is a person, and this string reaches the log.
+    await sendEmail({ to: 'student@example.com', subject: 'x', text: 'y' }).catch(
+      (error: Error) => {
+        expect(error.message).not.toContain('student@example.com')
+      },
+    )
+
+    globalThis.fetch = originalFetch
   })
 })
