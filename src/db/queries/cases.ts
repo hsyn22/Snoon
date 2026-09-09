@@ -1,6 +1,6 @@
 import { and, arrayOverlaps, asc, eq, inArray, isNull } from 'drizzle-orm'
 import { db } from '@/db'
-import { appointments, caseEvents, cases, claims, students } from '@/db/schema'
+import { appointments, caseEvents, casePhotos, cases, claims, students } from '@/db/schema'
 import { studentPreviouslyReleased } from '@/db/queries/claims'
 import { generateReferenceCode } from '@/lib/reference-code'
 import { generateTrackingToken, hashTrackingToken } from '@/lib/tracking-token'
@@ -29,6 +29,8 @@ export type SubmitCaseInput = {
 }
 
 export type SubmitCaseResult = {
+  /** Needed to attach photographs to the case just created. */
+  caseId: string
   referenceCode: string
   /**
    * The only time this value exists in plaintext. It is handed to the patient in
@@ -61,7 +63,7 @@ export async function submitCase(input: SubmitCaseInput): Promise<SubmitCaseResu
     const referenceCode = generateReferenceCode()
 
     try {
-      await db.transaction(async (tx) => {
+      const insertedId = await db.transaction(async (tx) => {
         const [row] = await tx
           .insert(cases)
           .values({
@@ -85,9 +87,11 @@ export async function submitCase(input: SubmitCaseInput): Promise<SubmitCaseResu
           actorType: 'PATIENT',
           reason: 'Case submitted by patient.',
         })
+
+        return row.id
       })
 
-      return { referenceCode, trackingToken }
+      return { caseId: insertedId, referenceCode, trackingToken }
     } catch (error) {
       // A reference code collision is expected occasionally and is not an error
       // worth surfacing — draw another and try again. Anything else propagates.
@@ -330,4 +334,16 @@ export async function getClosedCaseForStudent(
     .limit(1)
 
   return row ?? null
+}
+
+
+/**
+ * Attach an already-processed photograph to a case.
+ *
+ * Takes the Payload media id rather than raw bytes: processing and stripping
+ * happen before anything reaches storage, so there is no path here that could
+ * store an image with its EXIF intact.
+ */
+export async function attachCasePhoto(caseId: string, mediaId: string): Promise<void> {
+  await db.insert(casePhotos).values({ caseId, mediaId })
 }

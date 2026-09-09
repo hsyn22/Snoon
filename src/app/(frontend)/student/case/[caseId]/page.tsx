@@ -12,9 +12,18 @@ import {
 } from '@/db/queries/cases'
 import { auth } from '@/lib/auth'
 import { getAllTreatmentTypes } from '@/lib/config'
-import { caseForm, caseStatus, site, studentClaim, studentLifecycle } from '@/lib/copy'
+import {
+  caseForm,
+  casePhotos as photoCopy,
+  caseStatus,
+  site,
+  studentClaim,
+  studentLifecycle,
+} from '@/lib/copy'
 import { formatAppointment, formatCaseDateTime, toBaghdadInputValue } from '@/lib/dates'
 import { formatPhoneForDisplay } from '@/lib/phone'
+import { listCasePhotos } from '@/db/queries/case-photos'
+import { CasePhotoGrid } from '@/components/case-photo-grid'
 import { AssertContact } from './assert-contact'
 import { AppointmentStep, OutcomeStep } from './lifecycle-steps'
 
@@ -98,9 +107,10 @@ export default async function ClaimedCasePage({
     )
   }
 
-  const [treatments, appointment] = await Promise.all([
+  const [treatments, appointment, photos] = await Promise.all([
     getAllTreatmentTypes(),
     getCurrentAppointment(caseId),
+    listCasePhotos(caseId),
   ])
   const treatmentNames = record.treatmentTypeIds
     .map((id) => treatments.find((t) => t.id === id)?.nameAr ?? id)
@@ -185,6 +195,8 @@ export default async function ClaimedCasePage({
             />
           </>
         ) : null}
+
+        <CasePhotoGrid photos={photos} label={photoCopy.studentLabel} />
 
         <dl className="mt-4 rounded-lg border border-border bg-surface px-4">
           <Row label={studentClaim.nameLabel} value={record.patientName} />

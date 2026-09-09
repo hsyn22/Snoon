@@ -47,3 +47,20 @@ export const getCaseExpiryDays = cache(async (): Promise<number> => {
   const value = settings.caseExpiryDays
   return typeof value === 'number' && value > 0 ? value : FALLBACK_CASE_EXPIRY_DAYS
 })
+
+
+const FALLBACK_PHOTO_RETENTION_DAYS = 60
+
+/**
+ * How long intraoral photographs are kept after a case reaches a terminal state.
+ *
+ * They exist to help a student treat someone. Once that is over they are
+ * pictures inside a stranger's mouth sitting on a disk, and keeping them is a
+ * liability rather than an asset.
+ */
+export const getPhotoRetentionDays = cache(async (): Promise<number> => {
+  const payload = await getPayload({ config })
+  const settings = await payload.findGlobal({ slug: 'settings' })
+  const value = settings.photoRetentionDays
+  return typeof value === 'number' && value > 0 ? value : FALLBACK_PHOTO_RETENTION_DAYS
+})

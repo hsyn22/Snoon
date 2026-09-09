@@ -243,15 +243,30 @@ and it takes the claim as an argument. Let TypeScript enforce it.
 
 ## Privacy rules
 
-**Photographs.** Patients may upload intraoral images.
+**Photographs.** Patients may upload intraoral images. **Built** — `src/lib/images/`.
 
-- Strip EXIF on upload (`sharp`: rotate to bake orientation, then re-encode without metadata).
-- Re-encode to WebP, cap dimensions, cap file size.
-- Store outside the public directory. Serve through an authenticated route that re-checks
-  authorisation on every request. Never a guessable public URL.
-- The upload UI must warn, in Arabic, not to include the face.
-- Admins can remove any image.
-- Delete images a configurable period after the case reaches a terminal state.
+- EXIF is stripped by `processCasePhoto`: `rotate()` bakes the orientation tag in, then the
+  WebP re-encode drops all metadata because sharp writes none unless asked. This is the part
+  that matters most — a phone photograph carries GPS, and publishing a patient's home
+  coordinates alongside a picture of their mouth is a serious harm that is invisible unless
+  something checks. `tests/image-processing.test.ts` builds an image that really does carry
+  GPS tags and asserts they are gone, in the parsed metadata and in the raw bytes.
+- Re-encoded to WebP, long edge capped at 1600px, never upscaled, 12MB in and at most four
+  per case. Whatever arrived is decoded and rewritten, so a file that merely claims to be an
+  image does not survive.
+- Stored in `uploads/case-photos`, outside `/public`. Served only by
+  `/api/case-photos/[photoId]`, which re-answers "who is asking?" every request — a session
+  valid a minute ago proves nothing, and a student suspended since then stops seeing them at
+  once. Three viewers are allowed: an admin, a **verified** student (before claiming too, since
+  photographs are how they judge whether they can treat the case), and the patient carrying
+  their own tracking token. Everyone else gets 404, not 403: whether a photo id exists is
+  itself something only an allowed viewer should learn. `cache-control: private`, never
+  shared.
+- The upload warns in Arabic not to photograph the face, on the field itself.
+- Admins can remove any image from the Payload admin.
+- Deleted `photoRetentionDays` after the case reaches a terminal state, by the scheduled job.
+  The row is kept and marked rather than removed, so a case that had photographs is
+  distinguishable from one that never did.
 
 **Contact data.** Phone numbers are the most sensitive field in the system. They exist to be
 shown to exactly one student. Do not log them, do not put them in error messages, do not

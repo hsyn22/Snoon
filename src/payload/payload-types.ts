@@ -75,6 +75,7 @@ export interface Config {
     'treatment-types': TreatmentType;
     'stage-capabilities': StageCapability;
     'student-documents': StudentDocument;
+    'case-photos': CasePhoto;
     'payload-kv': PayloadKv;
     'payload-locked-documents': PayloadLockedDocument;
     'payload-preferences': PayloadPreference;
@@ -90,6 +91,7 @@ export interface Config {
     'treatment-types': TreatmentTypesSelect<false> | TreatmentTypesSelect<true>;
     'stage-capabilities': StageCapabilitiesSelect<false> | StageCapabilitiesSelect<true>;
     'student-documents': StudentDocumentsSelect<false> | StudentDocumentsSelect<true>;
+    'case-photos': CasePhotosSelect<false> | CasePhotosSelect<true>;
     'payload-kv': PayloadKvSelect<false> | PayloadKvSelect<true>;
     'payload-locked-documents': PayloadLockedDocumentsSelect<false> | PayloadLockedDocumentsSelect<true>;
     'payload-preferences': PayloadPreferencesSelect<false> | PayloadPreferencesSelect<true>;
@@ -293,6 +295,30 @@ export interface StudentDocument {
   focalY?: number | null;
 }
 /**
+ * صور داخل الفم. للمراجعة والحذف فقط.
+ *
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "case-photos".
+ */
+export interface CasePhoto {
+  id: number;
+  /**
+   * ملاحظات داخلية. ما تظهر للمريض ولا للطالب.
+   */
+  note?: string | null;
+  updatedAt: string;
+  createdAt: string;
+  url?: string | null;
+  thumbnailURL?: string | null;
+  filename?: string | null;
+  mimeType?: string | null;
+  filesize?: number | null;
+  width?: number | null;
+  height?: number | null;
+  focalX?: number | null;
+  focalY?: number | null;
+}
+/**
  * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "payload-kv".
  */
@@ -347,6 +373,10 @@ export interface PayloadLockedDocument {
     | ({
         relationTo: 'student-documents';
         value: number | StudentDocument;
+      } | null)
+    | ({
+        relationTo: 'case-photos';
+        value: number | CasePhoto;
       } | null);
   globalSlug?: string | null;
   user: {
@@ -504,6 +534,24 @@ export interface StudentDocumentsSelect<T extends boolean = true> {
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "case-photos_select".
+ */
+export interface CasePhotosSelect<T extends boolean = true> {
+  note?: T;
+  updatedAt?: T;
+  createdAt?: T;
+  url?: T;
+  thumbnailURL?: T;
+  filename?: T;
+  mimeType?: T;
+  filesize?: T;
+  width?: T;
+  height?: T;
+  focalX?: T;
+  focalY?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "payload-kv_select".
  */
 export interface PayloadKvSelect<T extends boolean = true> {
@@ -556,6 +604,10 @@ export interface Setting {
    * إذا مرت هذي المدة وما حجز أي طالب الحالة، تنتهي صلاحيتها وتنشال من القائمة. المريض غالباً يكون لكه علاج بمكان ثاني، وما نريد طالب يتصل بيه بعد شهور.
    */
   caseExpiryDays: number;
+  /**
+   * بعد ما تنغلق الحالة، الصور تنحذف نهائياً بعد هذي المدة. ما نحتفظ بصور داخل فم المريض أكثر من اللازم.
+   */
+  photoRetentionDays: number;
   updatedAt?: string | null;
   createdAt?: string | null;
 }
@@ -566,6 +618,7 @@ export interface Setting {
 export interface SettingsSelect<T extends boolean = true> {
   contactWindowHours?: T;
   caseExpiryDays?: T;
+  photoRetentionDays?: T;
   updatedAt?: T;
   createdAt?: T;
   globalType?: T;

@@ -1,4 +1,5 @@
-import { getCaseExpiryDays } from '@/lib/config/settings'
+import { getCaseExpiryDays, getPhotoRetentionDays } from '@/lib/config/settings'
+import { deleteExpiredCasePhotos } from '@/lib/images/retention'
 import { expireOverdueClaimsAndNotify } from './expiry'
 import { expireStaleRequestedCases } from './lifecycle'
 
@@ -21,6 +22,7 @@ export type ScheduledRunReport = {
   claimsExpired: number
   claimNotificationsSent: number
   casesExpired: number
+  photosDeleted: number
   ranAt: string
 }
 
@@ -34,10 +36,15 @@ export async function runScheduledJobs(now: Date = new Date()): Promise<Schedule
   const claims = await expireOverdueClaimsAndNotify(now)
   const casesExpired = await expireStaleRequestedCases(cutoff)
 
+  const retentionDays = await getPhotoRetentionDays()
+  const photoCutoff = new Date(now.getTime() - retentionDays * 24 * 60 * 60 * 1000)
+  const photosDeleted = await deleteExpiredCasePhotos(photoCutoff)
+
   return {
     claimsExpired: claims.released,
     claimNotificationsSent: claims.notified,
     casesExpired,
+    photosDeleted,
     ranAt: now.toISOString(),
   }
 }

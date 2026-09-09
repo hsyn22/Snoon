@@ -162,6 +162,39 @@ export const caseEvents = snoon.table(
   (table) => [index('case_events_case_id_created_idx').on(table.caseId, table.createdAt)],
 )
 
+/**
+ * Intraoral photographs attached to a case.
+ *
+ * The file itself lives in Payload — that is what gives an admin a viewer and a
+ * delete button. This table owns the relationship and the lifecycle, because
+ * those have rules: photographs are deleted a configurable period after the case
+ * reaches a terminal state, and a deletion has to be recorded rather than the row
+ * simply vanishing.
+ */
+export const casePhotos = snoon.table(
+  'case_photos',
+  {
+    id: uuid('id').primaryKey().defaultRandom(),
+
+    caseId: uuid('case_id')
+      .notNull()
+      .references(() => cases.id, { onDelete: 'cascade' }),
+
+    /** The Payload media document id holding the processed WebP. */
+    mediaId: text('media_id').notNull(),
+
+    /** Set when the file has actually been removed from storage. */
+    deletedAt: timestamp('deleted_at', { withTimezone: true }),
+    deletedReason: text('deleted_reason'),
+
+    createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+  },
+  (table) => [
+    index('case_photos_case_idx').on(table.caseId, table.createdAt),
+    uniqueIndex('case_photos_media_key').on(table.mediaId),
+  ],
+)
+
 export const appointments = snoon.table(
   'appointments',
   {
@@ -371,6 +404,7 @@ export type NewStudentRow = typeof students.$inferInsert
 export type ClaimRow = typeof claims.$inferSelect
 export type TelegramLinkRow = typeof telegramLinks.$inferSelect
 export type AppointmentRow = typeof appointments.$inferSelect
+export type CasePhotoRow = typeof casePhotos.$inferSelect
 
 /** Kept for migrations that need raw SQL alongside the schema. */
 export { sql }

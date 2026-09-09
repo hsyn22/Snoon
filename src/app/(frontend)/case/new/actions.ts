@@ -1,8 +1,9 @@
 'use server'
 
 import { redirect } from 'next/navigation'
-import { submitCase } from '@/db/queries/cases'
-import { caseForm } from '@/lib/copy'
+import { attachCasePhoto, submitCase } from '@/db/queries/cases'
+import { caseForm, casePhotos as photoCopy } from '@/lib/copy'
+import { MAX_PHOTOS_PER_CASE, processCasePhoto } from '@/lib/images/process'
 import {
   readCaseForm,
   validateCaseForm,
@@ -12,6 +13,9 @@ import {
 
 export type CaseFormState = {
   errors?: FieldErrors
+  /** Photograph problems are reported separately: they are optional extras, and
+   *  losing an otherwise-good submission over one bad file would be wrong. */
+  photoError?: string
   formError?: string
   /**
    * What the patient typed, handed back so a rejected submission does not empty
@@ -30,10 +34,56 @@ export async function submitCaseAction(
 
   if (!validated.ok) return { errors: validated.errors, values: fields }
 
+  // Photographs are processed BEFORE the case is written, so a case is never
+  // created alongside an image that turned out to be unusable — and so nothing
+  // with EXIF intact can reach storage.
+  const files = formData
+    .getAll('photos')
+    .filter((entry): entry is File => entry instanceof File && entry.size > 0)
+
+  if (files.length > MAX_PHOTOS_PER_CASE) {
+    return { photoError: photoCopy.errors.tooMany, values: fields }
+  }
+
+  const processed: Buffer[] = []
+  for (const file of files) {
+    const result = await processCasePhoto(Buffer.from(await file.arrayBuffer()))
+    if (!result.ok) {
+      return {
+        photoError:
+          result.reason === 'TOO_LARGE' ? photoCopy.errors.tooLarge : photoCopy.errors.notAnImage,
+        values: fields,
+      }
+    }
+    processed.push(result.photo.data)
+  }
+
   let trackingToken: string
   try {
     const result = await submitCase(validated.value)
     trackingToken = result.trackingToken
+
+    if (processed.length > 0) {
+      const { getPayload } = await import('payload')
+      const { default: payloadConfig } = await import('@payload-config')
+      const payload = await getPayload({ config: payloadConfig })
+
+      for (const [index, data] of processed.entries()) {
+        const media = await payload.create({
+          collection: 'case-photos',
+          data: {},
+          file: {
+            data,
+            mimetype: 'image/webp',
+            // Named by position, never by whatever the patient's phone called it:
+            // camera filenames sometimes carry dates and locations of their own.
+            name: `case-photo-${index + 1}.webp`,
+            size: data.byteLength,
+          },
+        })
+        await attachCasePhoto(result.caseId, String(media.id))
+      }
+    }
   } catch (error) {
     // Log that a submission failed, never what was in it — the form data holds
     // the patient's name and phone number.

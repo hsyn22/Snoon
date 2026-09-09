@@ -6,6 +6,7 @@ import { lexicalEditor } from '@payloadcms/richtext-lexical'
 import { buildConfig } from 'payload'
 import sharp from 'sharp'
 import { Admins } from '@/payload/collections/admins'
+import { CasePhotos } from '@/payload/collections/case-photos'
 import { StudentDocuments } from '@/payload/collections/student-documents'
 import { Settings } from '@/payload/globals/settings'
 import {
@@ -59,6 +60,7 @@ export default buildConfig({
     TreatmentTypes,
     StageCapabilities,
     StudentDocuments,
+    CasePhotos,
   ],
 
   globals: [Settings],

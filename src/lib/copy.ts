@@ -510,3 +510,22 @@ export const studentTelegram = {
   documentMissingTitle: 'ناقصة وثيقة التسجيل',
   documentMissingBody: 'ما نكدر نوثّق حسابك بدون وثيقة تثبت إنك طالب.',
 } as const
+
+/** Intraoral photographs on the case form. */
+export const casePhotos = {
+  label: 'صور الأسنان (اختياري)',
+  hint: 'صور داخل الفم تساعد الطالب يفهم حالتك قبل ما يحجزها. تكدر ترفع لحد ٤ صور.',
+
+  /** The guide requires this warning, in Arabic, on the upload itself. */
+  faceWarning: 'لا تصوّر وجهك. صوّر الأسنان بس.',
+  privacy: 'الصور تنشاف بس من طلبة طب الأسنان الموثّقين ومن إدارة سنون. ما تنشر بأي مكان.',
+
+  errors: {
+    tooMany: 'أكثر من اللازم. ٤ صور بالأكثر.',
+    tooLarge: 'وحدة من الصور كبيرة كلش.',
+    notAnImage: 'وحدة من الملفات مو صورة.',
+  },
+
+  patientLabel: 'صورك',
+  studentLabel: 'صور الحالة',
+} as const

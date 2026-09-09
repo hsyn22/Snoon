@@ -1,6 +1,8 @@
 import { getAllTreatmentTypes, getStudentCaseScope } from '@/lib/config'
 import { listOpenCasesForStudent } from '@/db/queries/cases'
-import { caseForm, studentQueue } from '@/lib/copy'
+import { listCasePhotos } from '@/db/queries/case-photos'
+import { CasePhotoGrid } from '@/components/case-photo-grid'
+import { caseForm, casePhotos as photoCopy, studentQueue } from '@/lib/copy'
 import { formatCaseDate } from '@/lib/dates'
 import { ClaimButton } from './claim-button'
 
@@ -39,6 +41,12 @@ export async function CaseQueue({
     listOpenCasesForStudent(studentId, scope),
     getAllTreatmentTypes(),
   ])
+
+  const photosByCase = new Map(
+    await Promise.all(
+      cases.map(async (entry) => [entry.id, await listCasePhotos(entry.id)] as const),
+    ),
+  )
 
   if (cases.length === 0) {
     return (
@@ -89,6 +97,11 @@ export async function CaseQueue({
                 <dd className="text-foreground-muted">{formatCaseDate(entry.createdAt)}</dd>
               </div>
             </dl>
+
+            <CasePhotoGrid
+              photos={photosByCase.get(entry.id) ?? []}
+              label={photoCopy.studentLabel}
+            />
 
             <ClaimButton caseId={entry.id} />
           </article>

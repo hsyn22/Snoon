@@ -6,7 +6,7 @@ import { useDismissibleErrors } from '@/components/use-dismissible-errors'
 // From ./schema, not ./index: importing the Payload reader here would pull the
 // whole CMS into the browser bundle.
 import { WEEK_DAYS, type City, type TreatmentType } from '@/lib/config/schema'
-import { caseForm } from '@/lib/copy'
+import { caseForm, casePhotos } from '@/lib/copy'
 import { submitCaseAction, type CaseFormState } from './actions'
 
 const INITIAL: CaseFormState = {}
@@ -163,6 +163,31 @@ export function CaseForm({
           aria-describedby={errors.patientPhone ? 'patientPhone-error' : undefined}
         />
         <FieldError id="patientPhone-error" message={errorFor('patientPhone', errors.patientPhone)} />
+      </div>
+
+      <div>
+        <label htmlFor="photos" className={labelClass}>
+          {casePhotos.label}
+        </label>
+        <p className={hintClass}>{casePhotos.hint}</p>
+        {/* The guide requires this warning, in Arabic, on the upload itself. */}
+        <p className="mt-2 text-sm font-medium text-warning">{casePhotos.faceWarning}</p>
+        <input
+          id="photos"
+          name="photos"
+          type="file"
+          accept="image/*"
+          multiple
+          // capture is deliberately omitted: on a phone this offers both the
+          // camera and the gallery, and a patient may already have a photo.
+          className="mt-2 w-full text-sm"
+        />
+        <p className="mt-2 text-xs text-foreground-muted">{casePhotos.privacy}</p>
+        {state.photoError ? (
+          <p role="alert" className="mt-2 text-sm text-danger">
+            {state.photoError}
+          </p>
+        ) : null}
       </div>
 
       <div>

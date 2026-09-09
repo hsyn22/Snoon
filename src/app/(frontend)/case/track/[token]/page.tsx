@@ -2,11 +2,14 @@ import type { Metadata } from 'next'
 import { headers } from 'next/headers'
 import Link from 'next/link'
 import { getCaseByTrackingToken, getCurrentAppointment } from '@/db/queries/cases'
+import { listCasePhotos } from '@/db/queries/case-photos'
+import { CasePhotoGrid } from '@/components/case-photo-grid'
 import { getAllTreatmentTypes, getCityById } from '@/lib/config'
 import {
   caseForm,
   caseStatus,
   caseTracking,
+  casePhotos as photoCopy,
   common,
   patientAppointment,
   patientConfirm,
@@ -85,6 +88,7 @@ export default async function TrackCasePage({
   // would have the patient confirming something that has not happened.
   const awaitingConfirmation = await hasPendingContactAssertion(record.id)
   const appointment = await getCurrentAppointment(record.id)
+  const photos = await listCasePhotos(record.id)
 
   const telegramAvailable = isTelegramConfigured()
   const patientLinked = telegramAvailable ? await isPatientLinked(record.id) : false
@@ -157,6 +161,8 @@ export default async function TrackCasePage({
         {telegramAvailable ? (
           <TelegramInvite trackingToken={token} alreadyLinked={patientLinked} />
         ) : null}
+
+        <CasePhotoGrid photos={photos} label={photoCopy.patientLabel} trackingToken={token} />
 
         <dl className="mt-6 rounded-lg border border-border bg-surface px-4">
           <Row label={caseTracking.statusLabel} value={caseStatus[record.status]} />
