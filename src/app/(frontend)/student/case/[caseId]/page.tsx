@@ -25,6 +25,7 @@ import { formatPhoneForDisplay } from '@/lib/phone'
 import { listCasePhotos } from '@/db/queries/case-photos'
 import { CasePhotoGrid } from '@/components/case-photo-grid'
 import { AssertContact } from './assert-contact'
+import { WrongNumberReport } from './wrong-number'
 import { AppointmentStep, OutcomeStep } from './lifecycle-steps'
 
 export const metadata: Metadata = {
@@ -160,7 +161,8 @@ export default async function ClaimedCasePage({
           >
             {formatPhoneForDisplay(record.patientPhone)}
           </a>
-          <p className="mt-3 text-xs font-medium text-warning">{studentClaim.phonePrivacy}</p>
+          <p className="mt-3 text-xs text-foreground-muted">{studentClaim.callAdvice}</p>
+          <p className="mt-2 text-xs font-medium text-warning">{studentClaim.phonePrivacy}</p>
         </section>
 
         {/* One step at a time: the case's own status decides what comes next,
@@ -194,6 +196,13 @@ export default async function ClaimedCasePage({
               currentValue={toBaghdadInputValue(appointment.scheduledFor)}
             />
           </>
+        ) : null}
+
+        {/* Only while the student still has a live phone number in front of them.
+            After an appointment exists the case has a patient who confirmed
+            contact, and a wrong number is no longer the explanation. */}
+        {record.status === 'MATCHED' || record.status === 'CONTACTED' ? (
+          <WrongNumberReport caseId={caseId} />
         ) : null}
 
         <CasePhotoGrid photos={photos} label={photoCopy.studentLabel} />

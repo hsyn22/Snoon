@@ -64,3 +64,48 @@ export const getPhotoRetentionDays = cache(async (): Promise<number> => {
   const value = settings.photoRetentionDays
   return typeof value === 'number' && value > 0 ? value : FALLBACK_PHOTO_RETENTION_DAYS
 })
+
+
+const FALLBACK_WRONG_NUMBER_BLOCK_DAYS = 30
+const FALLBACK_MAX_OPEN_CASES_PER_PHONE = 3
+const FALLBACK_MAX_CASES_PER_PHONE_PER_DAY = 5
+
+/**
+ * How long a number stays out of use after a student reports that its owner
+ * never asked for treatment.
+ *
+ * Long enough that resubmitting the same prank is not worth the wait, short
+ * enough that a real patient whose number was misused is not shut out for good.
+ */
+export const getWrongNumberBlockDays = cache(async (): Promise<number> => {
+  const payload = await getPayload({ config })
+  const settings = await payload.findGlobal({ slug: 'settings' })
+  const value = settings.wrongNumberBlockDays
+  return typeof value === 'number' && value > 0 ? value : FALLBACK_WRONG_NUMBER_BLOCK_DAYS
+})
+
+/**
+ * The two caps on how much one phone number can be used.
+ *
+ * Not one open case per number: a household shares a phone, and a mother
+ * submitting for herself and for her child is ordinary. The point is to stop
+ * someone queueing dozens of calls to a person who never asked.
+ */
+export const getPhoneSubmissionLimits = cache(
+  async (): Promise<{ maxOpen: number; maxPerDay: number }> => {
+    const payload = await getPayload({ config })
+    const settings = await payload.findGlobal({ slug: 'settings' })
+
+    const maxOpen = settings.maxOpenCasesPerPhone
+    const maxPerDay = settings.maxCasesPerPhonePerDay
+
+    return {
+      maxOpen:
+        typeof maxOpen === 'number' && maxOpen > 0 ? maxOpen : FALLBACK_MAX_OPEN_CASES_PER_PHONE,
+      maxPerDay:
+        typeof maxPerDay === 'number' && maxPerDay > 0
+          ? maxPerDay
+          : FALLBACK_MAX_CASES_PER_PHONE_PER_DAY,
+    }
+  },
+)

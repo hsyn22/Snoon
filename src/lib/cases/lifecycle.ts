@@ -3,6 +3,7 @@ import { db } from '@/db'
 import { appointments, caseEvents, cases, claims } from '@/db/schema'
 import { assertTransition, type CaseStatus } from './transitions'
 import { CASE_REASON } from './reasons'
+import { blockPhone } from '@/db/queries/phone-blocks'
 
 /**
  * The rest of the case lifecycle: appointment, and how a case ends.
@@ -194,4 +195,87 @@ export async function expireStaleRequestedCases(olderThan: Date): Promise<number
   }
 
   return expired
+}
+
+/**
+ * The claimant reports that whoever answered never asked for treatment.
+ *
+ * This is the answer to a problem that has no clean solution: patients have no
+ * account, so a case can carry someone else's phone number, and the first that
+ * person hears of سنون is a student ringing about treatment they never
+ * requested. Verifying the number would need an SMS code, which costs money per
+ * message and is excluded across the project — so the number is not verified.
+ * The call itself is the verification, and this is what the student does with
+ * the answer.
+ *
+ * Three things happen together, and all three matter:
+ *
+ * 1. **The case ends.** Terminal, so no other student is ever handed it.
+ * 2. **The tracking token is revoked**, so whoever submitted it loses their link
+ *    and cannot watch what happens next to a stranger's data.
+ * 3. **The number goes on a cooldown**, so the same submission cannot simply be
+ *    made again an hour later. This is the uncomfortable part — the cooldown
+ *    falls on the person who did nothing wrong — but it is the only handle that
+ *    stops a repeat, it lifts by itself, and an admin can lift it sooner.
+ *
+ * The claim is closed as RELEASED rather than COMPLETED: the student did the
+ * right thing and reported it, and nothing here should read as a case they
+ * finished or failed.
+ */
+export async function reportWrongNumber(
+  studentId: string,
+  caseId: string,
+  blockDays: number,
+): Promise<LifecycleResult> {
+  const claim = await activeClaimFor(caseId, studentId)
+  if (!claim) return { ok: false, reason: 'NO_ACTIVE_CLAIM' }
+
+  // Reportable from either state a student can be in with a phone number in
+  // front of them: before they say they made contact, and after.
+  if (claim.status !== 'MATCHED' && claim.status !== 'CONTACTED') {
+    return { ok: false, reason: 'WRONG_STATUS' }
+  }
+  assertTransition(claim.status, 'CANCELLED')
+
+  const from = claim.status
+
+  const phone = await db.transaction(async (tx) => {
+    const moved = await tx
+      .update(cases)
+      .set({ status: 'CANCELLED', trackingTokenRevokedAt: new Date(), updatedAt: new Date() })
+      .where(and(eq(cases.id, caseId), eq(cases.status, from)))
+      .returning({ phone: cases.patientPhone })
+
+    if (moved.length === 0) return null
+
+    await tx
+      .update(claims)
+      .set({ status: 'RELEASED', releasedAt: new Date(), releaseReason: CASE_REASON.WRONG_NUMBER })
+      .where(eq(claims.id, claim.claimId))
+
+    await tx.insert(caseEvents).values({
+      caseId,
+      fromStatus: from,
+      toStatus: 'CANCELLED',
+      actorType: 'STUDENT',
+      actorId: studentId,
+      reason: CASE_REASON.WRONG_NUMBER,
+    })
+
+    return moved[0]!.phone
+  })
+
+  if (phone === null) return { ok: false, reason: 'WRONG_STATUS' }
+
+  // Outside the transaction on purpose: the case is already closed and the
+  // student is already free. A failure to write the cooldown must not roll back
+  // the part that stops the calls.
+  await blockPhone({
+    phone,
+    reason: CASE_REASON.WRONG_NUMBER,
+    caseId,
+    days: blockDays,
+  })
+
+  return { ok: true }
 }

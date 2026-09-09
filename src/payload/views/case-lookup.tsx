@@ -7,6 +7,8 @@ import {
   listRecentCasesForAdmin,
   type AdminCaseView,
 } from '@/db/queries/admin-cases'
+import { listActivePhoneBlocks, type PhoneBlockRow } from '@/db/queries/phone-blocks'
+import { liftPhoneBlockAction } from './phone-block-actions'
 import {
   getAllCities,
   getAllTreatmentTypes,
@@ -144,9 +146,13 @@ export default async function CaseLookupView({
   // Only one case's contact details are ever loaded, and only for a code the
   // admin typed. The overview list below cannot contain them.
   const record: AdminCaseView | null = normalised ? await findCaseForAdmin(normalised) : null
-  const [recent, counts] = record
-    ? [[], {} as Record<string, number>]
-    : await Promise.all([listRecentCasesForAdmin(25), countCasesByStatus()])
+  const [recent, counts, blocks] = record
+    ? [[], {} as Record<string, number>, [] as PhoneBlockRow[]]
+    : await Promise.all([
+        listRecentCasesForAdmin(25),
+        countCasesByStatus(),
+        listActivePhoneBlocks(),
+      ])
 
   return (
     <div style={{ padding: '2rem', maxWidth: '60rem', margin: '0 auto' }} dir="rtl">
@@ -231,6 +237,64 @@ export default async function CaseLookupView({
               </div>
             )}
           </section>
+
+          {blocks.length > 0 ? (
+            <section style={{ marginBottom: '2rem' }}>
+              <h2 style={{ fontSize: '1rem', marginBottom: '0.25rem' }}>أرقام موقوفة مؤقتاً</h2>
+              <p style={{ opacity: 0.7, fontSize: '0.85rem', margin: '0 0 0.75rem' }}>
+                طالب بلّغ إن صاحب الرقم ما طلب علاج، فوقفنا الرقم حتى ما ينرسل نفس الطلب
+                مرة لخ. إذا صاحب الرقم راجعك وهو يريد علاج فعلاً، شيل الإيقاف من هنا.
+              </p>
+
+              <div style={{ display: 'grid', gap: '0.5rem' }}>
+                {blocks.map((block) => (
+                  <div
+                    key={block.id}
+                    style={{
+                      border: BORDER,
+                      borderRadius: '0.5rem',
+                      padding: '0.75rem 1rem',
+                      display: 'flex',
+                      justifyContent: 'space-between',
+                      alignItems: 'center',
+                      gap: '1rem',
+                      flexWrap: 'wrap',
+                    }}
+                  >
+                    <div>
+                      <strong>
+                        <Ltr>{block.phone}</Ltr>
+                      </strong>
+                      <div style={{ opacity: 0.7, fontSize: '0.85rem' }}>
+                        لحد {formatCaseDate(block.blockedUntil)}
+                      </div>
+                    </div>
+
+                    <form
+                      action={async () => {
+                        'use server'
+                        await liftPhoneBlockAction(block.id)
+                      }}
+                    >
+                      <button
+                        type="submit"
+                        style={{
+                          padding: '0.4rem 0.9rem',
+                          borderRadius: '0.35rem',
+                          border: BORDER,
+                          background: 'transparent',
+                          color: 'inherit',
+                          cursor: 'pointer',
+                        }}
+                      >
+                        شيل الإيقاف
+                      </button>
+                    </form>
+                  </div>
+                ))}
+              </div>
+            </section>
+          ) : null}
 
           {recent.length > 0 ? (
             <section>

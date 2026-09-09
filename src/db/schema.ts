@@ -346,6 +346,57 @@ export const claims = snoon.table(
  * otherwise attach their own chat to somebody else's case. Opting in is always
  * optional — nothing in the product may require Telegram.
  */
+/**
+ * Phone numbers that may not submit a new case for a while.
+ *
+ * Patients have no account, so nothing stops someone entering another person's
+ * number — and the first that person hears of it is a dental student ringing
+ * about treatment they never asked for. There is no free way to prove ownership
+ * of a phone number: an SMS code is exactly what this project excludes, and it
+ * costs money per message. So the answer is not verification but a fast, cheap
+ * stop: the student who makes that call reports it, and the number is put beyond
+ * use here.
+ *
+ * The cooldown is on the *victim's* number, which is uncomfortable and still
+ * right — it is the only handle that stops the same submission being made again
+ * an hour later. It is temporary, an admin can lift it, and the message shown to
+ * whoever next tries to use that number explains what happened and how to reach
+ * سنون. That message is aimed at the real owner: if they ever come to سنون
+ * themselves, they learn why rather than being silently refused.
+ *
+ * Deliberately NOT recorded here: the submitter's IP address. It would be the
+ * only handle on the person actually responsible, and it is not worth logging
+ * every patient's address for a rare event. Volume is already capped per address
+ * by the rate limiter, without storing anything.
+ */
+export const phoneBlocks = snoon.table(
+  'phone_blocks',
+  {
+    id: uuid('id').primaryKey().defaultRandom(),
+
+    /** Normalised to 07XXXXXXXXX, as cases store it. */
+    phone: text('phone').notNull(),
+
+    /** Why, for the admin deciding whether to lift it. Never shown to the public. */
+    reason: text('reason').notNull(),
+
+    /** The case whose claimant reported it. Null for a block an admin created. */
+    caseId: uuid('case_id').references(() => cases.id, { onDelete: 'set null' }),
+
+    blockedUntil: timestamp('blocked_until', { withTimezone: true }).notNull(),
+
+    /** Set rather than deleting, so lifting a block stays auditable. */
+    liftedAt: timestamp('lifted_at', { withTimezone: true }),
+    liftedBy: text('lifted_by'),
+
+    createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+  },
+  (table) => [
+    // The submission check: is there a live block on this number right now.
+    index('phone_blocks_phone_until_idx').on(table.phone, table.blockedUntil),
+  ],
+)
+
 export const telegramLinks = snoon.table(
   'telegram_links',
   {

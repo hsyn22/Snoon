@@ -15,14 +15,16 @@ export const ALLOWED_TRANSITIONS: Readonly<Record<CaseStatus, readonly CaseStatu
   // A student claims it, or it sits unclaimed past its useful life.
   REQUESTED: ['MATCHED', 'EXPIRED'],
 
-  // The student makes contact, or the contact window runs out.
-  MATCHED: ['CONTACTED', 'NO_CONTACT'],
+  // The student makes contact, or the contact window runs out — or the person
+  // who answers never asked for treatment, which ends the case there and then.
+  MATCHED: ['CONTACTED', 'NO_CONTACT', 'CANCELLED'],
 
   // A failed contact returns the case to the queue rather than stranding it.
   NO_CONTACT: ['RETURNED_TO_QUEUE'],
   RETURNED_TO_QUEUE: ['REQUESTED'],
 
-  CONTACTED: ['APPOINTMENT_CONFIRMED'],
+  // A wrong number can surface after the first call as easily as during it.
+  CONTACTED: ['APPOINTMENT_CONFIRMED', 'CANCELLED'],
   APPOINTMENT_CONFIRMED: ['COMPLETED', 'NO_SHOW', 'CANCELLED'],
 
   // Terminal.

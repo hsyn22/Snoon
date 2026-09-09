@@ -621,13 +621,25 @@ export interface PayloadMigrationsSelect<T extends boolean = true> {
 export interface Setting {
   id: number;
   /**
-   * كم ساعة عند الطالب حتى يتواصل وية المريض بعد ما ياخذ الحالة. إذا انتهت المهلة، الحالة ترجع للقائمة لطالب ثاني. الافتراضي ٤٨ ساعة — الطلبة بالعيادة أثناء النهار والمريض ممكن ما يرد أول مرة.
+   * كم ساعة عند الطالب حتى يتواصل وية المريض بعد ما ياخذ الحالة. إذا انتهت المهلة، الحالة ترجع للقائمة لطالب ثاني. الافتراضي 48 ساعة — الطلبة بالعيادة أثناء النهار والمريض ممكن ما يرد أول مرة.
    */
   contactWindowHours: number;
   /**
    * إذا مرت هذي المدة وما حجز أي طالب الحالة، تنتهي صلاحيتها وتنشال من القائمة. المريض غالباً يكون لكه علاج بمكان ثاني، وما نريد طالب يتصل بيه بعد شهور.
    */
   caseExpiryDays: number;
+  /**
+   * إذا طالب بلّغ إن صاحب الرقم ما طلب علاج، الرقم ما يكدر يقدّم حالة جديدة هذي المدة. هذا يمنع نفس الشخص من إعادة إرسال نفس الطلب على رقم شخص ما يعرف. تكدر تشيل الإيقاف من صفحة الحالات.
+   */
+  wrongNumberBlockDays: number;
+  /**
+   * أكثر من واحد بنفس البيت ممكن يستعملون نفس الرقم، فما نخليها وحدة — بس نمنع إن أحد يرسل عشرات الطلبات على رقم شخص ثاني.
+   */
+  maxOpenCasesPerPhone: number;
+  /**
+   * حد إضافي على السرعة، مو بس على العدد المفتوح.
+   */
+  maxCasesPerPhonePerDay: number;
   /**
    * بعد ما تنغلق الحالة، الصور تنحذف نهائياً بعد هذي المدة. ما نحتفظ بصور داخل فم المريض أكثر من اللازم.
    */
@@ -642,6 +654,9 @@ export interface Setting {
 export interface SettingsSelect<T extends boolean = true> {
   contactWindowHours?: T;
   caseExpiryDays?: T;
+  wrongNumberBlockDays?: T;
+  maxOpenCasesPerPhone?: T;
+  maxCasesPerPhonePerDay?: T;
   photoRetentionDays?: T;
   updatedAt?: T;
   createdAt?: T;

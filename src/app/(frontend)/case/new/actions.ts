@@ -6,6 +6,8 @@ import { attachCasePhoto, submitCase } from '@/db/queries/cases'
 import { caseForm, casePhotos as photoCopy } from '@/lib/copy'
 import { MAX_PHOTOS_PER_CASE, processCasePhoto } from '@/lib/images/process'
 import { checkRateLimit, clientIp, RATE_LIMITS } from '@/lib/rate-limit'
+import { checkPhoneMaySubmit } from '@/db/queries/phone-blocks'
+import { getPhoneSubmissionLimits } from '@/lib/config/settings'
 import {
   readCaseForm,
   validateCaseForm,
@@ -46,6 +48,33 @@ export async function submitCaseAction(
   const validated = await validateCaseForm(fields)
 
   if (!validated.ok) return { errors: validated.errors, values: fields }
+
+  /**
+   * The number itself has to pass before anything is written.
+   *
+   * A patient needs no account, so nothing stops a case carrying someone else's
+   * number — and the first that person hears of سنون is a student ringing about
+   * treatment they never asked for. Ownership cannot be proven without an SMS
+   * code, which costs money per message and is excluded, so this caps how much
+   * one number can be used and refuses one a student has already reported.
+   * Reported as an error on the phone field, so the message sits next to the
+   * thing it is about and the rest of the form survives.
+   */
+  const phoneVerdict = await checkPhoneMaySubmit(
+    validated.value.patientPhone,
+    await getPhoneSubmissionLimits(),
+  )
+
+  if (!phoneVerdict.ok) {
+    const message =
+      phoneVerdict.reason === 'BLOCKED'
+        ? caseForm.errors.phoneBlocked
+        : phoneVerdict.reason === 'TOO_MANY_OPEN'
+          ? caseForm.errors.phoneTooManyOpen
+          : caseForm.errors.phoneTooManyToday
+
+    return { errors: { patientPhone: message }, values: fields }
+  }
 
   // Photographs are processed BEFORE the case is written, so a case is never
   // created alongside an image that turned out to be unusable — and so nothing

@@ -5,6 +5,7 @@ import * as migration_20260909_063032_case_expiry from './20260909_063032_case_e
 import * as migration_20260909_063652_case_photos from './20260909_063652_case_photos';
 import * as migration_20260909_064124_photo_retention from './20260909_064124_photo_retention';
 import * as migration_20260909_130322_case_photo_thumb from './20260909_130322_case_photo_thumb';
+import * as migration_20260909_175751_phone_guard_settings from './20260909_175751_phone_guard_settings';
 
 export const migrations = [
   {
@@ -40,6 +41,11 @@ export const migrations = [
   {
     up: migration_20260909_130322_case_photo_thumb.up,
     down: migration_20260909_130322_case_photo_thumb.down,
-    name: '20260909_130322_case_photo_thumb'
+    name: '20260909_130322_case_photo_thumb',
+  },
+  {
+    up: migration_20260909_175751_phone_guard_settings.up,
+    down: migration_20260909_175751_phone_guard_settings.down,
+    name: '20260909_175751_phone_guard_settings'
   },
 ];

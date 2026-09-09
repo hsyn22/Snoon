@@ -116,7 +116,8 @@ export const caseForm = {
   nameHint: 'الاسم اللي يناديك بيه الطالب.',
 
   phoneLabel: 'رقم الموبايل',
-  phoneHint: 'يظهر بس للطالب اللي ياخذ حالتك، وما يظهر لأي أحد غيره.',
+  phoneHint:
+    'اكتب رقمك انت — طالب راح يتصل بيه. الرقم يظهر بس للطالب اللي ياخذ حالتك، وما يظهر لأي أحد غيره.',
 
   notesLabel: 'ملاحظات (اختياري)',
   notesHint: 'أي شي تحب تذكره عن حالتك.',
@@ -148,6 +149,17 @@ export const caseForm = {
     notesTooLong: 'الملاحظات طويلة كلش.',
     submitFailed: 'ما كدرنا نرسل الحالة. جرّب مرة لخ بعد شوية.',
     tooMany: 'أرسلت طلبات كثيرة بوقت قصير. انطر ساعة وجرّب مرة لخ.',
+
+    /**
+     * Written for the person whose number was misused, not for whoever misused
+     * it: if the real owner ever comes to سنون themselves, this is how they
+     * find out why they are refused and what to do about it.
+     */
+    phoneBlocked:
+      'هذا الرقم موقوف مؤقتاً. طالب بلّغنا إن صاحب الرقم ما طلب علاج. إذا هذا رقمك وتريد علاج فعلاً، راجع إدارة سنون حتى نشيل الإيقاف.',
+    phoneTooManyOpen:
+      'أكو حالات مفتوحة بهذا الرقم. خلّص وحدة منها قبل ما تقدّم حالة جديدة.',
+    phoneTooManyToday: 'قدّمت حالات كثيرة اليوم بهذا الرقم. جرّب باچر.',
   },
 } as const
 
@@ -334,6 +346,24 @@ export const studentClaim = {
   backToQueue: 'رجوع للحالات',
   notFoundTitle: 'ما لكينا الحالة',
   notFoundBody: 'يمكن انتهت مهلتك وراحت لطالب ثاني.',
+
+  /**
+   * The one thing standing between a mistyped number and someone being rung
+   * repeatedly about treatment they never asked for. It has to be easy to find
+   * and impossible to press by accident.
+   */
+  wrongNumberTitle: 'الرقم غلط؟',
+  wrongNumberBody:
+    'إذا اللي رد ما يعرف شي عن الطلب، بلّغنا. الحالة تنغلق ويتوقف الرقم مؤقتاً حتى ما ينرسل نفس الطلب مرة لخ. ما تنحسب عليك.',
+  wrongNumberAction: 'بلّغ: صاحب الرقم ما طلب علاج',
+  wrongNumberConfirm: 'متأكد؟ الحالة راح تنغلق نهائياً.',
+  wrongNumberSaving: 'قيد الإرسال…',
+  wrongNumberDone: 'شكراً. انغلقت الحالة وانوقف الرقم.',
+  wrongNumberFailed: 'ما كدرنا نسجّل البلاغ. جرّب مرة لخ.',
+
+  /** Shown above the phone number, because the first sentence of the call matters. */
+  callAdvice:
+    'عرّف بنفسك وبسنون أول شي، وتأكد إن الشخص هو اللي قدّم الطلب قبل ما تحچي عن حالته.',
 } as const
 
 /** What the bot says. Plain text — Telegram's markdown parser is not worth the risk. */
