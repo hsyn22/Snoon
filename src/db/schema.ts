@@ -35,6 +35,31 @@ export const caseStatus = snoon.enum('case_status', [
 /** Who caused an event. `SYSTEM` covers scheduled jobs such as contact-window expiry. */
 export const actorType = snoon.enum('actor_type', ['PATIENT', 'STUDENT', 'ADMIN', 'SYSTEM'])
 
+/**
+ * Student verification. University email is not reliably available in Iraq, so a
+ * student uploads proof of enrolment and an admin reviews it by hand. Only
+ * VERIFIED sees cases — checked server-side on every case query, never inferred
+ * from a session flag.
+ */
+export const verificationStatus = snoon.enum('verification_status', [
+  'PENDING',
+  'VERIFIED',
+  'REJECTED',
+  'SUSPENDED',
+])
+
+/**
+ * A claim's life. ACTIVE is the only state that grants sight of contact details,
+ * and only one ACTIVE claim may exist per case — enforced by a partial unique
+ * index, not by application logic.
+ */
+export const claimStatus = snoon.enum('claim_status', [
+  'ACTIVE',
+  'COMPLETED',
+  'RELEASED',
+  'EXPIRED',
+])
+
 export const cases = snoon.table(
   'cases',
   {
@@ -137,8 +162,105 @@ export const caseEvents = snoon.table(
   (table) => [index('case_events_case_id_created_idx').on(table.caseId, table.createdAt)],
 )
 
+export const students = snoon.table(
+  'students',
+  {
+    id: uuid('id').primaryKey().defaultRandom(),
+
+    /**
+     * The Better Auth user this profile belongs to. Auth owns credentials, email
+     * and sessions; this table owns who the student is academically. Text rather
+     * than a foreign key because the auth tables are managed by another tool.
+     */
+    authUserId: text('auth_user_id').notNull(),
+
+    fullName: text('full_name').notNull(),
+
+    /** Stable IDs into Payload-managed configuration, as on cases. */
+    universityId: text('university_id').notNull(),
+    collegeId: text('college_id').notNull(),
+    stageId: text('stage_id').notNull(),
+
+    verificationStatus: verificationStatus('verification_status').notNull().default('PENDING'),
+
+    /**
+     * Path to the uploaded proof of enrolment. Stored outside the public
+     * directory and served only through an authenticated route — never a
+     * guessable URL. Null until the student uploads one.
+     */
+    verificationDocumentPath: text('verification_document_path'),
+    verificationReviewedBy: text('verification_reviewed_by'),
+    verificationReviewedAt: timestamp('verification_reviewed_at', { withTimezone: true }),
+    /** Admin-facing note, e.g. why a document was rejected. Never shown verbatim to patients. */
+    verificationNote: text('verification_note'),
+
+    createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+    updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
+  },
+  (table) => [
+    uniqueIndex('students_auth_user_id_key').on(table.authUserId),
+    // The student-facing queue is filtered by verification first, then by where
+    // the student actually studies.
+    index('students_verification_college_idx').on(table.verificationStatus, table.collegeId),
+  ],
+)
+
+export const claims = snoon.table(
+  'claims',
+  {
+    id: uuid('id').primaryKey().defaultRandom(),
+
+    caseId: uuid('case_id')
+      .notNull()
+      .references(() => cases.id, { onDelete: 'cascade' }),
+    studentId: uuid('student_id')
+      .notNull()
+      .references(() => students.id, { onDelete: 'restrict' }),
+
+    status: claimStatus('status').notNull().default('ACTIVE'),
+
+    /**
+     * When the student must have made contact by. Computed from createdAt plus
+     * the Payload-configurable contact window (48 hours to start), and stored so
+     * the expiry job is a plain indexed query rather than a timer that would not
+     * survive a deploy.
+     */
+    contactDeadlineAt: timestamp('contact_deadline_at', { withTimezone: true }).notNull(),
+
+    releasedAt: timestamp('released_at', { withTimezone: true }),
+    /** Why the claim ended. Read by the queue so a student is not re-offered a case they lost. */
+    releaseReason: text('release_reason'),
+
+    createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+  },
+  (table) => [
+    /**
+     * The second line of defence behind the conditional update: even if two
+     * requests somehow both passed the status check, the database refuses the
+     * second ACTIVE claim. This is what makes "a case can never be claimed twice"
+     * a database guarantee rather than a hope.
+     */
+    uniqueIndex('one_active_claim_per_case')
+      .on(table.caseId)
+      .where(sql`status = 'ACTIVE'`),
+    index('claims_student_created_idx').on(table.studentId, table.createdAt),
+    // The expiry job: ACTIVE claims past their deadline.
+    index('claims_status_deadline_idx').on(table.status, table.contactDeadlineAt),
+  ],
+)
+
 export const casesRelations = relations(cases, ({ many }) => ({
   events: many(caseEvents),
+  claims: many(claims),
+}))
+
+export const studentsRelations = relations(students, ({ many }) => ({
+  claims: many(claims),
+}))
+
+export const claimsRelations = relations(claims, ({ one }) => ({
+  case: one(cases, { fields: [claims.caseId], references: [cases.id] }),
+  student: one(students, { fields: [claims.studentId], references: [students.id] }),
 }))
 
 export const caseEventsRelations = relations(caseEvents, ({ one }) => ({
@@ -148,6 +270,9 @@ export const caseEventsRelations = relations(caseEvents, ({ one }) => ({
 export type CaseRow = typeof cases.$inferSelect
 export type NewCaseRow = typeof cases.$inferInsert
 export type CaseEventRow = typeof caseEvents.$inferSelect
+export type StudentRow = typeof students.$inferSelect
+export type NewStudentRow = typeof students.$inferInsert
+export type ClaimRow = typeof claims.$inferSelect
 
 /** Kept for migrations that need raw SQL alongside the schema. */
 export { sql }

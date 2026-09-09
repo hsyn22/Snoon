@@ -1,6 +1,7 @@
-import { and, eq, isNull } from 'drizzle-orm'
+import { and, arrayOverlaps, asc, eq, inArray, isNull } from 'drizzle-orm'
 import { db } from '@/db'
-import { caseEvents, cases } from '@/db/schema'
+import { caseEvents, cases, claims, students } from '@/db/schema'
+import { studentPreviouslyReleased } from '@/db/queries/claims'
 import { generateReferenceCode } from '@/lib/reference-code'
 import { generateTrackingToken, hashTrackingToken } from '@/lib/tracking-token'
 import type { WeekDay } from '@/lib/config'
@@ -138,6 +139,127 @@ export async function getCaseByTrackingToken(token: string): Promise<PatientCase
     })
     .from(cases)
     .where(and(eq(cases.trackingTokenHash, hash), isNull(cases.trackingTokenRevokedAt)))
+    .limit(1)
+
+  return row ?? null
+}
+
+
+/**
+ * What a verified student sees before claiming anything.
+ *
+ * This type has no `patientName` and no `patientPhone`, and that is the point:
+ * the access-control table is enforced by the shape of the projection, so a
+ * component cannot render a contact detail it was never given. Adding a contact
+ * field here would be a bug, not a feature.
+ */
+export type StudentCaseListItem = {
+  id: string
+  referenceCode: string
+  cityId: string
+  treatmentTypeIds: string[]
+  availabilityDays: string[]
+  notes: string | null
+  createdAt: Date
+}
+
+/**
+ * Which cases a student is shown.
+ *
+ * The caller supplies the scope. Whether a student sees every case in their city
+ * or only those matching their clinic and stage capability is an open product
+ * decision (CLAUDE.md, open decisions), so the policy lives at the call site and
+ * this function stays a plain filter. What it does NOT leave to the caller: the
+ * case must be open, the student must be verified, and no contact detail is
+ * returned under any argument.
+ */
+export type StudentCaseFilter = {
+  cityIds: string[]
+  /** When given, only cases asking for at least one of these treatments. */
+  treatmentTypeIds?: string[]
+  limit?: number
+}
+
+export async function listOpenCasesForStudent(
+  studentId: string,
+  filter: StudentCaseFilter,
+): Promise<StudentCaseListItem[]> {
+  // Verification is checked here, on every query, rather than trusted from a
+  // session or a prior check.
+  const [student] = await db
+    .select({ verificationStatus: students.verificationStatus })
+    .from(students)
+    .where(eq(students.id, studentId))
+    .limit(1)
+
+  if (!student || student.verificationStatus !== 'VERIFIED') return []
+  if (filter.cityIds.length === 0) return []
+
+  const conditions = [
+    eq(cases.status, 'REQUESTED'),
+    inArray(cases.cityId, filter.cityIds),
+    // A student who already held this case and lost it is not offered it again.
+    studentPreviouslyReleased(studentId),
+  ]
+
+  if (filter.treatmentTypeIds && filter.treatmentTypeIds.length > 0) {
+    // Array overlap, served by the GIN index on treatment_type_ids. Drizzle's
+    // helper builds the array literal correctly; a hand-written `&&` template
+    // sends a one-element list as a bare scalar and Postgres rejects it.
+    conditions.push(arrayOverlaps(cases.treatmentTypeIds, filter.treatmentTypeIds))
+  }
+
+  return db
+    .select({
+      id: cases.id,
+      referenceCode: cases.referenceCode,
+      cityId: cases.cityId,
+      treatmentTypeIds: cases.treatmentTypeIds,
+      availabilityDays: cases.availabilityDays,
+      notes: cases.notes,
+      createdAt: cases.createdAt,
+    })
+    .from(cases)
+    .where(and(...conditions))
+    .orderBy(asc(cases.createdAt))
+    .limit(filter.limit ?? 50)
+}
+
+/**
+ * The claimant's view — the only projection that returns contact details to a
+ * student.
+ *
+ * It cannot be called without a student id, and it returns null unless that
+ * student holds an ACTIVE claim on that case. The join is the authorisation:
+ * there is no argument combination that yields a phone number to a student who
+ * does not hold the case.
+ */
+export type ClaimantCaseView = StudentCaseListItem & {
+  patientName: string
+  patientPhone: string
+  contactDeadlineAt: Date
+}
+
+export async function getCaseForClaimant(
+  caseId: string,
+  studentId: string,
+): Promise<ClaimantCaseView | null> {
+  const [row] = await db
+    .select({
+      id: cases.id,
+      referenceCode: cases.referenceCode,
+      cityId: cases.cityId,
+      treatmentTypeIds: cases.treatmentTypeIds,
+      availabilityDays: cases.availabilityDays,
+      notes: cases.notes,
+      createdAt: cases.createdAt,
+      patientName: cases.patientName,
+      patientPhone: cases.patientPhone,
+      contactDeadlineAt: claims.contactDeadlineAt,
+    })
+    .from(cases)
+    .innerJoin(claims, eq(claims.caseId, cases.id))
+    .where(and(eq(cases.id, caseId), eq(claims.studentId, studentId), eq(claims.status, 'ACTIVE')))
     .limit(1)
 
   return row ?? null

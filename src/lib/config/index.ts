@@ -82,6 +82,17 @@ export async function getTreatmentTypeById(id: string): Promise<TreatmentType | 
 }
 
 /**
+ * How long a student has to contact the patient after claiming a case.
+ *
+ * 48 hours, not 24: students are in clinic during the day and patients may not
+ * answer first try. This becomes a Payload setting so it can be tuned from the
+ * admin without a deployment — it is emphatically not a constant.
+ */
+export async function getContactWindowHours(): Promise<number> {
+  return 48
+}
+
+/**
  * Clinic days, starting Saturday as Iraqi clinics do. Friday is always a
  * holiday, so it is not offered — a patient cannot pick a day no clinic runs.
  */
