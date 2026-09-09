@@ -81,6 +81,14 @@ readable in the database and survive the config being edited, re-seeded or resto
 Client Component pulls `fs`, `child_process` and the whole CMS into the browser
 bundle and fails the build.
 
+**A custom Payload admin view must authorise itself.** Payload's admin gates the
+*interface* — an unauthenticated visitor is shown a login screen — but a custom view is
+still server-rendered, so anything it queries lands in the HTML whoever asked. `curl
+/admin/students` returned every student's name, university and document reference to
+anyone until the view started calling `payload.auth()` and returning null for non-admins.
+Query nothing until the caller is known. The same applies to server actions reached from
+such a view: being rendered inside the admin proves nothing about who calls the action.
+
 Any page rendering Payload config needs **both** a time-based `revalidate` and an
 `afterChange`/`afterDelete` hook calling `revalidatePath`. Without the hook an admin who
 adds a city sees nothing change and reasonably concludes the admin is broken; without the
@@ -218,7 +226,10 @@ include them in any list endpoint.
 
 Then a manual verification step, because university email is not reliably available in Iraq:
 the student uploads proof of enrolment (student ID or registration document), and an admin
-reviews it in the Payload admin. Status is `pending | verified | rejected | suspended`.
+reviews it at `/admin/students` — a custom Payload view that reads across to the Drizzle
+`students` table rather than duplicating the record into Payload. The document itself is a
+Payload upload collection with `read` restricted to admins, stored outside the public
+directory. Status is `pending | verified | rejected | suspended`.
 Only `verified` sees cases. Manual review is correct at this scale — do not build automated
 document checking.
 

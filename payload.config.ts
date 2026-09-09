@@ -29,6 +29,17 @@ export default buildConfig({
   admin: {
     user: Admins.slug,
     meta: { titleSuffix: ' — سنون' },
+
+    components: {
+      views: {
+        // Students live in Drizzle, but the person reviewing them is an admin who
+        // is already here, so the review lives inside the admin and reads across.
+        studentReview: {
+          Component: '@/payload/views/student-review#default',
+          path: '/students',
+        },
+      },
+    },
   },
 
   // The admin is used by سنون staff in Iraq, so it runs in Arabic. Payload sets
