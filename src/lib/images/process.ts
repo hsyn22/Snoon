@@ -1,4 +1,5 @@
 import sharp from 'sharp'
+import { MAX_PHOTO_BYTES } from './limits'
 
 /**
  * Preparing an intraoral photograph for storage.
@@ -22,14 +23,15 @@ import sharp from 'sharp'
 const MAX_DIMENSION = 1600
 const WEBP_QUALITY = 78
 
-/** What a browser may hand us. Checked again by decoding, not just believed. */
-export const ACCEPTED_PHOTO_TYPES = ['image/jpeg', 'image/png', 'image/webp', 'image/heic'] as const
-
-/** Before processing. A phone photograph is a few megabytes. */
-export const MAX_PHOTO_BYTES = 12 * 1024 * 1024
-
-/** Enough to show a problem from a couple of angles; not an album. */
-export const MAX_PHOTOS_PER_CASE = 4
+// The limits live in ./limits so the case form can apply the same ones without
+// pulling sharp into the browser bundle. Re-exported here because this is where
+// callers already look for them.
+export {
+  ACCEPTED_PHOTO_TYPES,
+  MAX_PHOTOS_PER_CASE,
+  MAX_PHOTO_BYTES,
+  MAX_PHOTO_BYTES_TOTAL,
+} from './limits'
 
 export type ProcessedPhoto = {
   data: Buffer

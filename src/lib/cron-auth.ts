@@ -1,4 +1,4 @@
-import { timingSafeEqual } from 'node:crypto'
+import { secureCompare } from '@/lib/secure-compare'
 
 /**
  * Authorising a scheduled-job request.
@@ -24,12 +24,5 @@ export function isAuthorisedCronRequest(
   const presented =
     headers.get('authorization')?.replace(/^Bearer\s+/i, '') ?? headers.get('x-cron-secret') ?? ''
 
-  if (presented.length === 0) return false
-
-  const a = Buffer.from(presented)
-  const b = Buffer.from(secret)
-  // Length is compared first because timingSafeEqual throws on a mismatch. The
-  // length of a secret is not the part worth hiding.
-  if (a.length !== b.length) return false
-  return timingSafeEqual(a, b)
+  return secureCompare(presented, secret)
 }

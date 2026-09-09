@@ -1,6 +1,7 @@
 import { readFileSync } from 'node:fs'
 import { join } from 'node:path'
 import { describe, expect, it } from 'vitest'
+import * as copy from '../src/lib/copy'
 import { caseStatus, landing, site } from '../src/lib/copy'
 import { CASE_REASON, CASE_REASON_AR, describeReason } from '../src/lib/cases/reasons'
 
@@ -69,5 +70,23 @@ describe('case event reasons', () => {
   it('shows text it does not recognise rather than dropping it', () => {
     // Rows written before a reason was renamed still have to read as something.
     expect(describeReason('Something older.')).toEqual({ text: 'Something older.', note: null })
+  })
+})
+
+describe('numerals', () => {
+  /** Walk every string in every exported copy object. */
+  function strings(value: unknown): string[] {
+    if (typeof value === 'string') return [value]
+    if (typeof value === 'function') return []
+    if (value && typeof value === 'object') return Object.values(value).flatMap(strings)
+    return []
+  }
+
+  it('uses Western digits everywhere, per the Arabic conventions', () => {
+    // Arabic-Indic digits read as a different number system to a user who types
+    // their phone number in Western digits, and the product mixes the two on the
+    // same screen. CLAUDE.md picks one: 1234.
+    const offenders = strings(copy).filter((text) => /[\u0660-\u0669]/.test(text))
+    expect(offenders).toEqual([])
   })
 })

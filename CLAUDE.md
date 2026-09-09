@@ -258,6 +258,41 @@ and it takes the claim as an argument. Let TypeScript enforce it.
 
 ---
 
+### Security review, before deployment
+
+A systematic pass over everything touching phone numbers, identity documents and
+intraoral photographs. What it found and what changed:
+
+- **A photograph killed the whole submission.** A server action's request body is capped at
+  1MB by default, and the case form posts photographs through one. A 7MB phone photo died
+  with an English "a server error occurred" and took the filled-in form with it — the exact
+  failure the form-reset rule exists to prevent, on the most ordinary thing a patient does.
+  `serverActions.bodySizeLimit` now fits the documented limits, and the browser applies the
+  same limits before uploading, because a request over the cap is refused before the action
+  runs and the server never gets to answer politely. Limits live in `src/lib/images/limits.ts`
+  precisely so a Client Component can import them without pulling sharp into the bundle.
+- **`isPatientLinked` and `isStudentLinked` were exported from `'use server'` files.** Every
+  export from such a file is a public POST endpoint, whether or not it was written as one —
+  these took an id and answered a question about it. They are plain queries now.
+- **No security headers at all.** `next.config.ts` sets them: nosniff, an explicit
+  `Referrer-Policy` (a patient's tracking token is in the URL and that page links out to
+  Telegram), `frame-ancestors 'none'`, and `private, no-store` plus `noindex` on every page
+  that carries contact details. There is still no `script-src` — Next and the Payload admin
+  both inline scripts, so a real CSP needs nonces through both and is its own piece of work.
+- The Telegram webhook secret was compared with `!==`. Both shared secrets now go through
+  `src/lib/secure-compare.ts`.
+- Payload access rules said "is anyone logged in", which is the same thing as "is an admin"
+  only while `admins` is the only auth-enabled collection. `src/payload/access.ts` names it.
+
+Verified as sound: Payload's REST and GraphQL both refuse `student-documents`, `case-photos`
+and `admins` to an unauthenticated caller; the upload file routes return 403; every server
+action resolves the acting student from the session and never from the form; nothing logs a
+phone number, a document or a photograph.
+
+**Still open, and needing a decision:** there is no rate limiting on the public endpoints —
+case submission accepts photographs and writes rows for anyone. Better Auth rate-limits its
+own routes in production; nothing else is limited.
+
 ## Privacy rules
 
 **Photographs.** Patients may upload intraoral images. **Built** — `src/lib/images/`.

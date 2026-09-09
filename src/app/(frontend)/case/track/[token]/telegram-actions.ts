@@ -2,7 +2,7 @@
 
 import { and, eq, isNull } from 'drizzle-orm'
 import { db } from '@/db'
-import { cases, telegramLinks } from '@/db/schema'
+import { cases } from '@/db/schema'
 import { createInvite } from '@/db/queries/telegram'
 import { hashTrackingToken } from '@/lib/tracking-token'
 import { buildDeepLink, getTelegramConfig } from '@/lib/telegram/config'
@@ -41,21 +41,4 @@ export async function createPatientInviteAction(
 
   const invite = await createInvite({ type: 'PATIENT_CASE', id: record.id })
   return { deepLink: buildDeepLink(config, invite) }
-}
-
-/** Whether this case already has a chat bound, so the page can say so. */
-export async function isPatientLinked(caseId: string): Promise<boolean> {
-  const [row] = await db
-    .select({ chatId: telegramLinks.chatId })
-    .from(telegramLinks)
-    .where(
-      and(
-        eq(telegramLinks.subjectType, 'PATIENT_CASE'),
-        eq(telegramLinks.subjectId, caseId),
-        isNull(telegramLinks.revokedAt),
-      ),
-    )
-    .limit(1)
-
-  return Boolean(row?.chatId)
 }

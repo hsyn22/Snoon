@@ -1,10 +1,10 @@
 'use server'
 
-import { and, eq, isNull } from 'drizzle-orm'
+import { eq } from 'drizzle-orm'
 import { headers } from 'next/headers'
 import { redirect } from 'next/navigation'
 import { db } from '@/db'
-import { students, telegramLinks } from '@/db/schema'
+import { students } from '@/db/schema'
 import { createInvite } from '@/db/queries/telegram'
 import { auth } from '@/lib/auth'
 import { buildDeepLink, getTelegramConfig } from '@/lib/telegram/config'
@@ -37,21 +37,4 @@ export async function createStudentInviteAction(
 
   const invite = await createInvite({ type: 'STUDENT', id: student.id })
   return { deepLink: buildDeepLink(config, invite) }
-}
-
-/** Whether this student already has a chat bound. */
-export async function isStudentLinked(studentId: string): Promise<boolean> {
-  const [row] = await db
-    .select({ chatId: telegramLinks.chatId })
-    .from(telegramLinks)
-    .where(
-      and(
-        eq(telegramLinks.subjectType, 'STUDENT'),
-        eq(telegramLinks.subjectId, studentId),
-        isNull(telegramLinks.revokedAt),
-      ),
-    )
-    .limit(1)
-
-  return Boolean(row?.chatId)
 }

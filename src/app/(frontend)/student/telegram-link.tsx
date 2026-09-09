@@ -41,6 +41,9 @@ export function TelegramLink({ needsDocument }: { needsDocument: boolean }) {
       {state.deepLink ? (
         <a
           href={state.deepLink}
+          // Leaves for telegram.org, and this page's URL is itself a credential
+          // on the patient's side. No referrer, and no window.opener either.
+          rel="noreferrer"
           className="mt-3 flex min-h-11 items-center justify-center rounded-md bg-accent px-4 text-sm font-medium text-accent-foreground"
         >
           {studentTelegram.open}

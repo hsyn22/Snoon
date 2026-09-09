@@ -1,4 +1,5 @@
 import type { CollectionConfig } from 'payload'
+import { isAdmin } from '@/payload/access'
 
 /**
  * Intraoral photographs, stored.
@@ -23,13 +24,13 @@ export const CasePhotos: CollectionConfig = {
   },
 
   access: {
-    read: ({ req }) => Boolean(req.user),
+    read: isAdmin,
     // Created only through the Local API, from the submission path that has
     // already processed and stripped the image.
     create: () => false,
-    update: ({ req }) => Boolean(req.user),
+    update: isAdmin,
     // Admins can remove any image.
-    delete: ({ req }) => Boolean(req.user),
+    delete: isAdmin,
   },
 
   upload: {

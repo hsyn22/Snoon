@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server'
 import { getTelegramConfig } from '@/lib/telegram/config'
 import { answerCallbackQuery, sendTelegramMessage } from '@/lib/telegram/client'
 import { handleTelegramUpdate, type TelegramUpdate } from '@/lib/telegram/webhook'
+import { secureCompare } from '@/lib/secure-compare'
 
 /**
  * Telegram's webhook.
@@ -17,8 +18,10 @@ export async function POST(request: Request): Promise<Response> {
   const config = getTelegramConfig()
   if (!config) return NextResponse.json({ ok: false }, { status: 404 })
 
-  const presented = request.headers.get('x-telegram-bot-api-secret-token')
-  if (presented !== config.webhookSecret) {
+  // Compared in constant time, like the cron secret: this header is the only
+  // thing standing between a public URL and a forged `/start <token>`.
+  const presented = request.headers.get('x-telegram-bot-api-secret-token') ?? ''
+  if (!secureCompare(presented, config.webhookSecret)) {
     return NextResponse.json({ ok: false }, { status: 401 })
   }
 

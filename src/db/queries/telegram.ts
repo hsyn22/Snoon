@@ -127,3 +127,28 @@ export async function getSubjectForChat(chatId: string): Promise<TelegramSubject
 
   return row ? { type: row.subjectType, id: row.subjectId } : null
 }
+
+/**
+ * Whether a subject already has a chat bound, so a page can say so rather than
+ * offering the link again.
+ *
+ * A plain query, deliberately not in a `'use server'` module. Exporting it from
+ * one would compile it into a callable server action — a public endpoint taking
+ * an id and answering a question about it — when all it is used for is rendering
+ * a panel the caller is already authorised to see.
+ */
+export async function isSubjectLinked(subject: TelegramSubject): Promise<boolean> {
+  const [row] = await db
+    .select({ chatId: telegramLinks.chatId })
+    .from(telegramLinks)
+    .where(
+      and(
+        eq(telegramLinks.subjectType, subject.type),
+        eq(telegramLinks.subjectId, subject.id),
+        isNull(telegramLinks.revokedAt),
+      ),
+    )
+    .limit(1)
+
+  return Boolean(row?.chatId)
+}

@@ -180,7 +180,7 @@ export const studentAuth = {
   nameHint: 'مثل ما هو بهوية الطالب.',
   emailLabel: 'الإيميل',
   passwordLabel: 'كلمة السر',
-  passwordHint: '٨ حروف أو أكثر.',
+  passwordHint: '8 حروف أو أكثر.',
 
   signUpAction: 'سجّل حساب',
   loginAction: 'دخول',
@@ -198,7 +198,7 @@ export const studentAuth = {
     emailRequired: 'اكتب إيميلك.',
     emailInvalid: 'الإيميل مو صحيح.',
     passwordRequired: 'اكتب كلمة السر.',
-    passwordTooShort: 'كلمة السر لازم ٨ حروف أو أكثر.',
+    passwordTooShort: 'كلمة السر لازم 8 حروف أو أكثر.',
     badCredentials: 'الإيميل أو كلمة السر غلط.',
     emailNotVerified: 'فعّل إيميلك أول. شوف الرسالة اللي وصلتك.',
     generic: 'ما كدرنا نكمل. جرّب مرة لخ بعد شوية.',
@@ -256,7 +256,7 @@ export const studentProfile = {
   stagePlaceholder: 'اختر مرحلتك',
 
   documentLabel: 'وثيقة التسجيل',
-  documentHint: 'صورة هوية الطالب أو وثيقة تسجيل. صورة أو PDF، وما تزيد عن ٥ ميكا.',
+  documentHint: 'صورة هوية الطالب أو وثيقة تسجيل. صورة أو PDF، وما تزيد عن 5 ميغا.',
   documentPrivacy: 'الوثيقة تنشاف بس من إدارة سنون، وما تظهر لأي أحد ثاني.',
 
   submit: 'أرسل للمراجعة',
@@ -274,7 +274,7 @@ export const studentProfile = {
     stageRequired: 'اختر مرحلتك.',
     stageUnknown: 'هاي المرحلة مو متوفرة.',
     documentRequired: 'ارفع وثيقة التسجيل.',
-    documentTooBig: 'الملف كبير كلش. لازم أقل من ٥ ميكا.',
+    documentTooBig: 'الملف كبير كلش. لازم أقل من 5 ميغا.',
     documentWrongType: 'نوع الملف مو مقبول. ارفع صورة أو PDF.',
     alreadySubmitted: 'معلوماتك منرسلة من قبل.',
     generic: 'ما كدرنا نرسل المعلومات. جرّب مرة لخ بعد شوية.',
@@ -483,7 +483,7 @@ export const telegramStudentDoc = {
 
   alreadyVerified: 'حسابك موثّق من قبل. ما تحتاج تدز وثيقة.',
   suspended: 'حسابك موقوف. تواصل وية إدارة سنون.',
-  tooLarge: 'الملف كبير كلش. لازم أقل من ٥ ميكا.',
+  tooLarge: 'الملف كبير كلش. لازم أقل من 5 ميغا.',
   wrongType: 'نوع الملف مو مقبول. دزّ صورة أو PDF.',
   failed: 'ما كدرنا نستلم الوثيقة. جرّب مرة لخ.',
   notAStudent: 'هذا الحساب مربوط بحالة مريض، مو بحساب طالب.',
@@ -514,16 +514,18 @@ export const studentTelegram = {
 /** Intraoral photographs on the case form. */
 export const casePhotos = {
   label: 'صور الأسنان (اختياري)',
-  hint: 'صور داخل الفم تساعد الطالب يفهم حالتك قبل ما يحجزها. تكدر ترفع لحد ٤ صور.',
+  hint: 'صور داخل الفم تساعد الطالب يفهم حالتك قبل ما يحجزها. تكدر ترفع لحد 4 صور.',
 
   /** The guide requires this warning, in Arabic, on the upload itself. */
   faceWarning: 'لا تصوّر وجهك. صوّر الأسنان بس.',
   privacy: 'الصور تنشاف بس من طلبة طب الأسنان الموثّقين ومن إدارة سنون. ما تنشر بأي مكان.',
 
   errors: {
-    tooMany: 'أكثر من اللازم. ٤ صور بالأكثر.',
-    tooLarge: 'وحدة من الصور كبيرة كلش.',
+    tooMany: 'أكثر من اللازم. 4 صور بالأكثر.',
+    tooLarge: 'وحدة من الصور كبيرة كلش. أكبر حجم للصورة 12 ميغا.',
     notAnImage: 'وحدة من الملفات مو صورة.',
+    /** Shown by the browser before uploading, so a doomed upload never starts. */
+    tooLargeTotal: 'مجموع حجم الصور كبير كلش. اختر صور أقل أو أصغر.',
   },
 
   patientLabel: 'صورك',

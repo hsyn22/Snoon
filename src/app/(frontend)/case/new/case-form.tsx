@@ -1,12 +1,13 @@
 'use client'
 
-import { useActionState } from 'react'
+import { useActionState, useState } from 'react'
 import { useFormStatus } from 'react-dom'
 import { useDismissibleErrors } from '@/components/use-dismissible-errors'
 // From ./schema, not ./index: importing the Payload reader here would pull the
 // whole CMS into the browser bundle.
 import { WEEK_DAYS, type City, type TreatmentType } from '@/lib/config/schema'
 import { caseForm, casePhotos } from '@/lib/copy'
+import { MAX_PHOTOS_PER_CASE, MAX_PHOTO_BYTES, MAX_PHOTO_BYTES_TOTAL } from '@/lib/images/limits'
 import { submitCaseAction, type CaseFormState } from './actions'
 
 const INITIAL: CaseFormState = {}
@@ -35,6 +36,17 @@ function SubmitButton() {
   )
 }
 
+/** The same rules the server applies, so the browser can say no first. */
+function describePhotoSelection(files: File[]): string | null {
+  if (files.length > MAX_PHOTOS_PER_CASE) return casePhotos.errors.tooMany
+  if (files.some((file) => file.size > MAX_PHOTO_BYTES)) return casePhotos.errors.tooLarge
+
+  const total = files.reduce((sum, file) => sum + file.size, 0)
+  if (total > MAX_PHOTO_BYTES_TOTAL) return casePhotos.errors.tooLargeTotal
+
+  return null
+}
+
 const labelClass = 'block text-sm font-medium text-foreground'
 const hintClass = 'mt-1 text-xs text-foreground-muted'
 const controlClass =
@@ -50,6 +62,8 @@ export function CaseForm({
   treatmentTypes: readonly TreatmentType[]
 }) {
   const [state, formAction] = useActionState(submitCaseAction, INITIAL)
+  // A photograph problem the browser caught, before anything was uploaded.
+  const [photoError, setPhotoError] = useState<string | null>(null)
   const errors = state.errors ?? {}
   // Clear a field's error as soon as it is edited.
   const { onInput, errorFor } = useDismissibleErrors(state)
@@ -181,11 +195,22 @@ export function CaseForm({
           // capture is deliberately omitted: on a phone this offers both the
           // camera and the gallery, and a patient may already have a photo.
           className="mt-2 w-full text-sm"
+          onChange={(event) => {
+            // Checked here as well as on the server, because the server never
+            // gets to answer: a request over the action's body limit is refused
+            // before the action runs, and the patient loses the whole form to an
+            // English error. On a slow connection this also saves them from
+            // uploading megabytes that were going to be rejected.
+            const files = Array.from(event.target.files ?? [])
+            const problem = describePhotoSelection(files)
+            setPhotoError(problem)
+            if (problem) event.target.value = ''
+          }}
         />
         <p className="mt-2 text-xs text-foreground-muted">{casePhotos.privacy}</p>
-        {state.photoError ? (
+        {photoError || state.photoError ? (
           <p role="alert" className="mt-2 text-sm text-danger">
-            {state.photoError}
+            {photoError ?? state.photoError}
           </p>
         ) : null}
       </div>

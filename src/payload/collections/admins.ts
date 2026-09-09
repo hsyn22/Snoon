@@ -1,4 +1,5 @@
 import type { CollectionConfig } from 'payload'
+import { isAdmin } from '@/payload/access'
 
 /**
  * سنون staff who log into the admin.
@@ -14,10 +15,10 @@ export const Admins: CollectionConfig = {
   admin: { useAsTitle: 'email', group: 'الإدارة' },
   access: {
     // Only a logged-in admin may read or manage other admins.
-    read: ({ req }) => Boolean(req.user),
-    create: ({ req }) => Boolean(req.user),
-    update: ({ req }) => Boolean(req.user),
-    delete: ({ req }) => Boolean(req.user),
+    read: isAdmin,
+    create: isAdmin,
+    update: isAdmin,
+    delete: isAdmin,
   },
   fields: [{ name: 'fullName', type: 'text', required: true, label: 'الاسم' }],
 }

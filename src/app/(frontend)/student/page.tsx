@@ -8,7 +8,7 @@ import { getActiveClaimForStudent } from '@/db/queries/claims'
 import { auth } from '@/lib/auth'
 import { site, studentAuth, studentClaim, studentStatus, studentTelegram } from '@/lib/copy'
 import { isTelegramConfigured } from '@/lib/telegram/config'
-import { isStudentLinked } from './telegram-actions'
+import { isSubjectLinked } from '@/db/queries/telegram'
 import { TelegramLink } from './telegram-link'
 import { logoutAction } from './actions'
 import { CaseQueue } from './case-queue'
@@ -97,7 +97,7 @@ export default async function StudentHomePage() {
   // The bot is offered for two reasons: notifications, and — more usefully —
   // sending the enrolment document without a web file picker.
   const telegramAvailable = isTelegramConfigured()
-  const telegramLinked = telegramAvailable && profile ? await isStudentLinked(profile.id) : false
+  const telegramLinked = telegramAvailable && profile ? await isSubjectLinked({ type: 'STUDENT', id: profile.id }) : false
   const needsDocument = Boolean(profile) && !profile?.verificationDocumentPath
 
   return (

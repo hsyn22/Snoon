@@ -1,4 +1,5 @@
 import type { CollectionConfig } from 'payload'
+import { isAdmin } from '@/payload/access'
 
 /**
  * Proof-of-enrolment documents uploaded by students.
@@ -25,10 +26,10 @@ export const StudentDocuments: CollectionConfig = {
   access: {
     // Admins only. Students upload through a server action that uses the Local
     // API, which bypasses access control deliberately and on the server.
-    read: ({ req }) => Boolean(req.user),
+    read: isAdmin,
     create: () => false,
-    update: ({ req }) => Boolean(req.user),
-    delete: ({ req }) => Boolean(req.user),
+    update: isAdmin,
+    delete: isAdmin,
   },
 
   upload: {

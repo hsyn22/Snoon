@@ -18,7 +18,7 @@ import {
 import { formatAppointment, formatCaseDate } from '@/lib/dates'
 import { formatPhoneForDisplay } from '@/lib/phone'
 import { isTelegramConfigured } from '@/lib/telegram/config'
-import { isPatientLinked } from './telegram-actions'
+import { isSubjectLinked } from '@/db/queries/telegram'
 import { TelegramInvite } from './telegram-invite'
 import { ConfirmContact } from './confirm-contact'
 import { hasPendingContactAssertion } from './confirm-queries'
@@ -91,7 +91,7 @@ export default async function TrackCasePage({
   const photos = await listCasePhotos(record.id)
 
   const telegramAvailable = isTelegramConfigured()
-  const patientLinked = telegramAvailable ? await isPatientLinked(record.id) : false
+  const patientLinked = telegramAvailable ? await isSubjectLinked({ type: 'PATIENT_CASE', id: record.id }) : false
 
   const headerList = await headers()
   const host = headerList.get('host') ?? ''

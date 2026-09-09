@@ -1,14 +1,7 @@
-import { and, count, desc, eq, isNotNull, isNull } from 'drizzle-orm'
+import { count, desc, eq } from 'drizzle-orm'
 import { db } from '@/db'
-import {
-  appointments,
-  caseEvents,
-  casePhotos,
-  cases,
-  claims,
-  students,
-  telegramLinks,
-} from '@/db/schema'
+import { appointments, caseEvents, casePhotos, cases, claims, students } from '@/db/schema'
+import { isSubjectLinked } from '@/db/queries/telegram'
 
 /**
  * Data access for the admin case view.
@@ -215,7 +208,7 @@ export async function findCaseForAdmin(referenceCode: string): Promise<AdminCase
       .orderBy(casePhotos.createdAt),
   ])
 
-  const telegramLinked = await hasLiveTelegramLink(record.id)
+  const telegramLinked = await isSubjectLinked({ type: 'PATIENT_CASE', id: record.id })
 
   return {
     ...record,
@@ -225,21 +218,4 @@ export async function findCaseForAdmin(referenceCode: string): Promise<AdminCase
     photos: photoRows,
     telegramLinked,
   }
-}
-
-async function hasLiveTelegramLink(caseId: string): Promise<boolean> {
-  const [row] = await db
-    .select({ id: telegramLinks.id })
-    .from(telegramLinks)
-    .where(
-      and(
-        eq(telegramLinks.subjectType, 'PATIENT_CASE'),
-        eq(telegramLinks.subjectId, caseId),
-        isNull(telegramLinks.revokedAt),
-        isNotNull(telegramLinks.chatId),
-      ),
-    )
-    .limit(1)
-
-  return Boolean(row)
 }
