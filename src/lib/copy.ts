@@ -327,3 +327,61 @@ export const studentClaim = {
   notFoundTitle: 'ما لكينا الحالة',
   notFoundBody: 'يمكن انتهت مهلتك وراحت لطالب ثاني.',
 } as const
+
+/** What the bot says. Plain text — Telegram's markdown parser is not worth the risk. */
+export const telegramCopy = {
+  welcomePatient: (referenceCode: string) =>
+    [
+      'أهلاً بيك بسنون.',
+      '',
+      `تم ربط إشعاراتك بحالتك ${referenceCode}.`,
+      'راح نعلمك أول ما يحجز طالب حالتك.',
+      '',
+      'تكدر توقف الإشعارات بأي وقت بأمر /stop',
+    ].join('\n'),
+
+  welcomeStudent: [
+    'أهلاً بيك بسنون.',
+    '',
+    'تم ربط إشعاراتك بحسابك.',
+    'راح نعلمك بالمهم — مثل انتهاء مهلة التواصل.',
+    '',
+    'تكدر توقف الإشعارات بأي وقت بأمر /stop',
+  ].join('\n'),
+
+  unknownToken: 'الرابط مو صحيح أو انتهى. ارجع للموقع واطلب رابط جديد.',
+  alreadyUsed: 'هذا الرابط مستخدم من قبل. ارجع للموقع واطلب رابط جديد.',
+  startWithoutToken: 'أهلاً. حتى تربط الإشعارات، افتح الرابط اللي بالموقع.',
+  stopped: 'وقفنا الإشعارات. تكدر ترجع تربطها من الموقع بأي وقت.',
+  nothingToStop: 'ما أكو إشعارات مربوطة بهذا الحساب.',
+  unknownCommand: 'ما فهمت. الأوامر المتاحة: /start و /stop',
+
+  /** Sent to the patient when a student takes their case. */
+  caseClaimed: (referenceCode: string) =>
+    [
+      `طالب حجز حالتك ${referenceCode}.`,
+      'راح يتصل بيك خلال يومين على الرقم اللي كتبته.',
+      '',
+      'إذا ما اتصل بيك، الحالة ترجع تلقائياً للقائمة لطالب ثاني.',
+    ].join('\n'),
+
+  /** Sent to the patient when a claim expires and the case returns to the queue. */
+  caseReturned: (referenceCode: string) =>
+    [
+      `حالتك ${referenceCode} رجعت للقائمة.`,
+      'الطالب اللي حجزها ما تواصل وياك بالوقت المحدد، فرجعناها لطالب ثاني.',
+    ].join('\n'),
+
+  /** Sent to the student when their contact window runs out. */
+  claimExpired: 'انتهت مهلة التواصل وراحت الحالة لطالب ثاني. تكدر تحجز حالة جديدة من الموقع.',
+} as const
+
+/** The "turn on notifications" invitation shown on the site. */
+export const telegramInvite = {
+  title: 'شغّل الإشعارات',
+  patientBody: 'اربط تلگرام حتى نعلمك أول ما يحجز طالب حالتك. اختياري.',
+  studentBody: 'اربط تلگرام حتى نعلمك بالمهم. اختياري.',
+  action: 'اربط تلگرام',
+  linked: 'الإشعارات مربوطة.',
+  unavailable: 'الإشعارات لسه ما متوفرة.',
+} as const

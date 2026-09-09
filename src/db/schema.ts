@@ -162,6 +162,12 @@ export const caseEvents = snoon.table(
   (table) => [index('case_events_case_id_created_idx').on(table.caseId, table.createdAt)],
 )
 
+/**
+ * Who a Telegram chat belongs to. A patient is bound to one case; a student is
+ * bound to their account.
+ */
+export const telegramSubjectType = snoon.enum('telegram_subject_type', ['PATIENT_CASE', 'STUDENT'])
+
 export const students = snoon.table(
   'students',
   {
@@ -249,6 +255,50 @@ export const claims = snoon.table(
   ],
 )
 
+/**
+ * Telegram chat bindings.
+ *
+ * Notifications replace SMS, which costs money per message. A person opts in by
+ * opening a deep link that carries a single-use invite token; the bot receives
+ * that token on /start and binds the chat.
+ *
+ * The invite token is stored as an HMAC, never in plaintext, exactly as patient
+ * tracking tokens are: the link is a credential, and anyone holding it could
+ * otherwise attach their own chat to somebody else's case. Opting in is always
+ * optional — nothing in the product may require Telegram.
+ */
+export const telegramLinks = snoon.table(
+  'telegram_links',
+  {
+    id: uuid('id').primaryKey().defaultRandom(),
+
+    subjectType: telegramSubjectType('subject_type').notNull(),
+    /** A case id or a student id, depending on subjectType. Not a foreign key
+     *  because it points at one of two tables. */
+    subjectId: uuid('subject_id').notNull(),
+
+    inviteTokenHash: text('invite_token_hash').notNull(),
+
+    /** Null until the person actually opens the bot and presses start. */
+    chatId: text('chat_id'),
+    linkedAt: timestamp('linked_at', { withTimezone: true }),
+
+    /** Set rather than deleting, so a revoked link stays auditable. */
+    revokedAt: timestamp('revoked_at', { withTimezone: true }),
+
+    createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+  },
+  (table) => [
+    uniqueIndex('telegram_links_invite_token_hash_key').on(table.inviteTokenHash),
+    // One live binding per subject: a second active link for the same case would
+    // mean two chats both believing they speak for that patient.
+    uniqueIndex('one_active_telegram_link_per_subject')
+      .on(table.subjectType, table.subjectId)
+      .where(sql`revoked_at is null`),
+    index('telegram_links_chat_idx').on(table.chatId),
+  ],
+)
+
 export const casesRelations = relations(cases, ({ many }) => ({
   events: many(caseEvents),
   claims: many(claims),
@@ -273,6 +323,7 @@ export type CaseEventRow = typeof caseEvents.$inferSelect
 export type StudentRow = typeof students.$inferSelect
 export type NewStudentRow = typeof students.$inferInsert
 export type ClaimRow = typeof claims.$inferSelect
+export type TelegramLinkRow = typeof telegramLinks.$inferSelect
 
 /** Kept for migrations that need raw SQL alongside the schema. */
 export { sql }

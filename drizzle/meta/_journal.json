@@ -22,6 +22,13 @@
       "when": 1788920246141,
       "tag": "0002_living_zuras",
       "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "7",
+      "when": 1788931706172,
+      "tag": "0003_lush_next_avengers",
+      "breakpoints": true
     }
   ]
 }

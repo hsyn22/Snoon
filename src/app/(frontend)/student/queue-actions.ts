@@ -6,8 +6,10 @@ import { redirect } from 'next/navigation'
 import { db } from '@/db'
 import { students } from '@/db/schema'
 import { claimCase } from '@/db/queries/claims'
+import { cases } from '@/db/schema'
 import { auth } from '@/lib/auth'
-import { studentQueue } from '@/lib/copy'
+import { studentQueue, telegramCopy } from '@/lib/copy'
+import { sendNotification } from '@/lib/notifications/send'
 
 export type ClaimActionState = { error?: string }
 
@@ -48,6 +50,21 @@ export async function claimCaseAction(
       default:
         return { error: studentQueue.claimFailedGeneric }
     }
+  }
+
+  // Best-effort, and after the claim has already succeeded: someone is waiting
+  // for a call, and a message that fails to send must not undo the claim.
+  const [record] = await db
+    .select({ referenceCode: cases.referenceCode })
+    .from(cases)
+    .where(eq(cases.id, caseId))
+    .limit(1)
+
+  if (record) {
+    await sendNotification({
+      recipient: { kind: 'PATIENT_CASE', caseId },
+      text: telegramCopy.caseClaimed(record.referenceCode),
+    })
   }
 
   redirect(`/student/case/${caseId}`)

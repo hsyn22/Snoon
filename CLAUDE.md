@@ -327,8 +327,31 @@ Shape:
 - Bot tokens are secrets; they live in the environment, never in the repo.
 - This does not weaken the no-SMS rule — it is what replaces SMS.
 
-Not built yet. When it is, the send path belongs behind an interface so a case status change
-does not know or care which channel carried it.
+**Built.** `src/lib/notifications/` is the interface — a case status change calls
+`sendNotification()` and knows nothing about channels. Telegram registers itself as a
+channel only when a bot is configured, so an unconfigured deployment reports `NO_CHANNEL`
+rather than failing.
+
+Rules the implementation holds to:
+
+- **Sending is never a precondition.** A claim that succeeded is not undone because a
+  message failed, and notification happens after the state change, never inside its
+  transaction.
+- **Invite tokens are stored hashed**, like tracking tokens, and keyed with a distinct
+  label so one can never be replayed as the other. The link is a credential: whoever holds
+  it receives that patient's notifications.
+- **Single use.** An invite already bound to one chat is refused for another, so a
+  forwarded link cannot move a patient's notifications to a stranger.
+- **The webhook is a public URL.** The only thing separating a real update from a forged
+  one is `X-Telegram-Bot-Api-Secret-Token`; without it anyone could post a synthetic
+  `/start <token>`.
+- A patient's invite is minted from their **tracking token**, never from a case id in a
+  form — an id would let anyone request notifications for a case they do not hold.
+
+Setup needs three environment variables (`TELEGRAM_BOT_TOKEN`, `TELEGRAM_BOT_USERNAME`,
+`TELEGRAM_WEBHOOK_SECRET`) from a bot created with @BotFather, and the webhook pointed at
+`/api/telegram/webhook`. Still to come: the patient confirming contact through the bot,
+which is the leading answer to open decision 4.
 
 ---
 

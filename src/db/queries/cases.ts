@@ -104,6 +104,8 @@ export async function submitCase(input: SubmitCaseInput): Promise<SubmitCaseResu
  * includes their contact details — no other projection does.
  */
 export type PatientCaseView = {
+  /** Needed to look up whether this case has notifications bound to it. */
+  id: string
   referenceCode: string
   status: (typeof cases.status.enumValues)[number]
   cityId: string
@@ -127,6 +129,7 @@ export async function getCaseByTrackingToken(token: string): Promise<PatientCase
 
   const [row] = await db
     .select({
+      id: cases.id,
       referenceCode: cases.referenceCode,
       status: cases.status,
       cityId: cases.cityId,

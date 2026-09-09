@@ -6,6 +6,9 @@ import { getAllTreatmentTypes, getCityById } from '@/lib/config'
 import { caseForm, caseStatus, caseTracking, common, site } from '@/lib/copy'
 import { formatCaseDate } from '@/lib/dates'
 import { formatPhoneForDisplay } from '@/lib/phone'
+import { isTelegramConfigured } from '@/lib/telegram/config'
+import { isPatientLinked } from './telegram-actions'
+import { TelegramInvite } from './telegram-invite'
 
 /**
  * The patient's view of their own case, opened by the tracking token in the URL.
@@ -66,6 +69,11 @@ export default async function TrackCasePage({
     .map((id) => allTreatments.find((treatment) => treatment.id === id)?.nameAr ?? id)
     .join('، ')
 
+  // Notifications are optional and the section is simply absent when no bot is
+  // configured, rather than offering something that cannot work.
+  const telegramAvailable = isTelegramConfigured()
+  const patientLinked = telegramAvailable ? await isPatientLinked(record.id) : false
+
   const headerList = await headers()
   const host = headerList.get('host') ?? ''
   const protocol = headerList.get('x-forwarded-proto') ?? 'http'
@@ -108,6 +116,10 @@ export default async function TrackCasePage({
           <p className="mt-2 text-xs text-foreground-muted">{caseTracking.linkHint}</p>
           <p className="mt-2 text-xs font-medium text-warning">{caseTracking.linkWarning}</p>
         </section>
+
+        {telegramAvailable ? (
+          <TelegramInvite trackingToken={token} alreadyLinked={patientLinked} />
+        ) : null}
 
         <dl className="mt-6 rounded-lg border border-border bg-surface px-4">
           <Row label={caseTracking.statusLabel} value={caseStatus[record.status]} />
