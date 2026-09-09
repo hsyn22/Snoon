@@ -91,6 +91,11 @@ export const common = {
   notFoundBody: 'الرابط اللي فتحته مو صحيح أو انحذف.',
   backHome: 'رجوع للرئيسية',
   referenceCodeLabel: 'رمز الحالة',
+
+  /** Error pages. The default Next.js screen is English and says nothing useful. */
+  errorRetry: 'جرّب مرة لخ',
+  errorReference: 'رمز الخطأ',
+  errorReferenceHint: 'إذا تكرر الخطأ، اذكر هذا الرمز لما تراجعنا.',
 } as const
 
 /** The patient case-submission form. */

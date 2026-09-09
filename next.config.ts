@@ -9,6 +9,11 @@ const nextConfig: NextConfig = {
   },
 
   experimental: {
+    // Serves src/app/global-not-found.tsx for URLs that match no route. Needed
+    // because سنون has two root layouts — the site and the Payload admin — so
+    // there is no single layout a 404 could be composed from.
+    globalNotFound: true,
+
     serverActions: {
       /**
        * A case is submitted through a server action, and those are capped at 1MB

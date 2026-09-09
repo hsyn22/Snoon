@@ -419,6 +419,24 @@ tokens are long, random, single-case scoped, and revocable.
   Use CSS custom properties with placeholder values in one tokens file so the identity can
   drop in later without touching components.
 
+### Error pages
+
+A crash showed Next's own screen: English, left-to-right, "Application error: a client-side
+exception has occurred", to someone halfway through submitting a case with no idea whether
+it was saved. Three files now cover it, and they are not interchangeable:
+
+- `(frontend)/error.tsx` catches a throw inside the site. It offers `reset()` first, which
+  re-renders the segment without a full load — the right first try on a flaky connection —
+  and shows the error digest, the only thing connecting "it broke for me" to the server log.
+- `global-error.tsx` is for when the root layout itself failed, so it renders its own
+  `<html dir="rtl">` and uses **inline styles only**: it must not depend on the stylesheet,
+  which might be what broke.
+- `global-not-found.tsx` answers URLs that match no route. A `not-found.tsx` inside a route
+  group only answers `notFound()` calls in that segment, and سنون has two root layouts — the
+  site and the Payload admin — so there is no single layout an app-wide 404 could compose
+  from. It needs `experimental.globalNotFound` in `next.config.ts`, and it bypasses the
+  layout, so it imports the stylesheet itself.
+
 ### The landing page
 
 A cinematic 3D clinic scene is described in the product vision. **It is not in the MVP.**
