@@ -2,6 +2,7 @@ import { readFileSync } from 'node:fs'
 import { join } from 'node:path'
 import { describe, expect, it } from 'vitest'
 import { caseStatus, landing, site } from '../src/lib/copy'
+import { CASE_REASON, CASE_REASON_AR, describeReason } from '../src/lib/cases/reasons'
 
 /**
  * The brand name is spelled سنون with no diacritics. سَنّون is a different word,
@@ -44,5 +45,29 @@ describe('case status labels', () => {
         'RETURNED_TO_QUEUE',
       ].sort(),
     )
+  })
+})
+
+describe('case event reasons', () => {
+  it('has an Arabic reading for every reason the system writes', () => {
+    for (const reason of Object.values(CASE_REASON)) {
+      expect(CASE_REASON_AR[reason], reason).toBeTruthy()
+      // Latin letters here would mean a reason went untranslated, which is what
+      // the admin's audit trail looked like before this existed.
+      expect(CASE_REASON_AR[reason]).not.toMatch(/[A-Za-z]/)
+    }
+  })
+
+  it('translates a reason and keeps the note the student typed', () => {
+    const stored = `${CASE_REASON.COMPLETED} حشوتين بالفك العلوي`
+    expect(describeReason(stored)).toEqual({
+      text: CASE_REASON_AR[CASE_REASON.COMPLETED],
+      note: 'حشوتين بالفك العلوي',
+    })
+  })
+
+  it('shows text it does not recognise rather than dropping it', () => {
+    // Rows written before a reason was renamed still have to read as something.
+    expect(describeReason('Something older.')).toEqual({ text: 'Something older.', note: null })
   })
 })

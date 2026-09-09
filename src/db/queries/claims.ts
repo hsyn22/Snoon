@@ -2,6 +2,7 @@ import { and, eq, inArray, lte, notExists, sql } from 'drizzle-orm'
 import { db } from '@/db'
 import { caseEvents, cases, claims, students } from '@/db/schema'
 import { getContactWindowHours } from '@/lib/config/settings'
+import { CASE_REASON } from '@/lib/cases/reasons'
 
 /**
  * Claiming, and the contact window that follows it.
@@ -82,7 +83,7 @@ export async function claimCase(caseId: string, studentId: string): Promise<Clai
         toStatus: 'MATCHED',
         actorType: 'STUDENT',
         actorId: studentId,
-        reason: 'Case claimed by student.',
+        reason: CASE_REASON.CLAIMED,
       })
 
       return { ok: true, claimId: claim.id, contactDeadlineAt }
@@ -146,7 +147,7 @@ export async function releaseClaim(
         fromStatus: 'RETURNED_TO_QUEUE',
         toStatus: 'REQUESTED',
         actorType: 'SYSTEM',
-        reason: 'Returned to the queue for another student.',
+        reason: CASE_REASON.RETURNED_TO_QUEUE,
       },
     ])
 
@@ -169,7 +170,7 @@ export async function expireOverdueClaims(now: Date = new Date()): Promise<numbe
   let released = 0
   for (const claim of overdue) {
     const ok = await releaseClaim(claim.id, {
-      reason: 'Contact window expired without contact.',
+      reason: CASE_REASON.CONTACT_WINDOW_EXPIRED,
       actorType: 'SYSTEM',
     })
     if (ok) released += 1

@@ -2,6 +2,7 @@ import { and, eq, isNull, lte } from 'drizzle-orm'
 import { db } from '@/db'
 import { appointments, caseEvents, cases, claims } from '@/db/schema'
 import { assertTransition, type CaseStatus } from './transitions'
+import { CASE_REASON } from './reasons'
 
 /**
  * The rest of the case lifecycle: appointment, and how a case ends.
@@ -88,8 +89,8 @@ export async function confirmAppointment(
       actorId: studentId,
       reason:
         claim.status === 'APPOINTMENT_CONFIRMED'
-          ? 'Appointment rescheduled by the student.'
-          : 'Appointment agreed with the patient.',
+          ? CASE_REASON.APPOINTMENT_RESCHEDULED
+          : CASE_REASON.APPOINTMENT_AGREED,
     })
 
     return { ok: true, value: { referenceCode: claim.referenceCode } }
@@ -100,9 +101,9 @@ export async function confirmAppointment(
 export type CaseOutcome = 'COMPLETED' | 'NO_SHOW' | 'CANCELLED'
 
 const OUTCOME_REASON: Record<CaseOutcome, string> = {
-  COMPLETED: 'Treatment completed.',
-  NO_SHOW: 'Patient did not attend the appointment.',
-  CANCELLED: 'Appointment cancelled.',
+  COMPLETED: CASE_REASON.COMPLETED,
+  NO_SHOW: CASE_REASON.NO_SHOW,
+  CANCELLED: CASE_REASON.CANCELLED,
 }
 
 /**
@@ -184,7 +185,7 @@ export async function expireStaleRequestedCases(olderThan: Date): Promise<number
         fromStatus: 'REQUESTED',
         toStatus: 'EXPIRED',
         actorType: 'SYSTEM',
-        reason: 'Case sat unclaimed past its useful life.',
+        reason: CASE_REASON.UNCLAIMED_TOO_LONG,
       })
       return true
     })

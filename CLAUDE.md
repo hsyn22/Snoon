@@ -84,6 +84,23 @@ bundle and fails the build; `settings.ts` reads Payload but is **not** marked
 which rules out scheduled jobs and CLI scripts. The contact-window expiry is
 exactly such a job, so a guard there would break the thing it governs.
 
+Two custom admin views read across into Drizzle: `/admin/students` reviews student
+verification, and `/admin/cases` looks a case up by the reference code a patient reads out
+over the phone — status, who claimed it, the appointment, and the full event log. The case
+view is **read-only**: case state is changed by the lifecycle functions, which validate the
+transition and write the audit row, never by a form in the CMS. Custom views get no nav
+entry of their own, so both are linked from `beforeNavLinks`.
+
+The privacy rule still binds inside the admin. `listRecentCasesForAdmin` has no contact
+columns in its projection at all, so the overview cannot leak a phone number however it is
+rendered; `findCaseForAdmin` is the only admin function returning them, and only for a
+single case an admin typed the code for.
+
+Reasons written to the case event log live in `src/lib/cases/reasons.ts` rather than as
+literals at each writer. They are stored in the database, so they are effectively an API —
+changing a literal in one file would split the history in two and leave half the admin's
+audit trail untranslated.
+
 **A custom Payload admin view must authorise itself.** Payload's admin gates the
 *interface* — an unauthenticated visitor is shown a login screen — but a custom view is
 still server-rendered, so anything it queries lands in the HTML whoever asked. `curl

@@ -5,6 +5,7 @@ import { studentPreviouslyReleased } from '@/db/queries/claims'
 import { generateReferenceCode } from '@/lib/reference-code'
 import { generateTrackingToken, hashTrackingToken } from '@/lib/tracking-token'
 import type { WeekDay } from '@/lib/config/schema'
+import { CASE_REASON } from '@/lib/cases/reasons'
 
 /**
  * Data access for cases.
@@ -85,7 +86,7 @@ export async function submitCase(input: SubmitCaseInput): Promise<SubmitCaseResu
           fromStatus: null,
           toStatus: 'REQUESTED',
           actorType: 'PATIENT',
-          reason: 'Case submitted by patient.',
+          reason: CASE_REASON.SUBMITTED,
         })
 
         return row.id

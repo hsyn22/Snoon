@@ -4,6 +4,7 @@ import { cases, claims } from '@/db/schema'
 import { releaseClaim } from '@/db/queries/claims'
 import { telegramCopy } from '@/lib/copy'
 import { sendNotification } from '@/lib/notifications/send'
+import { CASE_REASON } from './reasons'
 
 /**
  * The scheduled job that returns uncontacted cases to the queue.
@@ -34,7 +35,7 @@ export async function expireOverdueClaimsAndNotify(
 
   for (const entry of overdue) {
     const ok = await releaseClaim(entry.claimId, {
-      reason: 'Contact window expired without contact.',
+      reason: CASE_REASON.CONTACT_WINDOW_EXPIRED,
       actorType: 'SYSTEM',
     })
     if (!ok) continue

@@ -32,12 +32,23 @@ export default buildConfig({
     meta: { titleSuffix: ' — سنون' },
 
     components: {
+      // Custom views get no nav entry of their own, so they are linked here.
+      beforeNavLinks: ['@/payload/components/admin-nav-links#default'],
+
       views: {
         // Students live in Drizzle, but the person reviewing them is an admin who
         // is already here, so the review lives inside the admin and reads across.
         studentReview: {
           Component: '@/payload/views/student-review#default',
           path: '/students',
+        },
+
+        // Cases live in Drizzle too. This view only reads them — case state is
+        // changed by the lifecycle functions, which validate the transition and
+        // write the audit row, never by a form in the CMS.
+        caseLookup: {
+          Component: '@/payload/views/case-lookup#default',
+          path: '/cases',
         },
       },
     },

@@ -2,6 +2,7 @@ import { and, eq, isNull } from 'drizzle-orm'
 import { db } from '@/db'
 import { caseEvents, cases, claims } from '@/db/schema'
 import { assertTransition } from './transitions'
+import { CASE_REASON } from './reasons'
 
 /**
  * Confirming that contact actually happened.
@@ -50,7 +51,7 @@ export async function assertContactMade(
       actorId: studentId,
       // Same status on both sides on purpose: this records a claim about the
       // world, not a transition. The case has not moved.
-      reason: 'Student reported making contact; awaiting the patient to confirm.',
+      reason: CASE_REASON.CONTACT_ASSERTED,
     })
 
     return { ok: true, caseId, referenceCode: claim.referenceCode }
@@ -94,7 +95,7 @@ export async function confirmContactByPatient(caseId: string): Promise<ConfirmCo
       fromStatus: 'MATCHED',
       toStatus: 'CONTACTED',
       actorType: 'PATIENT',
-      reason: 'Patient confirmed a student made contact.',
+      reason: CASE_REASON.CONTACT_CONFIRMED,
     })
 
     return { ok: true, referenceCode: row.referenceCode }
@@ -122,7 +123,7 @@ export async function reportNoContactByPatient(caseId: string): Promise<boolean>
     fromStatus: 'MATCHED',
     toStatus: 'MATCHED',
     actorType: 'PATIENT',
-    reason: 'Patient reported that no student had contacted them yet.',
+    reason: CASE_REASON.NO_CONTACT_REPORTED,
   })
 
   return true
