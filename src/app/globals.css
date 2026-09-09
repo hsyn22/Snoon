@@ -69,8 +69,10 @@
    */
   .ltr-run {
     direction: ltr;
+    /* isolate works on inline content, so this sets no display of its own —
+       forcing inline-block here would silently override a flex/grid utility
+       applied alongside it. */
     unicode-bidi: isolate;
-    display: inline-block;
   }
 
   .reference-code {
