@@ -4,7 +4,7 @@ import { caseEvents, cases, claims, students } from '@/db/schema'
 import { studentPreviouslyReleased } from '@/db/queries/claims'
 import { generateReferenceCode } from '@/lib/reference-code'
 import { generateTrackingToken, hashTrackingToken } from '@/lib/tracking-token'
-import type { WeekDay } from '@/lib/config'
+import type { WeekDay } from '@/lib/config/schema'
 
 /**
  * Data access for cases.

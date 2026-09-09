@@ -2,8 +2,9 @@
 
 import { useActionState } from 'react'
 import { useFormStatus } from 'react-dom'
-import type { City, TreatmentType } from '@/lib/config'
-import { WEEK_DAYS } from '@/lib/config'
+// From ./schema, not ./index: importing the Payload reader here would pull the
+// whole CMS into the browser bundle.
+import { WEEK_DAYS, type City, type TreatmentType } from '@/lib/config/schema'
 import { caseForm } from '@/lib/copy'
 import { submitCaseAction, type CaseFormState } from './actions'
 

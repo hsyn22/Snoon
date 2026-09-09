@@ -67,8 +67,24 @@ to change without a deployment:
 - appointments
 - case event log (audit trail)
 
-Keep them in **separate Postgres schemas**. Application code reads Payload config through
-the Local API and joins by stable IDs. Never write case or claim data through Payload.
+Keep them in **separate Postgres schemas** — `payload`, `snoon`, and `auth` for Better
+Auth. Application code reads Payload config through the Local API and joins by stable IDs.
+Never write case or claim data through Payload.
+
+The join key is each config document's **`slug`**, not Payload's numeric id. A case stores
+`city_id` and `treatment_type_ids` as plain text in another schema, so the key has to stay
+readable in the database and survive the config being edited, re-seeded or restored.
+
+`src/lib/config/` is split along the client/server line and must stay that way.
+`schema.ts` holds types and the fixed week and is safe for a Client Component;
+`index.ts` reads Payload and is marked `server-only`, because importing it from a
+Client Component pulls `fs`, `child_process` and the whole CMS into the browser
+bundle and fails the build.
+
+Any page rendering Payload config needs **both** a time-based `revalidate` and an
+`afterChange`/`afterDelete` hook calling `revalidatePath`. Without the hook an admin who
+adds a city sees nothing change and reasonably concludes the admin is broken; without the
+`revalidate` a change made outside the admin never lands at all.
 
 ---
 
@@ -372,15 +388,16 @@ pnpm lint           # eslint (next/core-web-vitals + next/typescript)
 pnpm typecheck      # tsc --noEmit
 pnpm test           # vitest run
 pnpm test:watch     # vitest, watching
-pnpm db:generate    # write a migration from src/db/schema.ts
-pnpm db:migrate     # apply pending migrations
+pnpm db:generate    # write a migration from src/db/schema.ts (cases, claims, auth)
+pnpm db:migrate     # apply pending Drizzle migrations
+pnpm payload:migrate    # apply pending Payload migrations
+pnpm payload:seed       # seed cities, treatments and stages (idempotent)
+pnpm payload:types      # regenerate src/payload/payload-types.ts
+pnpm payload:importmap  # regenerate the admin import map
 ```
 
-Not wired up yet — arrives with Payload:
-
-```
-pnpm payload migrate
-```
+Run `payload:importmap` after adding or moving a collection, global or custom
+admin component, and `payload:types` after changing any field.
 
 ### Local database
 
@@ -393,7 +410,18 @@ service postgresql start
 psql -c "CREATE USER snoon WITH PASSWORD '…' CREATEDB;"
 createdb -O snoon snoon_dev
 pnpm db:migrate
+pnpm payload:migrate
+pnpm payload:seed
 ```
+
+The first admin is created by visiting `/admin`, which offers a create-first-user
+form while no admin exists.
+
+**`payload migrate` will prompt and hang if the database has been touched by
+`pnpm dev`.** Payload's dev server pushes schema changes straight to the database,
+which leaves migrations out of sync and makes the CLI stop for an interactive
+confirmation. Stop the dev server, drop the `payload` schema and re-run the
+migrations, so migrations stay the source of truth for deployment.
 
 The database-backed tests in `tests/cases.db.test.ts` skip themselves when
 `DATABASE_URL` is absent, so `pnpm test` still passes without Postgres — but the

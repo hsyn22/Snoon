@@ -6,6 +6,7 @@ import { lexicalEditor } from '@payloadcms/richtext-lexical'
 import { buildConfig } from 'payload'
 import sharp from 'sharp'
 import { Admins } from '@/payload/collections/admins'
+import { Settings } from '@/payload/globals/settings'
 import {
   Cities,
   Colleges,
@@ -38,6 +39,8 @@ export default buildConfig({
   },
 
   collections: [Admins, Cities, Universities, Colleges, Stages, TreatmentTypes, StageCapabilities],
+
+  globals: [Settings],
 
   editor: lexicalEditor(),
 

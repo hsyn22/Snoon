@@ -1,104 +1,119 @@
+// Guarantees a build-time error rather than a mysterious bundling failure if a
+// Client Component ever imports this module.
+import 'server-only'
+import { cache } from 'react'
+import { getPayload } from 'payload'
+import config from '@payload-config'
+import type { City, TreatmentType } from './schema'
+
 /**
- * ⚠️ TEMPORARY STAND-IN FOR PAYLOAD-MANAGED CONFIGURATION ⚠️
+ * Configuration, read from Payload.
  *
- * Cities and treatment types belong to Payload — an administrator must be able
- * to add a city or retire a treatment type without a deployment. Payload is not
- * installed yet, so this module hardcodes the same data behind the same async
- * interface a Payload Local API call will have.
+ * These used to be hardcoded here. They now come from the admin, so adding a
+ * city or retiring a treatment is something Haider does in a browser rather than
+ * something that needs a deployment.
  *
- * When Payload lands, the bodies of these functions are replaced with
- * `payload.find(...)` calls and nothing that imports them changes. The IDs below
- * become the Payload document IDs, so they must stay stable — a case row stores
- * `cityId` and `treatmentTypeId` as plain text, and repointing them later would
- * mean migrating live cases.
+ * The `id` on every type below is Payload's **slug**, not its numeric row id.
+ * That is deliberate: a case stores `city_id` and `treatment_type_ids` as plain
+ * text in another Postgres schema, and a stable, readable key is what makes that
+ * join survive the config being edited, re-seeded, or restored.
+ *
+ * Every read is wrapped in React's `cache`, so rendering a page that asks for the
+ * city list five times hits the database once.
  */
 
-export type City = {
-  id: string
-  nameAr: string
-}
+export type { City, TreatmentType, WeekDay } from './schema'
 
-export type TreatmentType = {
-  id: string
-  nameAr: string
-}
+/** Only `active` rows are offered. Inactive ones stay resolvable so existing
+ *  cases still display the name of a treatment that has since been retired. */
+export const getCities = cache(async (): Promise<readonly City[]> => {
+  const payload = await getPayload({ config })
+  const result = await payload.find({
+    collection: 'cities',
+    where: { active: { equals: true } },
+    sort: 'nameAr',
+    limit: 200,
+    pagination: false,
+  })
+  return result.docs.map((doc) => ({ id: doc.slug, nameAr: doc.nameAr }))
+})
 
-const CITIES: readonly City[] = [
-  { id: 'baghdad', nameAr: 'بغداد' },
-  { id: 'basra', nameAr: 'البصرة' },
-  { id: 'mosul', nameAr: 'الموصل' },
-  { id: 'erbil', nameAr: 'أربيل' },
-  { id: 'najaf', nameAr: 'النجف' },
-  { id: 'karbala', nameAr: 'كربلاء' },
-  { id: 'sulaymaniyah', nameAr: 'السليمانية' },
-  { id: 'kirkuk', nameAr: 'كركوك' },
-  { id: 'diwaniyah', nameAr: 'الديوانية' },
-  { id: 'hillah', nameAr: 'الحلة' },
-  { id: 'nasiriyah', nameAr: 'الناصرية' },
-  { id: 'amarah', nameAr: 'العمارة' },
-  { id: 'ramadi', nameAr: 'الرمادي' },
-  { id: 'baquba', nameAr: 'بعقوبة' },
-  { id: 'samawah', nameAr: 'السماوة' },
-  { id: 'kut', nameAr: 'الكوت' },
-  { id: 'duhok', nameAr: 'دهوك' },
-  { id: 'tikrit', nameAr: 'تكريت' },
-] as const
+export const getTreatmentTypes = cache(async (): Promise<readonly TreatmentType[]> => {
+  const payload = await getPayload({ config })
+  const result = await payload.find({
+    collection: 'treatment-types',
+    where: { active: { equals: true } },
+    sort: 'order',
+    limit: 200,
+    pagination: false,
+  })
+  return result.docs.map((doc) => ({ id: doc.slug, nameAr: doc.nameAr }))
+})
 
-const TREATMENT_TYPES: readonly TreatmentType[] = [
-  { id: 'examination', nameAr: 'فحص' },
-  { id: 'filling', nameAr: 'حشوة' },
-  { id: 'extraction', nameAr: 'قلع' },
-  { id: 'scaling', nameAr: 'تنظيف' },
-  { id: 'root-canal', nameAr: 'علاج عصب' },
-  { id: 'partial-denture', nameAr: 'طقم جزئي' },
-  { id: 'complete-denture', nameAr: 'طقم كامل' },
-  { id: 'orthodontics', nameAr: 'تقويم أسنان' },
-  { id: 'paediatric', nameAr: 'أسنان الأطفال' },
-] as const
+/**
+ * Resolve a stored slug to a name, including retired ones.
+ *
+ * A case submitted last month may name a treatment that has since been
+ * deactivated. Showing its Arabic name is right; showing the raw slug is not.
+ */
+export const getAllTreatmentTypes = cache(async (): Promise<readonly TreatmentType[]> => {
+  const payload = await getPayload({ config })
+  const result = await payload.find({
+    collection: 'treatment-types',
+    sort: 'order',
+    limit: 200,
+    pagination: false,
+  })
+  return result.docs.map((doc) => ({ id: doc.slug, nameAr: doc.nameAr }))
+})
 
-export async function getCities(): Promise<readonly City[]> {
-  return CITIES
-}
+export const getAllCities = cache(async (): Promise<readonly City[]> => {
+  const payload = await getPayload({ config })
+  const result = await payload.find({
+    collection: 'cities',
+    sort: 'nameAr',
+    limit: 200,
+    pagination: false,
+  })
+  return result.docs.map((doc) => ({ id: doc.slug, nameAr: doc.nameAr }))
+})
 
-export async function getTreatmentTypes(): Promise<readonly TreatmentType[]> {
-  return TREATMENT_TYPES
-}
-
-/** Whether an ID submitted by a form is one we actually offer. */
+/**
+ * Whether an id submitted by a form is one we currently offer.
+ *
+ * Checked against the *active* list, not every row: a retired city must not be
+ * selectable on a new case even though old cases still reference it.
+ */
 export async function isKnownCityId(id: string): Promise<boolean> {
-  return CITIES.some((city) => city.id === id)
+  return (await getCities()).some((city) => city.id === id)
 }
 
 export async function isKnownTreatmentTypeId(id: string): Promise<boolean> {
-  return TREATMENT_TYPES.some((treatment) => treatment.id === id)
+  return (await getTreatmentTypes()).some((treatment) => treatment.id === id)
 }
 
 export async function getCityById(id: string): Promise<City | undefined> {
-  return CITIES.find((city) => city.id === id)
+  return (await getAllCities()).find((city) => city.id === id)
 }
 
 export async function getTreatmentTypeById(id: string): Promise<TreatmentType | undefined> {
-  return TREATMENT_TYPES.find((treatment) => treatment.id === id)
+  return (await getAllTreatmentTypes()).find((treatment) => treatment.id === id)
 }
 
 /**
  * How long a student has to contact the patient after claiming a case.
  *
- * 48 hours, not 24: students are in clinic during the day and patients may not
- * answer first try. This becomes a Payload setting so it can be tuned from the
- * admin without a deployment — it is emphatically not a constant.
+ * Read from the Payload settings global so it can be tuned from the admin. 48
+ * hours is the default, not a constant: students are in clinic during the day
+ * and patients may not answer first try.
  */
-export async function getContactWindowHours(): Promise<number> {
-  return 48
-}
+const FALLBACK_CONTACT_WINDOW_HOURS = 48
 
-/**
- * Clinic days, starting Saturday as Iraqi clinics do. Friday is always a
- * holiday, so it is not offered — a patient cannot pick a day no clinic runs.
- */
-export const WEEK_DAYS = ['sat', 'sun', 'mon', 'tue', 'wed', 'thu'] as const
-export type WeekDay = (typeof WEEK_DAYS)[number]
-
-export function isWeekDay(value: string): value is WeekDay {
-  return (WEEK_DAYS as readonly string[]).includes(value)
-}
+export const getContactWindowHours = cache(async (): Promise<number> => {
+  const payload = await getPayload({ config })
+  const settings = await payload.findGlobal({ slug: 'settings' })
+  const value = settings.contactWindowHours
+  // A misconfigured or missing value must not mean a zero-length window, which
+  // would expire every claim the instant it was made.
+  return typeof value === 'number' && value > 0 ? value : FALLBACK_CONTACT_WINDOW_HOURS
+})

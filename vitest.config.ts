@@ -13,10 +13,19 @@ export default defineConfig({
     environment: 'node',
     // The database tests share one Postgres schema, so they must not race.
     fileParallelism: false,
+    // Payload's configuration must exist before validation tests check against it.
+    globalSetup: ['./tests/setup/global.ts'],
+    // Seeding Payload on a cold database takes a while the first time.
+    hookTimeout: 120_000,
   },
   resolve: {
     alias: {
       '@': fileURLToPath(new URL('./src', import.meta.url)),
+      // Configuration now comes from Payload, so anything importing @/lib/config
+      // pulls the Payload config in too.
+      '@payload-config': fileURLToPath(new URL('./payload.config.ts', import.meta.url)),
+      // See the stub for why: the real package throws outside a server condition.
+      'server-only': fileURLToPath(new URL('./tests/setup/server-only-stub.ts', import.meta.url)),
     },
   },
 })

@@ -6,6 +6,15 @@ import { CaseForm } from './case-form'
 
 export const metadata: Metadata = { title: caseForm.title }
 
+/**
+ * The city and treatment lists come from Payload, so this page cannot be baked
+ * once at build time — an admin adding a city would see nothing change until the
+ * next deployment. Re-generated at most every five minutes instead: the page
+ * stays pre-rendered and fast for a patient on a slow connection, and a config
+ * edit appears without a deploy.
+ */
+export const revalidate = 300
+
 export default async function NewCasePage() {
   // Configuration is read on the server; the client component only receives the
   // options it needs to render.

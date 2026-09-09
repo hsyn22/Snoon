@@ -1,4 +1,11 @@
 import type { CollectionConfig } from 'payload'
+import { revalidateOnChange, revalidateOnDelete } from '@/payload/hooks/revalidate'
+
+/** Applied to collections the public pages render, so an admin edit shows at once. */
+const revalidateHooks = {
+  afterChange: [revalidateOnChange],
+  afterDelete: [revalidateOnDelete],
+}
 
 /**
  * Payload-managed configuration.
@@ -48,6 +55,7 @@ export const Cities: CollectionConfig = {
   labels: { singular: 'مدينة', plural: 'المدن' },
   admin: { useAsTitle: 'nameAr', defaultColumns: ['nameAr', 'slug', 'active'], group: 'الإعدادات' },
   access: { read: () => true },
+  hooks: revalidateHooks,
   fields: [nameArField, slugField, activeField],
 }
 
@@ -105,6 +113,7 @@ export const TreatmentTypes: CollectionConfig = {
   labels: { singular: 'نوع علاج', plural: 'أنواع العلاج' },
   admin: { useAsTitle: 'nameAr', defaultColumns: ['nameAr', 'order', 'active'], group: 'الإعدادات' },
   access: { read: () => true },
+  hooks: revalidateHooks,
   fields: [
     nameArField,
     slugField,

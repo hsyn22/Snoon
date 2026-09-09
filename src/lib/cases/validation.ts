@@ -1,4 +1,5 @@
-import { isKnownCityId, isKnownTreatmentTypeId, isWeekDay, type WeekDay } from '@/lib/config'
+import { isKnownCityId, isKnownTreatmentTypeId } from '@/lib/config'
+import { isWeekDay, type WeekDay } from '@/lib/config/schema'
 import { caseForm } from '@/lib/copy'
 import { normalisePhone } from '@/lib/phone'
 import type { SubmitCaseInput } from '@/db/queries/cases'

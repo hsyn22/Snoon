@@ -2,7 +2,7 @@ import type { Metadata } from 'next'
 import { headers } from 'next/headers'
 import Link from 'next/link'
 import { getCaseByTrackingToken } from '@/db/queries/cases'
-import { getCityById, getTreatmentTypes } from '@/lib/config'
+import { getAllTreatmentTypes, getCityById } from '@/lib/config'
 import { caseForm, caseStatus, caseTracking, common, site } from '@/lib/copy'
 import { formatCaseDate } from '@/lib/dates'
 import { formatPhoneForDisplay } from '@/lib/phone'
@@ -53,7 +53,12 @@ export default async function TrackCasePage({
     )
   }
 
-  const [city, allTreatments] = await Promise.all([getCityById(record.cityId), getTreatmentTypes()])
+  // The full list, not just the active one: a case submitted before a treatment
+  // was retired must still show its Arabic name rather than a raw slug.
+  const [city, allTreatments] = await Promise.all([
+    getCityById(record.cityId),
+    getAllTreatmentTypes(),
+  ])
 
   // Resolve the stored IDs to Arabic names, keeping any unknown ID visible
   // rather than silently dropping a treatment the patient asked for.
