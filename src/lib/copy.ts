@@ -92,3 +92,91 @@ export const common = {
   backHome: 'رجوع للرئيسية',
   referenceCodeLabel: 'رمز الحالة',
 } as const
+
+/** The patient case-submission form. */
+export const caseForm = {
+  title: 'قدّم حالتك',
+  intro: 'املأ المعلومات وراح نوصلها لطلبة طب الأسنان بمدينتك. ما تحتاج حساب.',
+
+  cityLabel: 'المدينة',
+  cityPlaceholder: 'اختر مدينتك',
+
+  treatmentLabel: 'شنو العلاج اللي تحتاجه؟',
+  treatmentPlaceholder: 'اختر نوع العلاج',
+  treatmentHint: 'إذا مو متأكد، اختر الأقرب لحالتك والطالب راح يشخّص.',
+
+  daysLabel: 'أي أيام تكدر تجي؟',
+  daysHint: 'اختر كل الأيام اللي تناسبك — كل ما تختار أكثر، تلكى طالب أسرع.',
+
+  periodLabel: 'الوقت المناسب',
+  periodOptions: {
+    MORNING: 'صباحاً',
+    AFTERNOON: 'بعد الظهر',
+    EITHER: 'الاثنين يناسبني',
+  },
+
+  nameLabel: 'الاسم',
+  nameHint: 'الاسم اللي يناديك بيه الطالب.',
+
+  phoneLabel: 'رقم الموبايل',
+  phoneHint: 'يظهر بس للطالب اللي ياخذ حالتك، وما يظهر لأي أحد غيره.',
+
+  notesLabel: 'ملاحظات (اختياري)',
+  notesHint: 'أي شي تحب تذكره عن حالتك.',
+
+  submit: 'أرسل الحالة',
+  submitting: 'قيد الإرسال…',
+
+  weekDays: {
+    sat: 'السبت',
+    sun: 'الأحد',
+    mon: 'الاثنين',
+    tue: 'الثلاثاء',
+    wed: 'الأربعاء',
+    thu: 'الخميس',
+    fri: 'الجمعة',
+  },
+
+  errors: {
+    cityRequired: 'اختر مدينتك.',
+    cityUnknown: 'هاي المدينة مو متوفرة حالياً.',
+    treatmentRequired: 'اختر نوع العلاج.',
+    treatmentUnknown: 'نوع العلاج هذا مو متوفر حالياً.',
+    daysRequired: 'اختر يوم واحد على الأقل.',
+    daysInvalid: 'في يوم مو صحيح بالاختيار.',
+    periodRequired: 'اختر الوقت المناسب.',
+    nameRequired: 'اكتب اسمك.',
+    nameTooShort: 'الاسم قصير كلش.',
+    nameTooLong: 'الاسم طويل كلش.',
+    phoneRequired: 'اكتب رقم موبايلك.',
+    phoneInvalid: 'الرقم مو صحيح. اكتبه هيچي: 07701234567',
+    notesTooLong: 'الملاحظات طويلة كلش.',
+    submitFailed: 'ما كدرنا نرسل الحالة. جرّب مرة لخ بعد شوية.',
+  },
+} as const
+
+/** The page shown after a case is submitted, and the patient's tracking page. */
+export const caseTracking = {
+  successTitle: 'انرسلت حالتك',
+  successBody: 'راح يشوفها طلبة طب الأسنان بمدينتك، وأول ما يحجزها طالب راح يتصل بيك.',
+
+  referenceLabel: 'رمز حالتك',
+  referenceHint: 'احتفظ بيه. تحتاجه إذا تريد تسأل عن حالتك.',
+
+  linkLabel: 'رابط متابعة حالتك',
+  linkHint: 'احفظ هذا الرابط بالمفضلة. هو الطريقة الوحيدة تشوف بيها حالتك، وما ينرسل بأي مكان ثاني.',
+  linkWarning: 'لا تشارك هذا الرابط مع أحد — أي شخص يفتحه يشوف معلوماتك.',
+
+  statusLabel: 'حالة الطلب',
+  submittedAtLabel: 'تاريخ الإرسال',
+  cityLabel: 'المدينة',
+  treatmentLabel: 'العلاج المطلوب',
+  daysLabel: 'الأيام المتاحة',
+  periodLabel: 'الوقت',
+  nameLabel: 'الاسم',
+  phoneLabel: 'رقم الموبايل',
+  notesLabel: 'ملاحظات',
+
+  invalidTitle: 'الرابط مو صحيح',
+  invalidBody: 'رابط المتابعة هذا مو شغّال. تأكد إنك ناسخه كامل.',
+} as const

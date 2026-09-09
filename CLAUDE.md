@@ -307,14 +307,33 @@ pnpm lint           # eslint (next/core-web-vitals + next/typescript)
 pnpm typecheck      # tsc --noEmit
 pnpm test           # vitest run
 pnpm test:watch     # vitest, watching
+pnpm db:generate    # write a migration from src/db/schema.ts
+pnpm db:migrate     # apply pending migrations
 ```
 
-Not wired up yet — these arrive with the data layer:
+Not wired up yet — arrives with Payload:
 
 ```
 pnpm payload migrate
-pnpm drizzle-kit generate
 ```
+
+### Local database
+
+Development needs a PostgreSQL reachable at `DATABASE_URL`. Copy `.env.example`
+to `.env.local` and fill it in; `.env.local` is gitignored and must never point at
+a database holding real patient contact details.
+
+```
+service postgresql start
+psql -c "CREATE USER snoon WITH PASSWORD '…' CREATEDB;"
+createdb -O snoon snoon_dev
+pnpm db:migrate
+```
+
+The database-backed tests in `tests/cases.db.test.ts` skip themselves when
+`DATABASE_URL` is absent, so `pnpm test` still passes without Postgres — but the
+access-control tests are the ones that matter most, so run them with a database
+before pushing.
 
 ### Toolchain pins
 
