@@ -2,6 +2,7 @@
 
 import { useActionState } from 'react'
 import { useFormStatus } from 'react-dom'
+import { useDismissibleErrors } from '@/components/use-dismissible-errors'
 // From ./schema, not ./index: importing the Payload reader here would pull the
 // whole CMS into the browser bundle.
 import { WEEK_DAYS, type City, type TreatmentType } from '@/lib/config/schema'
@@ -50,11 +51,13 @@ export function CaseForm({
 }) {
   const [state, formAction] = useActionState(submitCaseAction, INITIAL)
   const errors = state.errors ?? {}
+  // Clear a field's error as soon as it is edited.
+  const { onInput, errorFor } = useDismissibleErrors(state)
   // Re-submitting after an error must not mean typing everything again.
   const values = state.values
 
   return (
-    <form action={formAction} className="space-y-6" noValidate>
+    <form action={formAction} onInput={onInput} className="space-y-6" noValidate>
       <div>
         <label htmlFor="cityId" className={labelClass}>
           {caseForm.cityLabel}
@@ -80,7 +83,7 @@ export function CaseForm({
             </option>
           ))}
         </select>
-        <FieldError id="cityId-error" message={errors.cityId} />
+        <FieldError id="cityId-error" message={errorFor('cityId', errors.cityId)} />
       </div>
 
       <fieldset>
@@ -100,7 +103,7 @@ export function CaseForm({
             </label>
           ))}
         </div>
-        <FieldError id="treatmentTypeIds-error" message={errors.treatmentTypeIds} />
+        <FieldError id="treatmentTypeIds-error" message={errorFor('treatmentTypeIds', errors.treatmentTypeIds)} />
       </fieldset>
 
       <fieldset>
@@ -120,7 +123,7 @@ export function CaseForm({
             </label>
           ))}
         </div>
-        <FieldError id="availabilityDays-error" message={errors.availabilityDays} />
+        <FieldError id="availabilityDays-error" message={errorFor('availabilityDays', errors.availabilityDays)} />
       </fieldset>
 
       <div>
@@ -138,7 +141,7 @@ export function CaseForm({
           aria-invalid={Boolean(errors.patientName)}
           aria-describedby={errors.patientName ? 'patientName-error' : undefined}
         />
-        <FieldError id="patientName-error" message={errors.patientName} />
+        <FieldError id="patientName-error" message={errorFor('patientName', errors.patientName)} />
       </div>
 
       <div>
@@ -159,7 +162,7 @@ export function CaseForm({
           aria-invalid={Boolean(errors.patientPhone)}
           aria-describedby={errors.patientPhone ? 'patientPhone-error' : undefined}
         />
-        <FieldError id="patientPhone-error" message={errors.patientPhone} />
+        <FieldError id="patientPhone-error" message={errorFor('patientPhone', errors.patientPhone)} />
       </div>
 
       <div>
@@ -177,7 +180,7 @@ export function CaseForm({
           aria-invalid={Boolean(errors.notes)}
           aria-describedby={errors.notes ? 'notes-error' : undefined}
         />
-        <FieldError id="notes-error" message={errors.notes} />
+        <FieldError id="notes-error" message={errorFor('notes', errors.notes)} />
       </div>
 
       {state.formError ? (

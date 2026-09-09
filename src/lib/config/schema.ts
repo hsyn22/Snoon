@@ -19,6 +19,26 @@ export type TreatmentType = {
   nameAr: string
 }
 
+export type University = {
+  id: string
+  nameAr: string
+  /** Slug of the city this university is in. */
+  cityId: string
+}
+
+export type College = {
+  id: string
+  nameAr: string
+  /** Slug of the parent university. */
+  universityId: string
+}
+
+export type Stage = {
+  id: string
+  nameAr: string
+  order: number
+}
+
 /**
  * Clinic days, starting Saturday as Iraqi clinics do. Friday is always a
  * holiday, so it is not offered — a patient cannot pick a day no clinic runs.

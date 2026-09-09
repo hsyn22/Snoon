@@ -16,7 +16,15 @@ import type { CollectionAfterChangeHook, CollectionAfterDeleteHook } from 'paylo
 const CONFIG_DEPENDENT_PATHS = ['/case/new']
 
 function revalidateConfigPages(): void {
-  for (const path of CONFIG_DEPENDENT_PATHS) revalidatePath(path)
+  try {
+    for (const path of CONFIG_DEPENDENT_PATHS) revalidatePath(path)
+  } catch {
+    // Payload does not only run inside Next. The seed script, migrations and any
+    // CLI task create documents with no request context, and revalidatePath
+    // throws an invariant there. Nothing is being served in those cases, so
+    // there is no page cache to refresh and nothing to report — but letting it
+    // propagate would fail the seed, and with it any deploy that seeds.
+  }
 }
 
 export const revalidateOnChange: CollectionAfterChangeHook = ({ doc }) => {

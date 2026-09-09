@@ -2,6 +2,7 @@
 
 import { useActionState } from 'react'
 import { useFormStatus } from 'react-dom'
+import { useDismissibleErrors } from '@/components/use-dismissible-errors'
 import { studentAuth } from '@/lib/copy'
 import type { AuthFormState } from './actions'
 
@@ -46,11 +47,13 @@ export function AuthForm({
 }) {
   const [state, formAction] = useActionState(action, INITIAL)
   const errors = state.errors ?? {}
+  // Clear a field's error as soon as it is edited.
+  const { onInput, errorFor } = useDismissibleErrors(state)
   // Re-submitting after an error must not mean typing everything again.
   const values = state.values
 
   return (
-    <form action={formAction} className="space-y-5" noValidate>
+    <form action={formAction} onInput={onInput} className="space-y-5" noValidate>
       {withName ? (
         <div>
           <label htmlFor="name" className={labelClass}>
@@ -67,7 +70,7 @@ export function AuthForm({
             aria-invalid={Boolean(errors.name)}
             aria-describedby={errors.name ? 'name-error' : undefined}
           />
-          <FieldError id="name-error" message={errors.name} />
+          <FieldError id="name-error" message={errorFor('name', errors.name)} />
         </div>
       ) : null}
 
@@ -86,7 +89,7 @@ export function AuthForm({
           aria-invalid={Boolean(errors.email)}
           aria-describedby={errors.email ? 'email-error' : undefined}
         />
-        <FieldError id="email-error" message={errors.email} />
+        <FieldError id="email-error" message={errorFor('email', errors.email)} />
       </div>
 
       <div>
@@ -104,7 +107,7 @@ export function AuthForm({
           aria-invalid={Boolean(errors.password)}
           aria-describedby={errors.password ? 'password-error' : undefined}
         />
-        <FieldError id="password-error" message={errors.password} />
+        <FieldError id="password-error" message={errorFor('password', errors.password)} />
       </div>
 
       {state.formError ? (

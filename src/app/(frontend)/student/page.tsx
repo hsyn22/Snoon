@@ -13,12 +13,30 @@ export const metadata: Metadata = { title: studentAuth.loginTitle }
 /** Session state is read per request; nothing about a student is cached. */
 export const dynamic = 'force-dynamic'
 
-function Panel({ title, body, note }: { title: string; body: string; note?: string }) {
+function Panel({
+  title,
+  body,
+  note,
+  action,
+}: {
+  title: string
+  body: string
+  note?: string
+  action?: { href: string; label: string }
+}) {
   return (
     <section className="rounded-lg border border-border bg-surface p-5">
       <h1 className="text-xl font-bold">{title}</h1>
       <p className="mt-2 text-sm text-foreground-muted">{body}</p>
       {note ? <p className="mt-3 text-xs text-foreground-muted">{note}</p> : null}
+      {action ? (
+        <Link
+          href={action.href}
+          className="mt-4 flex min-h-11 items-center justify-center rounded-md bg-accent px-4 font-medium text-accent-foreground"
+        >
+          {action.label}
+        </Link>
+      ) : null}
     </section>
   )
 }
@@ -85,7 +103,7 @@ export default async function StudentHomePage() {
           <Panel
             title={studentStatus.profileNeededTitle}
             body={studentStatus.profileNeededBody}
-            note={studentStatus.profileNeededSoon}
+            action={{ href: '/student/profile', label: studentStatus.profileNeededAction }}
           />
         ) : profile.verificationStatus === 'PENDING' ? (
           <Panel title={studentStatus.pendingTitle} body={studentStatus.pendingBody} />

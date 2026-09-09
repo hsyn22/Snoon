@@ -223,7 +223,7 @@ export const studentStatus = {
 
   profileNeededTitle: 'ناقص معلومات دراستك',
   profileNeededBody: 'لازم تحدد جامعتك وكليتك ومرحلتك حتى نكدر نوثّق حسابك.',
-  profileNeededSoon: 'هذي الخطوة لسه ما جاهزة.',
+  profileNeededAction: 'كمّل معلوماتك',
 
   pendingTitle: 'حسابك قيد المراجعة',
   pendingBody:
@@ -237,4 +237,45 @@ export const studentStatus = {
 
   verifiedTitle: 'حسابك موثّق',
   verifiedBody: 'قائمة الحالات المتاحة اللي تناسب مرحلتك لسه قيد البناء.',
+} as const
+
+/** The step where a student says where they study and proves it. */
+export const studentProfile = {
+  title: 'معلومات دراستك',
+  intro: 'حدد وين تدرس وارفع وثيقة تثبت إنك طالب، وإدارة سنون راح تراجعها.',
+
+  universityLabel: 'الجامعة',
+  universityPlaceholder: 'اختر جامعتك',
+
+  collegeLabel: 'الكلية / العيادة',
+  collegePlaceholder: 'اختر كليتك',
+  collegeHint: 'اختر الجامعة أول.',
+
+  stageLabel: 'المرحلة',
+  stagePlaceholder: 'اختر مرحلتك',
+
+  documentLabel: 'وثيقة التسجيل',
+  documentHint: 'صورة هوية الطالب أو وثيقة تسجيل. صورة أو PDF، وما تزيد عن ٥ ميكا.',
+  documentPrivacy: 'الوثيقة تنشاف بس من إدارة سنون، وما تظهر لأي أحد ثاني.',
+
+  submit: 'أرسل للمراجعة',
+  submitting: 'قيد الإرسال…',
+
+  notReadyTitle: 'لسه ما نكدر نكمل',
+  notReadyBody: 'قوائم الجامعات والكليات لسه ما مضافة. راجعنا بعدين.',
+
+  errors: {
+    universityRequired: 'اختر جامعتك.',
+    universityUnknown: 'هاي الجامعة مو متوفرة.',
+    collegeRequired: 'اختر كليتك.',
+    collegeUnknown: 'هاي الكلية مو متوفرة.',
+    collegeMismatch: 'الكلية هاي مو تابعة للجامعة اللي اخترتها.',
+    stageRequired: 'اختر مرحلتك.',
+    stageUnknown: 'هاي المرحلة مو متوفرة.',
+    documentRequired: 'ارفع وثيقة التسجيل.',
+    documentTooBig: 'الملف كبير كلش. لازم أقل من ٥ ميكا.',
+    documentWrongType: 'نوع الملف مو مقبول. ارفع صورة أو PDF.',
+    alreadySubmitted: 'معلوماتك منرسلة من قبل.',
+    generic: 'ما كدرنا نرسل المعلومات. جرّب مرة لخ بعد شوية.',
+  },
 } as const

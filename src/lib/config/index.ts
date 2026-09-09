@@ -4,7 +4,7 @@ import 'server-only'
 import { cache } from 'react'
 import { getPayload } from 'payload'
 import config from '@payload-config'
-import type { City, TreatmentType } from './schema'
+import type { City, College, Stage, TreatmentType, University } from './schema'
 
 /**
  * Configuration, read from Payload.
@@ -22,7 +22,7 @@ import type { City, TreatmentType } from './schema'
  * city list five times hits the database once.
  */
 
-export type { City, TreatmentType, WeekDay } from './schema'
+export type { City, College, Stage, TreatmentType, University, WeekDay } from './schema'
 
 /** Only `active` rows are offered. Inactive ones stay resolvable so existing
  *  cases still display the name of a treatment that has since been retired. */
@@ -117,3 +117,110 @@ export const getContactWindowHours = cache(async (): Promise<number> => {
   // would expire every claim the instant it was made.
   return typeof value === 'number' && value > 0 ? value : FALLBACK_CONTACT_WINDOW_HOURS
 })
+
+
+/**
+ * Relationship fields come back as an id or a populated document depending on
+ * depth. We ask for depth 1 and read the slug off the populated side, falling
+ * back to null so a row pointing at a deleted parent is skipped rather than
+ * crashing a page.
+ */
+function relatedSlug(value: unknown): string | null {
+  if (value && typeof value === 'object' && 'slug' in value) {
+    const slug = (value as { slug?: unknown }).slug
+    return typeof slug === 'string' ? slug : null
+  }
+  return null
+}
+
+export const getUniversities = cache(async (): Promise<readonly University[]> => {
+  const payload = await getPayload({ config })
+  const result = await payload.find({
+    collection: 'universities',
+    where: { active: { equals: true } },
+    sort: 'nameAr',
+    depth: 1,
+    limit: 500,
+    pagination: false,
+  })
+
+  return result.docs.flatMap((doc) => {
+    const cityId = relatedSlug(doc.city)
+    return cityId ? [{ id: doc.slug, nameAr: doc.nameAr, cityId }] : []
+  })
+})
+
+export const getColleges = cache(async (): Promise<readonly College[]> => {
+  const payload = await getPayload({ config })
+  const result = await payload.find({
+    collection: 'colleges',
+    where: { active: { equals: true } },
+    sort: 'nameAr',
+    depth: 1,
+    limit: 500,
+    pagination: false,
+  })
+
+  return result.docs.flatMap((doc) => {
+    const universityId = relatedSlug(doc.university)
+    return universityId ? [{ id: doc.slug, nameAr: doc.nameAr, universityId }] : []
+  })
+})
+
+export const getStages = cache(async (): Promise<readonly Stage[]> => {
+  const payload = await getPayload({ config })
+  const result = await payload.find({
+    collection: 'stages',
+    where: { active: { equals: true } },
+    sort: 'order',
+    limit: 100,
+    pagination: false,
+  })
+  return result.docs.map((doc) => ({ id: doc.slug, nameAr: doc.nameAr, order: doc.order }))
+})
+
+/**
+ * Which treatments a stage may perform at a clinic.
+ *
+ * This is what decides whether a case is visible to a student, so an absent
+ * mapping returns an empty list and the student sees nothing — deliberately
+ * conservative. Showing a student a case their stage may not treat wastes a
+ * claim and the patient's time; showing them nothing is visible to an admin as
+ * "cases are not being claimed", which is at least diagnosable.
+ */
+export const getStageCapabilityTreatmentIds = cache(
+  async (collegeId: string, stageId: string): Promise<readonly string[]> => {
+    const payload = await getPayload({ config })
+    const result = await payload.find({
+      collection: 'stage-capabilities',
+      where: {
+        'college.slug': { equals: collegeId },
+        'stage.slug': { equals: stageId },
+      },
+      depth: 1,
+      limit: 1,
+      pagination: false,
+    })
+
+    const capability = result.docs[0]
+    if (!capability) return []
+
+    const treatments = capability.treatmentTypes
+    if (!Array.isArray(treatments)) return []
+
+    return treatments.flatMap((treatment) => {
+      const slug = relatedSlug(treatment)
+      return slug ? [slug] : []
+    })
+  },
+)
+
+/** Whether the config needed for a student to describe where they study exists yet. */
+export async function hasStudentPlacesConfigured(): Promise<boolean> {
+  const [universities, colleges, stages] = await Promise.all([
+    getUniversities(),
+    getColleges(),
+    getStages(),
+  ])
+  return universities.length > 0 && colleges.length > 0 && stages.length > 0
+}

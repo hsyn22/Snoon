@@ -74,6 +74,7 @@ export interface Config {
     stages: Stage;
     'treatment-types': TreatmentType;
     'stage-capabilities': StageCapability;
+    'student-documents': StudentDocument;
     'payload-kv': PayloadKv;
     'payload-locked-documents': PayloadLockedDocument;
     'payload-preferences': PayloadPreference;
@@ -88,6 +89,7 @@ export interface Config {
     stages: StagesSelect<false> | StagesSelect<true>;
     'treatment-types': TreatmentTypesSelect<false> | TreatmentTypesSelect<true>;
     'stage-capabilities': StageCapabilitiesSelect<false> | StageCapabilitiesSelect<true>;
+    'student-documents': StudentDocumentsSelect<false> | StudentDocumentsSelect<true>;
     'payload-kv': PayloadKvSelect<false> | PayloadKvSelect<true>;
     'payload-locked-documents': PayloadLockedDocumentsSelect<false> | PayloadLockedDocumentsSelect<true>;
     'payload-preferences': PayloadPreferencesSelect<false> | PayloadPreferencesSelect<true>;
@@ -267,6 +269,30 @@ export interface StageCapability {
   createdAt: string;
 }
 /**
+ * وثائق تسجيل الطلبة. للمراجعة فقط.
+ *
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "student-documents".
+ */
+export interface StudentDocument {
+  id: number;
+  /**
+   * ملاحظات داخلية. ما تظهر للطالب.
+   */
+  note?: string | null;
+  updatedAt: string;
+  createdAt: string;
+  url?: string | null;
+  thumbnailURL?: string | null;
+  filename?: string | null;
+  mimeType?: string | null;
+  filesize?: number | null;
+  width?: number | null;
+  height?: number | null;
+  focalX?: number | null;
+  focalY?: number | null;
+}
+/**
  * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "payload-kv".
  */
@@ -317,6 +343,10 @@ export interface PayloadLockedDocument {
     | ({
         relationTo: 'stage-capabilities';
         value: number | StageCapability;
+      } | null)
+    | ({
+        relationTo: 'student-documents';
+        value: number | StudentDocument;
       } | null);
   globalSlug?: string | null;
   user: {
@@ -453,6 +483,24 @@ export interface StageCapabilitiesSelect<T extends boolean = true> {
   treatmentTypes?: T;
   updatedAt?: T;
   createdAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "student-documents_select".
+ */
+export interface StudentDocumentsSelect<T extends boolean = true> {
+  note?: T;
+  updatedAt?: T;
+  createdAt?: T;
+  url?: T;
+  thumbnailURL?: T;
+  filename?: T;
+  mimeType?: T;
+  filesize?: T;
+  width?: T;
+  height?: T;
+  focalX?: T;
+  focalY?: T;
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema

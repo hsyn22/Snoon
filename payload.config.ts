@@ -6,6 +6,7 @@ import { lexicalEditor } from '@payloadcms/richtext-lexical'
 import { buildConfig } from 'payload'
 import sharp from 'sharp'
 import { Admins } from '@/payload/collections/admins'
+import { StudentDocuments } from '@/payload/collections/student-documents'
 import { Settings } from '@/payload/globals/settings'
 import {
   Cities,
@@ -38,7 +39,16 @@ export default buildConfig({
     fallbackLanguage: 'ar',
   },
 
-  collections: [Admins, Cities, Universities, Colleges, Stages, TreatmentTypes, StageCapabilities],
+  collections: [
+    Admins,
+    Cities,
+    Universities,
+    Colleges,
+    Stages,
+    TreatmentTypes,
+    StageCapabilities,
+    StudentDocuments,
+  ],
 
   globals: [Settings],
 
@@ -48,6 +58,12 @@ export default buildConfig({
     pool: { connectionString: process.env.DATABASE_URL ?? '' },
     schemaName: 'payload',
     migrationDir: path.resolve(dirname, 'src/payload/migrations'),
+
+    // Migrations are the source of truth. Payload's dev server otherwise pushes
+    // schema changes straight to the database, which desynchronises them and
+    // makes `payload migrate` stop for an interactive confirmation — hanging any
+    // non-interactive run, a deploy included.
+    push: false,
   }),
 
   // Used for intraoral photographs later: rotate to bake orientation, re-encode
