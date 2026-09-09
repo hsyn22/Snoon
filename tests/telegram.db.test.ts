@@ -21,7 +21,7 @@ describe.skipIf(!hasDatabase)('telegram links', async () => {
   )
   const { generateInviteToken, hashInviteToken } = await import('@/lib/telegram/invite-token')
   const { handleTelegramUpdate } = await import('@/lib/telegram/webhook')
-  const { telegramCopy } = await import('@/lib/copy')
+  const { telegramConfirm, telegramCopy } = await import('@/lib/copy')
 
   const caseIds: string[] = []
 
@@ -184,6 +184,62 @@ describe.skipIf(!hasDatabase)('telegram links', async () => {
     it('answers anything else with the available commands', async () => {
       const outcome = await handleTelegramUpdate({ message: { chat: { id: 2 }, text: 'مرحبا' } })
       expect(outcome.reply?.text).toBe(telegramCopy.unknownCommand)
+    })
+  })
+
+  describe('the patient confirming through a button', () => {
+    it('resolves the case from the chat, never from the callback payload', async () => {
+      const { claimCase } = await import('@/db/queries/claims')
+      const { students } = await import('@/db/schema')
+      const { CONFIRM_CONTACT_YES } = await import('@/lib/telegram/webhook')
+
+      const record = await makeCase()
+      const [student] = await db
+        .insert(students)
+        .values({
+          authUserId: `tg-${crypto.randomUUID()}`,
+          fullName: 'طالب',
+          universityId: 'u',
+          collegeId: 'c',
+          stageId: 'stage-4',
+          verificationStatus: 'VERIFIED',
+        })
+        .returning({ id: students.id })
+      await claimCase(record.id, student!.id)
+
+      await linkChat(await createInvite({ type: 'PATIENT_CASE', id: record.id }), '3030')
+
+      // The payload names only the answer. Anyone can send any callback data to a
+      // bot, so it must never be able to name which case is being confirmed.
+      const outcome = await handleTelegramUpdate({
+        callback_query: { id: 'cb1', data: CONFIRM_CONTACT_YES, message: { chat: { id: 3030 } } },
+      })
+
+      expect(outcome.answerCallbackId).toBe('cb1')
+      const [row] = await db.select({ status: cases.status }).from(cases).where(eq(cases.id, record.id))
+      expect(row?.status).toBe('CONTACTED')
+    })
+
+    it('tells an unbound chat there is nothing to confirm', async () => {
+      const { CONFIRM_CONTACT_YES } = await import('@/lib/telegram/webhook')
+      const outcome = await handleTelegramUpdate({
+        callback_query: { id: 'cb2', data: CONFIRM_CONTACT_YES, message: { chat: { id: 4040 } } },
+      })
+      expect(outcome.reply?.text).toBe(telegramConfirm.nothingToConfirm)
+    })
+
+    it('ignores callback data it does not recognise', async () => {
+      const outcome = await handleTelegramUpdate({
+        callback_query: { id: 'cb3', data: 'contact:yes; drop table cases', message: { chat: { id: 5050 } } },
+      })
+      expect(outcome.reply).toBeNull()
+      expect(outcome.answerCallbackId).toBe('cb3')
+    })
+
+    it('stays silent on a callback with no chat', async () => {
+      expect(await handleTelegramUpdate({ callback_query: { id: 'cb4', data: 'contact:yes' } })).toEqual({
+        reply: null,
+      })
     })
   })
 

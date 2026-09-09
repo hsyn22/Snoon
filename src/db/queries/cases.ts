@@ -241,6 +241,10 @@ export type ClaimantCaseView = StudentCaseListItem & {
   patientName: string
   patientPhone: string
   contactDeadlineAt: Date
+  /** Whether the student has already reported reaching the patient. */
+  contactAsserted: boolean
+  /** Whether the patient has confirmed it — the only thing that advances the case. */
+  contactConfirmed: boolean
   /**
    * Whether the contact window has already run out. Decided here rather than in
    * the component: "now" is request state, and a render should be a pure
@@ -266,6 +270,8 @@ export async function getCaseForClaimant(
       patientName: cases.patientName,
       patientPhone: cases.patientPhone,
       contactDeadlineAt: claims.contactDeadlineAt,
+      contactAssertedAt: claims.contactAssertedAt,
+      status: cases.status,
     })
     .from(cases)
     .innerJoin(claims, eq(claims.caseId, cases.id))
@@ -274,5 +280,13 @@ export async function getCaseForClaimant(
 
   if (!row) return null
 
-  return { ...row, isPastContactDeadline: row.contactDeadlineAt.getTime() < now.getTime() }
+  const { contactAssertedAt, status, ...rest } = row
+
+  return {
+    ...rest,
+    contactAsserted: contactAssertedAt !== null,
+    // CONTACTED and everything after it means the patient confirmed.
+    contactConfirmed: status !== 'MATCHED',
+    isPastContactDeadline: row.contactDeadlineAt.getTime() < now.getTime(),
+  }
 }

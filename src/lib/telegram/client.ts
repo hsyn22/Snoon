@@ -11,7 +11,14 @@ const API_TIMEOUT_MS = 10_000
 
 export type SendResult = { ok: true } | { ok: false; reason: string }
 
-export async function sendTelegramMessage(chatId: string, text: string): Promise<SendResult> {
+/** One row of tappable buttons under a message. */
+export type InlineButton = { text: string; callbackData: string }
+
+export async function sendTelegramMessage(
+  chatId: string,
+  text: string,
+  buttons?: readonly InlineButton[],
+): Promise<SendResult> {
   const config = getTelegramConfig()
   if (!config) return { ok: false, reason: 'not-configured' }
 
@@ -26,6 +33,18 @@ export async function sendTelegramMessage(chatId: string, text: string): Promise
         // Telegram's markdown parser would reject, and a failed parse means an
         // undelivered message rather than an ugly one.
         disable_web_page_preview: true,
+        ...(buttons && buttons.length > 0
+          ? {
+              reply_markup: {
+                inline_keyboard: [
+                  buttons.map((button) => ({
+                    text: button.text,
+                    callback_data: button.callbackData,
+                  })),
+                ],
+              },
+            }
+          : {}),
       }),
       signal: AbortSignal.timeout(API_TIMEOUT_MS),
     })
@@ -41,5 +60,27 @@ export async function sendTelegramMessage(chatId: string, text: string): Promise
     return { ok: true }
   } catch (error) {
     return { ok: false, reason: error instanceof Error ? error.message : 'unknown-error' }
+  }
+}
+
+/**
+ * Acknowledge a button tap.
+ *
+ * Telegram shows a loading spinner on the button until this is called, so
+ * skipping it leaves the patient looking at a control that appears stuck.
+ */
+export async function answerCallbackQuery(callbackQueryId: string, text?: string): Promise<void> {
+  const config = getTelegramConfig()
+  if (!config) return
+
+  try {
+    await fetch(`https://api.telegram.org/bot${config.botToken}/answerCallbackQuery`, {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ callback_query_id: callbackQueryId, text }),
+      signal: AbortSignal.timeout(API_TIMEOUT_MS),
+    })
+  } catch {
+    // Cosmetic. A failure here must not affect the decision already recorded.
   }
 }

@@ -110,3 +110,20 @@ export async function revokeLinksForChat(chatId: string): Promise<number> {
 
   return revoked.length
 }
+
+
+/** Which subject a chat is bound to, if any. The chat id is the trusted identity. */
+export async function getSubjectForChat(chatId: string): Promise<TelegramSubject | null> {
+  const [row] = await db
+    .select({ subjectType: telegramLinks.subjectType, subjectId: telegramLinks.subjectId })
+    .from(telegramLinks)
+    .where(
+      and(
+        eq(telegramLinks.chatId, chatId),
+        isNull(telegramLinks.revokedAt),
+      ),
+    )
+    .limit(1)
+
+  return row ? { type: row.subjectType, id: row.subjectId } : null
+}

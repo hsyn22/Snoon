@@ -406,10 +406,17 @@ These are genuinely unresolved. If a task depends on one, stop and ask rather th
    than merely inconvenient, so the mapping is admin-editable in Payload and worth auditing
    against cases that sit unclaimed. `listOpenCasesForStudent` already takes the scope as an
    explicit filter, so this is a call-site policy, not a data-layer change.
-4. **Patient confirmation mechanism.** How the patient confirms contact happened, without
-   an account and without SMS. Leading candidate: the Telegram bot asks them directly. Still
-   open is what happens for a patient who never opts in — the tracking link can carry a
-   confirm button, but an unanswered case must not stall forever.
+4. ~~**Patient confirmation mechanism.**~~ **Built.** The student reports having called,
+   which is recorded but moves nothing; the patient is then asked, and only their answer
+   advances `MATCHED → CONTACTED`. Asked two ways, because Telegram is optional: inline
+   buttons in the bot, and the same question on the tracking link. `reportNoContactByPatient`
+   records a "nobody called" without releasing the claim — the contact window is already
+   running, and a mistaken tap must not take a case from a student mid-call.
+   **Still open:** what happens when the patient never answers at all. Today the contact
+   window simply expires and the case returns to the queue, which is right when nobody
+   called and wrong when a student did call a patient who ignores both channels. Options:
+   a longer window once contact is reported, or surfacing these to an admin. Needs a
+   decision before real traffic.
 5. **Photo requirement.** Optional at submission — but should some treatments require them?
 6. **University choice by the patient.** Raised and deliberately deferred, not rejected: after
    picking a city, should the patient narrow their case to particular universities they can

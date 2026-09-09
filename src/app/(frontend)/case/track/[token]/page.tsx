@@ -3,12 +3,14 @@ import { headers } from 'next/headers'
 import Link from 'next/link'
 import { getCaseByTrackingToken } from '@/db/queries/cases'
 import { getAllTreatmentTypes, getCityById } from '@/lib/config'
-import { caseForm, caseStatus, caseTracking, common, site } from '@/lib/copy'
+import { caseForm, caseStatus, caseTracking, common, patientConfirm, site } from '@/lib/copy'
 import { formatCaseDate } from '@/lib/dates'
 import { formatPhoneForDisplay } from '@/lib/phone'
 import { isTelegramConfigured } from '@/lib/telegram/config'
 import { isPatientLinked } from './telegram-actions'
 import { TelegramInvite } from './telegram-invite'
+import { ConfirmContact } from './confirm-contact'
+import { hasPendingContactAssertion } from './confirm-queries'
 
 /**
  * The patient's view of their own case, opened by the tracking token in the URL.
@@ -71,6 +73,10 @@ export default async function TrackCasePage({
 
   // Notifications are optional and the section is simply absent when no bot is
   // configured, rather than offering something that cannot work.
+  // Only asked once a student has actually said they called — asking before that
+  // would have the patient confirming something that has not happened.
+  const awaitingConfirmation = await hasPendingContactAssertion(record.id)
+
   const telegramAvailable = isTelegramConfigured()
   const patientLinked = telegramAvailable ? await isPatientLinked(record.id) : false
 
@@ -116,6 +122,18 @@ export default async function TrackCasePage({
           <p className="mt-2 text-xs text-foreground-muted">{caseTracking.linkHint}</p>
           <p className="mt-2 text-xs font-medium text-warning">{caseTracking.linkWarning}</p>
         </section>
+
+        {awaitingConfirmation ? <ConfirmContact trackingToken={token} /> : null}
+
+        {/* Rendered from the server, not from the form's own state: answering
+            "yes" moves the case out of MATCHED, which unmounts the question —
+            so without this the patient taps and the question simply disappears
+            with nothing to show it worked. */}
+        {record.status === 'CONTACTED' ? (
+          <section className="mt-4 rounded-lg border border-border bg-surface p-4">
+            <p className="text-sm">{patientConfirm.confirmed}</p>
+          </section>
+        ) : null}
 
         {telegramAvailable ? (
           <TelegramInvite trackingToken={token} alreadyLinked={patientLinked} />

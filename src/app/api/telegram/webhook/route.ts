@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server'
 import { getTelegramConfig } from '@/lib/telegram/config'
-import { sendTelegramMessage } from '@/lib/telegram/client'
+import { answerCallbackQuery, sendTelegramMessage } from '@/lib/telegram/client'
 import { handleTelegramUpdate, type TelegramUpdate } from '@/lib/telegram/webhook'
 
 /**
@@ -31,6 +31,8 @@ export async function POST(request: Request): Promise<Response> {
 
   try {
     const outcome = await handleTelegramUpdate(update)
+    // Acknowledge first: Telegram spins the button until this lands.
+    if (outcome.answerCallbackId) await answerCallbackQuery(outcome.answerCallbackId)
     if (outcome.reply) await sendTelegramMessage(outcome.reply.chatId, outcome.reply.text)
   } catch (error) {
     // Never echo the update: it carries whatever a stranger typed.

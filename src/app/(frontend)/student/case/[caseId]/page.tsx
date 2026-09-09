@@ -11,6 +11,7 @@ import { getAllTreatmentTypes } from '@/lib/config'
 import { caseForm, site, studentClaim } from '@/lib/copy'
 import { formatCaseDateTime } from '@/lib/dates'
 import { formatPhoneForDisplay } from '@/lib/phone'
+import { AssertContact } from './assert-contact'
 
 export const metadata: Metadata = {
   title: studentClaim.title,
@@ -115,6 +116,12 @@ export default async function ClaimedCasePage({
           </a>
           <p className="mt-3 text-xs font-medium text-warning">{studentClaim.phonePrivacy}</p>
         </section>
+
+        <AssertContact
+          caseId={caseId}
+          alreadyAsserted={record.contactAsserted}
+          confirmed={record.contactConfirmed}
+        />
 
         <dl className="mt-4 rounded-lg border border-border bg-surface px-4">
           <Row label={studentClaim.nameLabel} value={record.patientName} />

@@ -233,6 +233,15 @@ export const claims = snoon.table(
      */
     contactDeadlineAt: timestamp('contact_deadline_at', { withTimezone: true }).notNull(),
 
+    /**
+     * When the student said they had reached the patient.
+     *
+     * Recorded, but it does NOT advance the case on its own: the student's word
+     * alone must not be able to hide a case forever. It exists so the patient can
+     * be asked to confirm, and so an admin can see who claimed what and said what.
+     */
+    contactAssertedAt: timestamp('contact_asserted_at', { withTimezone: true }),
+
     releasedAt: timestamp('released_at', { withTimezone: true }),
     /** Why the claim ended. Read by the queue so a student is not re-offered a case they lost. */
     releaseReason: text('release_reason'),

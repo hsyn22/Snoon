@@ -385,3 +385,41 @@ export const telegramInvite = {
   linked: 'الإشعارات مربوطة.',
   unavailable: 'الإشعارات لسه ما متوفرة.',
 } as const
+
+/** The bot asking the patient whether a student actually reached them. */
+export const telegramConfirm = {
+  ask: (referenceCode: string) =>
+    [
+      `الطالب اللي حاجز حالتك ${referenceCode} يكول إنه تواصل وياك.`,
+      '',
+      'صحيح؟',
+    ].join('\n'),
+
+  yesButton: 'إي، تواصل وياي',
+  noButton: 'لا، ما تواصل أحد',
+
+  thanksYes: 'شكراً. سجّلنا إنه تم التواصل.',
+  thanksNo: 'شكراً. إذا ما تواصل وياك بالوقت المحدد، الحالة ترجع تلقائياً لطالب ثاني.',
+  alreadyAnswered: 'سجّلنا جوابك من قبل.',
+  nothingToConfirm: 'ما أكو حالة تنتظر تأكيدك.',
+} as const
+
+/** The same confirmation on the patient's tracking page, for anyone not on Telegram. */
+export const patientConfirm = {
+  title: 'تواصل وياك طالب؟',
+  body: 'الطالب اللي حاجز حالتك يكول إنه تواصل وياك. أكّدلنا حتى نكمل.',
+  yes: 'إي، تواصل وياي',
+  no: 'لا، ما تواصل أحد',
+  confirmed: 'شكراً، سجّلنا إنه تم التواصل.',
+  denied: 'شكراً. إذا ما تواصل وياك بالوقت المحدد، الحالة ترجع لطالب ثاني.',
+} as const
+
+/** What the student sees on the case they are holding. */
+export const studentContact = {
+  assertTitle: 'تواصلت وية المريض؟',
+  assertBody: 'إذا اتصلت بيه، خبّرنا وراح نسأل المريض يأكد.',
+  assertAction: 'تواصلت وياه',
+  assertPending: 'دزّينا للمريض يأكد. ننتظر جوابه.',
+  assertConfirmed: 'المريض أكّد التواصل.',
+  assertFailed: 'ما كدرنا نسجّل. جرّب مرة لخ.',
+} as const

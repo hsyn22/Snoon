@@ -1,0 +1,1 @@
+ALTER TABLE "snoon"."claims" ADD COLUMN "contact_asserted_at" timestamp with time zone;

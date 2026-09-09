@@ -1,8 +1,9 @@
 import { eq } from 'drizzle-orm'
 import { db } from '@/db'
 import { cases } from '@/db/schema'
-import { linkChat, revokeLinksForChat } from '@/db/queries/telegram'
-import { telegramCopy } from '@/lib/copy'
+import { linkChat, revokeLinksForChat, getSubjectForChat } from '@/db/queries/telegram'
+import { telegramConfirm, telegramCopy } from '@/lib/copy'
+import { confirmContactByPatient, reportNoContactByPatient } from '@/lib/cases/contact'
 import { looksLikeInviteToken } from './invite-token'
 
 /**
@@ -22,16 +23,79 @@ export type TelegramUpdate = {
     chat?: { id?: number | string }
     text?: string
   }
+  callback_query?: {
+    id?: string
+    data?: string
+    message?: { chat?: { id?: number | string } }
+  }
 }
 
 export type WebhookOutcome = {
   /** Reply to send back, or null to stay silent. */
   reply: { chatId: string; text: string } | null
+  /** Button tap to acknowledge, so Telegram stops showing a spinner. */
+  answerCallbackId?: string
 }
 
 const NO_REPLY: WebhookOutcome = { reply: null }
 
+/** Callback payloads. Telegram caps callback_data at 64 bytes, so these stay short. */
+export const CONFIRM_CONTACT_YES = 'contact:yes'
+export const CONFIRM_CONTACT_NO = 'contact:no'
+
+/**
+ * Handle the patient tapping a confirmation button.
+ *
+ * The case is resolved from the chat's existing binding, never from the callback
+ * payload. Callback data is attacker-controlled — anyone can send any string to
+ * a bot — so it names the *answer*, never the case.
+ */
+async function handleContactCallback(
+  chatId: string,
+  data: string,
+  callbackId: string | undefined,
+): Promise<WebhookOutcome> {
+  const subject = await getSubjectForChat(chatId)
+
+  if (!subject || subject.type !== 'PATIENT_CASE') {
+    return { reply: { chatId, text: telegramConfirm.nothingToConfirm }, answerCallbackId: callbackId }
+  }
+
+  if (data === CONFIRM_CONTACT_YES) {
+    const result = await confirmContactByPatient(subject.id)
+    return {
+      reply: {
+        chatId,
+        text: result.ok ? telegramConfirm.thanksYes : telegramConfirm.alreadyAnswered,
+      },
+      answerCallbackId: callbackId,
+    }
+  }
+
+  const recorded = await reportNoContactByPatient(subject.id)
+  return {
+    reply: {
+      chatId,
+      text: recorded ? telegramConfirm.thanksNo : telegramConfirm.alreadyAnswered,
+    },
+    answerCallbackId: callbackId,
+  }
+}
+
 export async function handleTelegramUpdate(update: TelegramUpdate): Promise<WebhookOutcome> {
+  const callback = update.callback_query
+  if (callback) {
+    const callbackChatId = callback.message?.chat?.id
+    const data = callback.data
+    if (callbackChatId === undefined || callbackChatId === null || typeof data !== 'string') {
+      return NO_REPLY
+    }
+    if (data === CONFIRM_CONTACT_YES || data === CONFIRM_CONTACT_NO) {
+      return handleContactCallback(String(callbackChatId), data, callback.id)
+    }
+    return { reply: null, answerCallbackId: callback.id }
+  }
+
   const chatIdRaw = update.message?.chat?.id
   const text = update.message?.text
 
