@@ -4,9 +4,11 @@ import { headers } from 'next/headers'
 import Link from 'next/link'
 import { db } from '@/db'
 import { students } from '@/db/schema'
+import { getActiveClaimForStudent } from '@/db/queries/claims'
 import { auth } from '@/lib/auth'
-import { site, studentAuth, studentStatus } from '@/lib/copy'
+import { site, studentAuth, studentClaim, studentStatus } from '@/lib/copy'
 import { logoutAction } from './actions'
+import { CaseQueue } from './case-queue'
 
 export const metadata: Metadata = { title: studentAuth.loginTitle }
 
@@ -74,10 +76,19 @@ export default async function StudentHomePage() {
   // Logging in is not the same as being allowed to see cases. The verification
   // status below is read from the database, never inferred from the session.
   const [profile] = await db
-    .select({ verificationStatus: students.verificationStatus })
+    .select({
+      id: students.id,
+      collegeId: students.collegeId,
+      stageId: students.stageId,
+      verificationStatus: students.verificationStatus,
+    })
     .from(students)
     .where(eq(students.authUserId, session.user.id))
     .limit(1)
+
+  // A student holds at most one case at a time, and the case they hold matters
+  // more than the queue: someone is waiting for their call.
+  const activeClaim = profile ? await getActiveClaimForStudent(profile.id) : null
 
   return (
     <div className="mx-auto flex min-h-dvh max-w-md flex-col px-4">
@@ -111,12 +122,23 @@ export default async function StudentHomePage() {
           <Panel title={studentStatus.rejectedTitle} body={studentStatus.rejectedBody} />
         ) : profile.verificationStatus === 'SUSPENDED' ? (
           <Panel title={studentStatus.suspendedTitle} body={studentStatus.suspendedBody} />
+        ) : activeClaim ? (
+          <section className="rounded-lg border border-border bg-accent-muted p-5">
+            <h1 className="text-xl font-bold">{studentClaim.title}</h1>
+            <p className="mt-2 text-sm">{studentClaim.intro}</p>
+            <Link
+              href={`/student/case/${activeClaim.caseId}`}
+              className="mt-4 flex min-h-11 items-center justify-center rounded-md bg-accent px-4 font-medium text-accent-foreground"
+            >
+              {studentClaim.title}
+            </Link>
+          </section>
         ) : (
-          // VERIFIED. The case queue replaces this panel once the stage-capability
-          // mapping exists — it decides which cases this student may see. Until
-          // then say so plainly rather than showing a verified student a
-          // "under review" message that is not true.
-          <Panel title={studentStatus.verifiedTitle} body={studentStatus.verifiedBody} />
+          <CaseQueue
+            studentId={profile.id}
+            collegeId={profile.collegeId}
+            stageId={profile.stageId}
+          />
         )}
       </main>
     </div>

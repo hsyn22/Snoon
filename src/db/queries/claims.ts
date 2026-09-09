@@ -192,3 +192,21 @@ export function studentPreviouslyReleased(studentId: string) {
       ),
   )
 }
+
+
+/** The claim a student is currently holding, if any. A student holds at most one at a time. */
+export async function getActiveClaimForStudent(
+  studentId: string,
+): Promise<{ id: string; caseId: string; contactDeadlineAt: Date } | null> {
+  const [row] = await db
+    .select({
+      id: claims.id,
+      caseId: claims.caseId,
+      contactDeadlineAt: claims.contactDeadlineAt,
+    })
+    .from(claims)
+    .where(and(eq(claims.studentId, studentId), eq(claims.status, 'ACTIVE')))
+    .limit(1)
+
+  return row ?? null
+}

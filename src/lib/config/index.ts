@@ -224,3 +224,49 @@ export async function hasStudentPlacesConfigured(): Promise<boolean> {
   ])
   return universities.length > 0 && colleges.length > 0 && stages.length > 0
 }
+
+
+/**
+ * The city a college sits in, resolved college → university → city.
+ *
+ * A student's queue is scoped to the city they actually attend clinic in, and
+ * that fact lives across two Payload relationships rather than on the student.
+ * Returns null if either link is missing, and the caller shows an empty queue —
+ * an empty queue is diagnosable, a queue scoped to the wrong city is not.
+ */
+export const getCityIdForCollege = cache(async (collegeId: string): Promise<string | null> => {
+  const payload = await getPayload({ config })
+  const result = await payload.find({
+    collection: 'colleges',
+    where: { slug: { equals: collegeId } },
+    // Two hops: the college's university, and that university's city.
+    depth: 2,
+    limit: 1,
+    pagination: false,
+  })
+
+  const college = result.docs[0]
+  if (!college || typeof college.university !== 'object' || college.university === null) return null
+
+  const city = (college.university as { city?: unknown }).city
+  return relatedSlug(city)
+})
+
+/**
+ * The full scope of what a student may see: where they attend, and what their
+ * stage may treat there.
+ */
+export async function getStudentCaseScope(
+  collegeId: string,
+  stageId: string,
+): Promise<{ cityIds: string[]; treatmentTypeIds: string[] }> {
+  const [cityId, treatmentTypeIds] = await Promise.all([
+    getCityIdForCollege(collegeId),
+    getStageCapabilityTreatmentIds(collegeId, stageId),
+  ])
+
+  return {
+    cityIds: cityId ? [cityId] : [],
+    treatmentTypeIds: [...treatmentTypeIds],
+  }
+}

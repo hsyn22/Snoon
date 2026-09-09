@@ -279,3 +279,51 @@ export const studentProfile = {
     generic: 'ما كدرنا نرسل المعلومات. جرّب مرة لخ بعد شوية.',
   },
 } as const
+
+/** The verified student's queue of available cases, and the case they hold. */
+export const studentQueue = {
+  title: 'الحالات المتاحة',
+  intro: 'هذي حالات تناسب مرحلتك وعيادتك. أول ما تحجز وحدة تظهرلك معلومات التواصل.',
+
+  emptyTitle: 'ما أكو حالات متاحة هسه',
+  emptyBody: 'ارجع شوفها بعدين. الحالات الجديدة تظهر هنا أول ما تنقدّم.',
+  noScopeTitle: 'ما نكدر نعرض الحالات',
+  noScopeBody:
+    'ما محددة الحالات اللي تكدر مرحلتك تعالجها بعيادتك. راجع إدارة سنون حتى تضبطها.',
+
+  caseReference: 'رمز الحالة',
+  caseTreatments: 'العلاج المطلوب',
+  caseDays: 'الأيام المتاحة',
+  caseNotes: 'ملاحظات المريض',
+  caseSubmitted: 'قُدّمت',
+
+  claim: 'احجز الحالة',
+  claiming: 'قيد الحجز…',
+
+  claimFailedUnavailable: 'هاي الحالة انحجزت من طالب ثاني. شوف باقي الحالات.',
+  claimFailedNotVerified: 'حسابك مو موثّق.',
+  claimFailedGeneric: 'ما كدرنا نحجز الحالة. جرّب مرة لخ.',
+} as const
+
+/** The case a student is holding right now. */
+export const studentClaim = {
+  title: 'الحالة اللي حاجزها',
+  intro: 'تواصل وية المريض واتفق وياه على الموعد.',
+
+  deadlineLabel: 'لازم تتواصل قبل',
+  deadlinePassed: 'انتهت المهلة.',
+  deadlineHint: 'إذا ما تواصلت بالوقت، الحالة ترجع للقائمة لطالب ثاني.',
+
+  nameLabel: 'اسم المريض',
+  phoneLabel: 'رقم الموبايل',
+  callAction: 'اتصل',
+  phonePrivacy: 'هذا الرقم ظهرلك لأنك حاجز الحالة. لا تشاركه مع أي أحد.',
+
+  treatmentsLabel: 'العلاج المطلوب',
+  daysLabel: 'الأيام المتاحة',
+  notesLabel: 'ملاحظات المريض',
+
+  backToQueue: 'رجوع للحالات',
+  notFoundTitle: 'ما لكينا الحالة',
+  notFoundBody: 'يمكن انتهت مهلتك وراحت لطالب ثاني.',
+} as const

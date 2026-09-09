@@ -238,11 +238,18 @@ export type ClaimantCaseView = StudentCaseListItem & {
   patientName: string
   patientPhone: string
   contactDeadlineAt: Date
+  /**
+   * Whether the contact window has already run out. Decided here rather than in
+   * the component: "now" is request state, and a render should be a pure
+   * function of what it is given.
+   */
+  isPastContactDeadline: boolean
 }
 
 export async function getCaseForClaimant(
   caseId: string,
   studentId: string,
+  now: Date = new Date(),
 ): Promise<ClaimantCaseView | null> {
   const [row] = await db
     .select({
@@ -262,5 +269,7 @@ export async function getCaseForClaimant(
     .where(and(eq(cases.id, caseId), eq(claims.studentId, studentId), eq(claims.status, 'ACTIVE')))
     .limit(1)
 
-  return row ?? null
+  if (!row) return null
+
+  return { ...row, isPastContactDeadline: row.contactDeadlineAt.getTime() < now.getTime() }
 }

@@ -27,3 +27,23 @@ export function formatCaseDate(date: Date): string {
 
   return stripBidiControls(formatted)
 }
+
+/**
+ * "11 أيلول 2026 في 1:15 م" — a moment, not a day.
+ *
+ * Used for the contact deadline. The window is 48 hours, so a date alone is
+ * ambiguous by most of a day in either direction, and the student needs to know
+ * whether they still have tonight.
+ */
+export function formatCaseDateTime(date: Date): string {
+  const formatted = new Intl.DateTimeFormat('ar-IQ', {
+    day: 'numeric',
+    month: 'long',
+    year: 'numeric',
+    hour: 'numeric',
+    minute: '2-digit',
+    numberingSystem: 'latn',
+  }).format(date)
+
+  return stripBidiControls(formatted)
+}

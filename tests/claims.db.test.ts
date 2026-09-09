@@ -157,6 +157,22 @@ describe.skipIf(!hasDatabase)('claiming', async () => {
       expect(view?.patientName).toBe('أبو حسن')
     })
 
+    it('reports whether the contact window has run out', async () => {
+      const caseId = await makeCase()
+      const studentId = await makeStudent()
+      const result = await claimCase(caseId, studentId)
+      expect(result.ok).toBe(true)
+      if (!result.ok) return
+
+      const now = await getCaseForClaimant(caseId, studentId)
+      expect(now?.isPastContactDeadline).toBe(false)
+
+      // Asking as of a moment after the deadline, without waiting 48 hours.
+      const later = new Date(result.contactDeadlineAt.getTime() + 1000)
+      const afterwards = await getCaseForClaimant(caseId, studentId, later)
+      expect(afterwards?.isPastContactDeadline).toBe(true)
+    })
+
     it('gives a different student nothing at all', async () => {
       const caseId = await makeCase()
       const claimant = await makeStudent()
