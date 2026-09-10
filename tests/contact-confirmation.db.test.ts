@@ -1,6 +1,9 @@
 import { eq, inArray } from 'drizzle-orm'
 import { afterAll, describe, expect, it } from 'vitest'
 
+/** Fixed here so the tests do not depend on a Payload setting. */
+const GRACE_HOURS = 48
+
 /**
  * Contact confirmation.
  *
@@ -73,7 +76,7 @@ describe.skipIf(!hasDatabase)('contact confirmation', async () => {
       const studentId = await makeStudent()
       await claimCase(caseId, studentId)
 
-      const result = await assertContactMade(studentId, caseId)
+      const result = await assertContactMade(studentId, caseId, GRACE_HOURS)
       expect(result.ok).toBe(true)
       // The whole point: reporting contact is not the same as it having happened.
       expect(await statusOf(caseId)).toBe('MATCHED')
@@ -83,7 +86,7 @@ describe.skipIf(!hasDatabase)('contact confirmation', async () => {
       const caseId = await makeCase()
       const studentId = await makeStudent()
       await claimCase(caseId, studentId)
-      await assertContactMade(studentId, caseId)
+      await assertContactMade(studentId, caseId, GRACE_HOURS)
 
       const events = await db
         .select({ from: caseEvents.fromStatus, to: caseEvents.toStatus, reason: caseEvents.reason })
@@ -102,7 +105,7 @@ describe.skipIf(!hasDatabase)('contact confirmation', async () => {
       const stranger = await makeStudent()
       await claimCase(caseId, holder)
 
-      expect(await assertContactMade(stranger, caseId)).toEqual({
+      expect(await assertContactMade(stranger, caseId, GRACE_HOURS)).toEqual({
         ok: false,
         reason: 'NO_ACTIVE_CLAIM',
       })
@@ -116,7 +119,7 @@ describe.skipIf(!hasDatabase)('contact confirmation', async () => {
       if (!claim.ok) return
 
       await releaseClaim(claim.claimId, { reason: 'expired', actorType: 'SYSTEM' })
-      expect(await assertContactMade(studentId, caseId)).toEqual({
+      expect(await assertContactMade(studentId, caseId, GRACE_HOURS)).toEqual({
         ok: false,
         reason: 'NO_ACTIVE_CLAIM',
       })
@@ -128,7 +131,7 @@ describe.skipIf(!hasDatabase)('contact confirmation', async () => {
       const caseId = await makeCase()
       const studentId = await makeStudent()
       await claimCase(caseId, studentId)
-      await assertContactMade(studentId, caseId)
+      await assertContactMade(studentId, caseId, GRACE_HOURS)
 
       const result = await confirmContactByPatient(caseId)
       expect(result.ok).toBe(true)
@@ -223,7 +226,7 @@ describe.skipIf(!hasDatabase)('contact confirmation', async () => {
       expect(before?.contactAsserted).toBe(false)
       expect(before?.contactConfirmed).toBe(false)
 
-      await assertContactMade(studentId, caseId)
+      await assertContactMade(studentId, caseId, GRACE_HOURS)
       const reported = await getCaseForClaimant(caseId, studentId)
       expect(reported?.contactAsserted).toBe(true)
       expect(reported?.contactConfirmed).toBe(false)

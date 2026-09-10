@@ -1,6 +1,9 @@
 import { eq, inArray } from 'drizzle-orm'
 import { afterAll, describe, expect, it } from 'vitest'
 
+/** Fixed here so the tests do not depend on a Payload setting. */
+const GRACE_HOURS = 48
+
 /**
  * A case can carry someone else's phone number.
  *
@@ -146,7 +149,7 @@ describe.skipIf(!hasDatabase)('a case submitted with the wrong number', async ()
     const { caseId } = await makeCase(phone)
     const studentId = await makeStudent()
     await claimCase(caseId, studentId)
-    await assertContactMade(studentId, caseId)
+    await assertContactMade(studentId, caseId, GRACE_HOURS)
 
     expect((await reportWrongNumber(studentId, caseId, 30)).ok).toBe(true)
   })

@@ -8,6 +8,7 @@ import { db } from '@/db'
 import { students } from '@/db/schema'
 import { auth } from '@/lib/auth'
 import { assertContactMade } from '@/lib/cases/contact'
+import { getContactGraceHours } from '@/lib/config/settings'
 import { studentContact } from '@/lib/copy'
 import { askPatientToConfirmContact } from '@/lib/notifications/ask-patient-to-confirm'
 
@@ -36,7 +37,7 @@ export async function assertContactAction(
     .limit(1)
   if (!student) redirect('/student')
 
-  const result = await assertContactMade(student.id, caseId)
+  const result = await assertContactMade(student.id, caseId, await getContactGraceHours())
   if (!result.ok) return { error: studentContact.assertFailed }
 
   // Best-effort: the patient may not use Telegram, and their tracking link

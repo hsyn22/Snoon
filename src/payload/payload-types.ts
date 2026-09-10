@@ -634,6 +634,10 @@ export interface Setting {
    */
   caseExpiryDays: number;
   /**
+   * لما الطالب يبلّغ إنه اتصل بالمريض، نمدد مهلته هذي المدة حتى ننطي المريض وقت يأكد. مريض ما يستعمل تلگرام وما يفتح الرابط ممكن ياخذ يومين لحد ما يرد. الافتراضي 48 ساعة.
+   */
+  contactGraceHours: number;
+  /**
    * إذا طالب بلّغ إن صاحب الرقم ما طلب علاج، الرقم ما يكدر يقدّم حالة جديدة هذي المدة. هذا يمنع نفس الشخص من إعادة إرسال نفس الطلب على رقم شخص ما يعرف. تكدر تشيل الإيقاف من صفحة الحالات.
    */
   wrongNumberBlockDays: number;
@@ -659,6 +663,7 @@ export interface Setting {
 export interface SettingsSelect<T extends boolean = true> {
   contactWindowHours?: T;
   caseExpiryDays?: T;
+  contactGraceHours?: T;
   wrongNumberBlockDays?: T;
   maxOpenCasesPerPhone?: T;
   maxCasesPerPhonePerDay?: T;

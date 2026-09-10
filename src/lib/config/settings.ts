@@ -109,3 +109,22 @@ export const getPhoneSubmissionLimits = cache(
     }
   },
 )
+
+
+const FALLBACK_CONTACT_GRACE_HOURS = 48
+
+/**
+ * Extra time granted when a student reports having called.
+ *
+ * The contact window exists to stop a case being sat on. But a student who
+ * actually rang has done their part, and the patient they rang may simply not
+ * use Telegram and may never open a tracking link — which is an ordinary way for
+ * the median user to behave, not a failure. Taking the case off that student at
+ * the 48-hour mark punishes the one person who did what was asked.
+ */
+export const getContactGraceHours = cache(async (): Promise<number> => {
+  const payload = await getPayload({ config })
+  const settings = await payload.findGlobal({ slug: 'settings' })
+  const value = settings.contactGraceHours
+  return typeof value === 'number' && value > 0 ? value : FALLBACK_CONTACT_GRACE_HOURS
+})

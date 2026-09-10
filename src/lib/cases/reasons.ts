@@ -28,6 +28,8 @@ export const CASE_REASON = {
   RETURNED_TO_QUEUE: 'Returned to the queue for another student.',
   UNCLAIMED_TOO_LONG: 'Case sat unclaimed past its useful life.',
   WRONG_NUMBER: 'The person reached never asked for treatment; number put on cooldown.',
+  CONTACT_CONFIRMED_BY_ADMIN: 'Admin confirmed contact after the patient answered neither channel.',
+  RELEASED_BY_ADMIN: 'Admin returned the case to the queue after the patient answered neither channel.',
   PART_COMPLETED: 'Student completed the treatments their stage may perform.',
   REMAINDER_QUEUED: 'Remaining treatments returned to the queue for another stage.',
 } as const
@@ -50,6 +52,10 @@ export const CASE_REASON_AR: Record<CaseReason, string> = {
   [CASE_REASON.RETURNED_TO_QUEUE]: 'رجعت للقائمة حتى ياخذها طالب ثاني.',
   [CASE_REASON.UNCLAIMED_TOO_LONG]: 'كعدت بالقائمة بدون ما ياخذها أحد.',
   [CASE_REASON.WRONG_NUMBER]: 'الطالب بلّغ إن صاحب الرقم ما طلب علاج. الرقم انوقف مؤقتاً.',
+  [CASE_REASON.CONTACT_CONFIRMED_BY_ADMIN]:
+    'الإدارة أكّدت التواصل بعد ما المريض ما رد على الإشعار ولا على الرابط.',
+  [CASE_REASON.RELEASED_BY_ADMIN]:
+    'الإدارة رجّعت الحالة للقائمة بعد ما المريض ما رد على الإشعار ولا على الرابط.',
   [CASE_REASON.PART_COMPLETED]: 'الطالب خلّص العلاجات اللي تخص مرحلته.',
   [CASE_REASON.REMAINDER_QUEUED]: 'باقي العلاجات رجعت للقائمة حتى ياخذها طالب من مرحلة ثانية.',
 }

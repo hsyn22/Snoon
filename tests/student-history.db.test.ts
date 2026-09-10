@@ -1,6 +1,9 @@
 import { inArray } from 'drizzle-orm'
 import { afterAll, describe, expect, it } from 'vitest'
 
+/** Fixed here so the tests do not depend on a Payload setting. */
+const GRACE_HOURS = 48
+
 /**
  * A student's own record of the cases they have held.
  *
@@ -67,7 +70,7 @@ describe.skipIf(!hasDatabase)('a student’s case history', async () => {
 
   async function treat(studentId: string, caseId: string) {
     await claimCase(caseId, studentId)
-    await assertContactMade(studentId, caseId)
+    await assertContactMade(studentId, caseId, GRACE_HOURS)
     await confirmContactByPatient(caseId)
     await confirmAppointment(studentId, caseId, new Date(Date.now() + 3 * 86400_000))
     await recordOutcome(studentId, caseId, 'COMPLETED')
@@ -132,7 +135,7 @@ describe.skipIf(!hasDatabase)('a student’s case history', async () => {
     const caseId = await makeCase(['root-canal', 'partial-denture'])
 
     await claimCase(caseId, fifth)
-    await assertContactMade(fifth, caseId)
+    await assertContactMade(fifth, caseId, GRACE_HOURS)
     await confirmContactByPatient(caseId)
     await confirmAppointment(fifth, caseId, new Date(Date.now() + 3 * 86400_000))
     await returnRemainderToQueue(fifth, caseId, ['root-canal'])

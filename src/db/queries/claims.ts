@@ -1,4 +1,4 @@
-import { and, count, desc, eq, inArray, lte, notExists, sql } from 'drizzle-orm'
+import { and, count, desc, eq, inArray, isNull, isNotNull, lte, notExists, sql } from 'drizzle-orm'
 import { db } from '@/db'
 import { caseEvents, cases, claims, students } from '@/db/schema'
 import { getContactWindowHours } from '@/lib/config/settings'
@@ -165,7 +165,24 @@ export async function expireOverdueClaims(now: Date = new Date()): Promise<numbe
   const overdue = await db
     .select({ id: claims.id })
     .from(claims)
-    .where(and(eq(claims.status, 'ACTIVE'), lte(claims.contactDeadlineAt, now)))
+    .where(
+      and(
+        eq(claims.status, 'ACTIVE'),
+        lte(claims.contactDeadlineAt, now),
+        /**
+         * Only claims where the student never said they called.
+         *
+         * That is the case this job was written for: nobody rang, and the
+         * patient should not wait behind a student who is not going to act. A
+         * student who did ring is a different situation entirely — the silence
+         * is the patient's, and taking the case away punishes the one person who
+         * did what was asked while sending the next student to the same
+         * unresponsive number. Those go to an admin instead, and are never
+         * released automatically. See `listClaimsAwaitingPatient`.
+         */
+        isNull(claims.contactAssertedAt),
+      ),
+    )
 
   let released = 0
   for (const claim of overdue) {
@@ -276,4 +293,61 @@ export async function countTreatedCasesForStudent(studentId: string): Promise<nu
     .where(and(eq(claims.studentId, studentId), eq(claims.status, 'COMPLETED')))
 
   return Number(row?.total ?? 0)
+}
+
+/**
+ * Claims where the student says they called and the patient never answered.
+ *
+ * The gap this fills: the product asks the patient to confirm, through Telegram
+ * and through their tracking link, and only their answer advances the case. A
+ * patient who uses neither — which is entirely ordinary on a cheap phone —
+ * leaves the case stuck. Advancing it on the student's word alone is exactly
+ * what the confirmation rule exists to prevent, and releasing it punishes a
+ * student who did their part.
+ *
+ * So neither happens automatically. These surface to an admin, who can ring the
+ * patient and decide. That does not scale to thousands of cases and does not
+ * need to: at one or two cities it is a handful a week, and a wrong automatic
+ * answer here costs someone their treatment or their case.
+ */
+export type ClaimAwaitingPatient = {
+  claimId: string
+  caseId: string
+  referenceCode: string
+  studentId: string
+  studentName: string
+  contactAssertedAt: Date
+  contactDeadlineAt: Date
+}
+
+export async function listClaimsAwaitingPatient(
+  now: Date = new Date(),
+  limit = 50,
+): Promise<ClaimAwaitingPatient[]> {
+  return db
+    .select({
+      claimId: claims.id,
+      caseId: claims.caseId,
+      referenceCode: cases.referenceCode,
+      studentId: claims.studentId,
+      studentName: students.fullName,
+      contactAssertedAt: claims.contactAssertedAt,
+      contactDeadlineAt: claims.contactDeadlineAt,
+    })
+    .from(claims)
+    .innerJoin(cases, eq(cases.id, claims.caseId))
+    .innerJoin(students, eq(students.id, claims.studentId))
+    .where(
+      and(
+        eq(claims.status, 'ACTIVE'),
+        eq(cases.status, 'MATCHED'),
+        isNotNull(claims.contactAssertedAt),
+        lte(claims.contactDeadlineAt, now),
+      ),
+    )
+    .orderBy(claims.contactDeadlineAt)
+    .limit(limit)
+    .then((rows) =>
+      rows.map((row) => ({ ...row, contactAssertedAt: row.contactAssertedAt as Date })),
+    )
 }

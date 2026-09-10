@@ -36,6 +36,19 @@ export const Settings: GlobalConfig = {
       },
     },
     {
+      name: 'contactGraceHours',
+      type: 'number',
+      required: true,
+      defaultValue: 48,
+      min: 1,
+      max: 336,
+      label: 'مهلة إضافية بعد ما الطالب يكَول إنه اتصل (بالساعات)',
+      admin: {
+        description:
+          'لما الطالب يبلّغ إنه اتصل بالمريض، نمدد مهلته هذي المدة حتى ننطي المريض وقت يأكد. مريض ما يستعمل تلگرام وما يفتح الرابط ممكن ياخذ يومين لحد ما يرد. الافتراضي 48 ساعة.',
+      },
+    },
+    {
       name: 'wrongNumberBlockDays',
       type: 'number',
       required: true,

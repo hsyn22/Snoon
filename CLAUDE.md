@@ -675,11 +675,18 @@ These are genuinely unresolved. If a task depends on one, stop and ask rather th
    buttons in the bot, and the same question on the tracking link. `reportNoContactByPatient`
    records a "nobody called" without releasing the claim — the contact window is already
    running, and a mistaken tap must not take a case from a student mid-call.
-   **Still open:** what happens when the patient never answers at all. Today the contact
-   window simply expires and the case returns to the queue, which is right when nobody
-   called and wrong when a student did call a patient who ignores both channels. Options:
-   a longer window once contact is reported, or surfacing these to an admin. Needs a
-   decision before real traffic.
+   ~~**Still open:** what happens when the patient never answers at all.~~ **Decided —
+   both options, because they answer different halves.** Reporting contact now *extends* the
+   window by a configurable grace (default 48h), since a patient who uses neither Telegram
+   nor their tracking link is ordinary on a cheap phone rather than a failure. When even the
+   grace runs out, the expiry job leaves the claim alone — it only ever releases claims where
+   `contact_asserted_at IS NULL`, the case it was written for — and the claim surfaces to an
+   admin at `/admin/cases`, who rings the patient and either confirms contact or returns the
+   case to the queue. Neither is automatic: advancing on the student's word is what the
+   confirmation rule exists to prevent, and releasing punishes the one person who did what
+   was asked. An admin who has rung the patient is a check; a timer is not. This does not
+   scale to thousands of cases and does not need to — at one or two cities it is a handful a
+   week, and a wrong automatic answer costs someone their treatment or their case.
 5. **Photo requirement.** Optional at submission — but should some treatments require them?
 6. **University choice by the patient.** Raised and deliberately deferred, not rejected: after
    picking a city, should the patient narrow their case to particular universities they can

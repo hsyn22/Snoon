@@ -8,7 +8,9 @@ import {
   type AdminCaseView,
 } from '@/db/queries/admin-cases'
 import { listActivePhoneBlocks, type PhoneBlockRow } from '@/db/queries/phone-blocks'
+import { listClaimsAwaitingPatient, type ClaimAwaitingPatient } from '@/db/queries/claims'
 import { liftPhoneBlockAction } from './phone-block-actions'
+import { decideStuckContactAction } from './stuck-contact-actions'
 import {
   getAllCities,
   getAllTreatmentTypes,
@@ -146,12 +148,13 @@ export default async function CaseLookupView({
   // Only one case's contact details are ever loaded, and only for a code the
   // admin typed. The overview list below cannot contain them.
   const record: AdminCaseView | null = normalised ? await findCaseForAdmin(normalised) : null
-  const [recent, counts, blocks] = record
-    ? [[], {} as Record<string, number>, [] as PhoneBlockRow[]]
+  const [recent, counts, blocks, stuck] = record
+    ? [[], {} as Record<string, number>, [] as PhoneBlockRow[], [] as ClaimAwaitingPatient[]]
     : await Promise.all([
         listRecentCasesForAdmin(25),
         countCasesByStatus(),
         listActivePhoneBlocks(),
+        listClaimsAwaitingPatient(),
       ])
 
   return (
@@ -237,6 +240,97 @@ export default async function CaseLookupView({
               </div>
             )}
           </section>
+
+          {stuck.length > 0 ? (
+            <section style={{ marginBottom: '2rem' }}>
+              <h2 style={{ fontSize: '1rem', marginBottom: '0.25rem' }}>
+                تنتظر قرارك — المريض ما رد
+              </h2>
+              <p style={{ opacity: 0.7, fontSize: '0.85rem', margin: '0 0 0.75rem' }}>
+                الطالب كَال إنه اتصل، وسألنا المريض بتلگرام وبرابط المتابعة وما رد على
+                الاثنين. ما نكدر نأكد التواصل بكلام الطالب لحاله، وما نكدر نسحب الحالة من
+                طالب سوّى اللي عليه. اتصل بالمريض وقرر.
+              </p>
+
+              <div style={{ display: 'grid', gap: '0.75rem' }}>
+                {stuck.map((entry) => (
+                  <div
+                    key={entry.claimId}
+                    style={{ border: BORDER, borderRadius: '0.5rem', padding: '0.75rem 1rem' }}
+                  >
+                    <div
+                      style={{
+                        display: 'flex',
+                        justifyContent: 'space-between',
+                        gap: '1rem',
+                        flexWrap: 'wrap',
+                      }}
+                    >
+                      <a
+                        href={`?ref=${encodeURIComponent(entry.referenceCode)}`}
+                        style={{ color: 'inherit' }}
+                      >
+                        <strong>
+                          <Ltr>{entry.referenceCode}</Ltr>
+                        </strong>
+                      </a>
+                      <span style={{ opacity: 0.7, fontSize: '0.85rem' }}>
+                        {entry.studentName}
+                      </span>
+                    </div>
+
+                    <p style={{ opacity: 0.7, fontSize: '0.85rem', margin: '0.5rem 0 0.75rem' }}>
+                      الطالب بلّغ بـ {formatCaseDateTime(entry.contactAssertedAt)}
+                    </p>
+
+                    <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
+                      <form
+                        action={async () => {
+                          'use server'
+                          await decideStuckContactAction(entry.caseId, 'CONFIRMED')
+                        }}
+                      >
+                        <button
+                          type="submit"
+                          style={{
+                            padding: '0.4rem 0.9rem',
+                            borderRadius: '0.35rem',
+                            border: 'none',
+                            background: '#116149',
+                            color: 'white',
+                            cursor: 'pointer',
+                          }}
+                        >
+                          التواصل صار — كمّل الحالة
+                        </button>
+                      </form>
+
+                      <form
+                        action={async () => {
+                          'use server'
+                          await decideStuckContactAction(entry.caseId, 'RELEASE')
+                        }}
+                      >
+                        <button
+                          type="submit"
+                          style={{
+                            padding: '0.4rem 0.9rem',
+                            borderRadius: '0.35rem',
+                            border: BORDER,
+                            background: 'transparent',
+                            color: 'inherit',
+                            cursor: 'pointer',
+                          }}
+                        >
+                          رجّعها للقائمة
+                        </button>
+                      </form>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </section>
+          ) : null}
 
           {blocks.length > 0 ? (
             <section style={{ marginBottom: '2rem' }}>

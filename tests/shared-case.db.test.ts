@@ -1,6 +1,9 @@
 import { eq, inArray } from 'drizzle-orm'
 import { afterAll, describe, expect, it } from 'vitest'
 
+/** Fixed here so the tests do not depend on a Payload setting. */
+const GRACE_HOURS = 48
+
 /**
  * A case that needs two students.
  *
@@ -73,7 +76,7 @@ describe.skipIf(!hasDatabase)('a case needing two stages', async () => {
    *  — or a hand-off — becomes possible. */
   async function reachAppointment(studentId: string, caseId: string) {
     await claimCase(caseId, studentId)
-    await assertContactMade(studentId, caseId)
+    await assertContactMade(studentId, caseId, GRACE_HOURS)
     await confirmContactByPatient(caseId)
     await confirmAppointment(studentId, caseId, new Date(Date.now() + 3 * 24 * 60 * 60 * 1000))
   }

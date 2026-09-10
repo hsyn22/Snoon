@@ -3,6 +3,7 @@ import { db } from '@/db'
 import { caseEvents, cases, claims } from '@/db/schema'
 import { assertTransition } from './transitions'
 import { CASE_REASON } from './reasons'
+import { releaseClaim } from '@/db/queries/claims'
 
 /**
  * Confirming that contact actually happened.
@@ -21,10 +22,20 @@ export type AssertContactResult =
  * The student says they reached the patient.
  *
  * Writes an event and a timestamp; deliberately does not change the case status.
+ * Only the patient's own answer does that.
+ *
+ * It does one other thing: it **extends the contact window**. The window exists
+ * to stop a case being sat on, and a student who actually rang is not sitting on
+ * it — but the patient they rang may never use Telegram and may never open a
+ * tracking link, which is an ordinary way for the median user to behave rather
+ * than a failure. Without the extension the case is taken off the one person who
+ * did what was asked, and handed to another student who will ring the same
+ * unresponsive number.
  */
 export async function assertContactMade(
   studentId: string,
   caseId: string,
+  graceHours: number,
 ): Promise<AssertContactResult> {
   return db.transaction(async (tx) => {
     const [claim] = await tx
@@ -38,9 +49,14 @@ export async function assertContactMade(
 
     if (!claim) return { ok: false, reason: 'NO_ACTIVE_CLAIM' }
 
+    // Guarded by `contactAssertedAt IS NULL`, so a student tapping twice cannot
+    // extend their own deadline indefinitely.
     await tx
       .update(claims)
-      .set({ contactAssertedAt: new Date() })
+      .set({
+        contactAssertedAt: new Date(),
+        contactDeadlineAt: new Date(Date.now() + graceHours * 60 * 60 * 1000),
+      })
       .where(and(eq(claims.id, claim.id), isNull(claims.contactAssertedAt)))
 
     await tx.insert(caseEvents).values({
@@ -127,4 +143,80 @@ export async function reportNoContactByPatient(caseId: string): Promise<boolean>
   })
 
   return true
+}
+
+export type AdminContactDecision = 'CONFIRMED' | 'RELEASE'
+
+/**
+ * An admin decides a case where the student says they called and the patient
+ * answered neither channel.
+ *
+ * This is the only path by which contact is confirmed without the patient
+ * saying so, and it is deliberately a person rather than a timer. The rule the
+ * product is built on — a student's word alone must not advance a case — is
+ * about an *unchecked* claim; an admin who has rung the patient, or who knows
+ * the student, is a check. A timer would not be.
+ *
+ * Both outcomes are guarded by the status they may come from, so two admins
+ * clicking at once cannot apply the decision twice.
+ */
+export async function decideStuckContact(
+  caseId: string,
+  decision: AdminContactDecision,
+  adminEmail: string,
+): Promise<ConfirmContactResult> {
+  if (decision === 'CONFIRMED') {
+    assertTransition('MATCHED', 'CONTACTED')
+
+    return db.transaction(async (tx) => {
+      const updated = await tx
+        .update(cases)
+        .set({ status: 'CONTACTED', updatedAt: new Date() })
+        .where(and(eq(cases.id, caseId), eq(cases.status, 'MATCHED')))
+        .returning({ referenceCode: cases.referenceCode })
+
+      const row = updated[0]
+      if (!row) return { ok: false, reason: 'WRONG_STATUS' }
+
+      await tx.insert(caseEvents).values({
+        caseId,
+        fromStatus: 'MATCHED',
+        toStatus: 'CONTACTED',
+        actorType: 'ADMIN',
+        actorId: adminEmail,
+        reason: CASE_REASON.CONTACT_CONFIRMED_BY_ADMIN,
+      })
+
+      return { ok: true, referenceCode: row.referenceCode }
+    })
+  }
+
+  // Back to the queue. The student keeps the case in their history as a claim
+  // that was released, which is what happened — they are not marked as having
+  // failed, and the patient is not left waiting behind a stalled case.
+  const [record] = await db
+    .select({ referenceCode: cases.referenceCode })
+    .from(cases)
+    .where(and(eq(cases.id, caseId), eq(cases.status, 'MATCHED')))
+    .limit(1)
+
+  if (!record) return { ok: false, reason: 'WRONG_STATUS' }
+
+  const [claim] = await db
+    .select({ id: claims.id })
+    .from(claims)
+    .where(and(eq(claims.caseId, caseId), eq(claims.status, 'ACTIVE')))
+    .limit(1)
+
+  if (!claim) return { ok: false, reason: 'WRONG_STATUS' }
+
+  const released = await releaseClaim(claim.id, {
+    reason: CASE_REASON.RELEASED_BY_ADMIN,
+    actorType: 'ADMIN',
+    actorId: adminEmail,
+  })
+
+  return released
+    ? { ok: true, referenceCode: record.referenceCode }
+    : { ok: false, reason: 'WRONG_STATUS' }
 }
