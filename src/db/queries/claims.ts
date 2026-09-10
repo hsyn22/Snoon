@@ -1,4 +1,4 @@
-import { and, eq, inArray, lte, notExists, sql } from 'drizzle-orm'
+import { and, count, desc, eq, inArray, lte, notExists, sql } from 'drizzle-orm'
 import { db } from '@/db'
 import { caseEvents, cases, claims, students } from '@/db/schema'
 import { getContactWindowHours } from '@/lib/config/settings'
@@ -210,4 +210,70 @@ export async function getActiveClaimForStudent(
     .limit(1)
 
   return row ?? null
+}
+
+/**
+ * A student's own record: the cases they have held and how each ended.
+ *
+ * The reason this exists is not nostalgia. A student is here because their
+ * university requires a number of cases; "how many have I done" is the question
+ * they actually came to answer, and until now the site could not answer it. It
+ * is also the data that any future fairness policy would be computed from
+ * (open decision 1), which is worth having long before the policy is decided.
+ *
+ * No contact details, by construction. These claims are closed, and the grant of
+ * a patient's name and number was for the active claim only — a student who
+ * finished a case last month has no more right to that number than anyone else.
+ */
+export type StudentCaseHistoryEntry = {
+  claimId: string
+  caseId: string
+  referenceCode: string
+  /** What the case asked for while this student held it. */
+  treatmentTypeIds: string[]
+  claimStatus: (typeof claims.status.enumValues)[number]
+  caseStatus: (typeof cases.status.enumValues)[number]
+  releaseReason: string | null
+  claimedAt: Date
+  closedAt: Date | null
+}
+
+export async function listCaseHistoryForStudent(
+  studentId: string,
+  limit = 100,
+): Promise<StudentCaseHistoryEntry[]> {
+  return db
+    .select({
+      claimId: claims.id,
+      caseId: claims.caseId,
+      referenceCode: cases.referenceCode,
+      treatmentTypeIds: cases.treatmentTypeIds,
+      claimStatus: claims.status,
+      caseStatus: cases.status,
+      releaseReason: claims.releaseReason,
+      claimedAt: claims.createdAt,
+      closedAt: claims.releasedAt,
+    })
+    .from(claims)
+    .innerJoin(cases, eq(cases.id, claims.caseId))
+    .where(eq(claims.studentId, studentId))
+    .orderBy(desc(claims.createdAt))
+    .limit(limit)
+}
+
+/**
+ * How many cases this student has actually treated.
+ *
+ * Counts claims that ended in treatment — a completed case, or a share of one
+ * handed on to another stage. A claim that expired or was released is not a
+ * treated case and must not inflate the number a student reports to their
+ * university.
+ */
+export async function countTreatedCasesForStudent(studentId: string): Promise<number> {
+  const [row] = await db
+    .select({ total: count() })
+    .from(claims)
+    .where(and(eq(claims.studentId, studentId), eq(claims.status, 'COMPLETED')))
+
+  return Number(row?.total ?? 0)
 }

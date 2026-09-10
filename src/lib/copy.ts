@@ -330,6 +330,40 @@ export const studentQueue = {
 } as const
 
 /** The case a student is holding right now. */
+/**
+ * The student's own record.
+ *
+ * A student is here because their college asks for a number of cases. "How many
+ * have I done" is the question they came with, and the site could not answer it.
+ */
+export const studentHistory = {
+  title: 'حالاتي',
+  intro: 'الحالات اللي أخذتها من سنون.',
+  link: 'شوف حالاتي',
+
+  treatedLabel: 'حالات علّجتها',
+  totalLabel: 'كل الحالات اللي أخذتها',
+
+  emptyTitle: 'لسه ما أخذت ولا حالة',
+  emptyBody: 'أول ما تحجز حالة وتخلّصها، تظهر هنا.',
+
+  claimedAt: 'حجزتها',
+  closedAt: 'انتهت',
+  treatments: 'العلاج',
+
+  outcome: {
+    COMPLETED: 'مكتملة',
+    ACTIVE: 'شغّالة هسه',
+    RELEASED: 'انفكّت',
+    EXPIRED: 'انتهت مهلتها',
+  },
+
+  /** Shown instead of "مكتملة" when only part of the case was theirs. */
+  handedOn: 'خلّصت حصتك ورجّعت الباقي',
+
+  note: 'هذا سجلك بسنون فقط. الحالات اللي تلكاها بنفسك مو محسوبة هنا.',
+} as const
+
 export const studentClaim = {
   title: 'الحالة اللي حاجزها',
   intro: 'تواصل وية المريض واتفق وياه على الموعد.',

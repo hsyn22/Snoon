@@ -6,7 +6,14 @@ import { db } from '@/db'
 import { students } from '@/db/schema'
 import { getActiveClaimForStudent } from '@/db/queries/claims'
 import { auth } from '@/lib/auth'
-import { site, studentAuth, studentClaim, studentStatus, studentTelegram } from '@/lib/copy'
+import {
+  site,
+  studentAuth,
+  studentClaim,
+  studentHistory,
+  studentStatus,
+  studentTelegram,
+} from '@/lib/copy'
 import { isTelegramConfigured } from '@/lib/telegram/config'
 import { isSubjectLinked } from '@/db/queries/telegram'
 import { TelegramLink } from './telegram-link'
@@ -165,6 +172,17 @@ export default async function StudentHomePage() {
             stageId={profile.stageId}
           />
         )}
+        {/* Only once verified: before that there is nothing to have a record of,
+            and the student has a more pressing step in front of them. */}
+        {profile?.verificationStatus === 'VERIFIED' ? (
+          <Link
+            href="/student/history"
+            className="mt-4 flex min-h-11 items-center justify-center rounded-md border border-border px-4 text-sm font-medium"
+          >
+            {studentHistory.link}
+          </Link>
+        ) : null}
+
         {telegramAvailable && !telegramLinked && profile ? (
           <TelegramLink needsDocument={needsDocument} />
         ) : null}

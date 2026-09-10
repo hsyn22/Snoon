@@ -1,3 +1,4 @@
+import Link from 'next/link'
 import { EntryCard } from '@/components/entry-card'
 import { footer, howItWorks, landing, site } from '@/lib/copy'
 
@@ -42,6 +43,16 @@ export default function HomePage() {
 
       <footer className="border-t border-border py-6 text-xs text-foreground-muted">
         <p className="text-pretty">{footer.disclaimer}</p>
+        {/* These were written in the copy file long before the pages existed,
+            which meant a promise nobody could read. */}
+        <p className="mt-3 flex gap-4">
+          <Link href="/privacy" className="underline">
+            {footer.privacy}
+          </Link>
+          <Link href="/terms" className="underline">
+            {footer.terms}
+          </Link>
+        </p>
       </footer>
     </div>
   )
