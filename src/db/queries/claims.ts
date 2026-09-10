@@ -246,7 +246,11 @@ export type StudentCaseHistoryEntry = {
   claimId: string
   caseId: string
   referenceCode: string
-  /** What the case asked for while this student held it. */
+  /**
+   * What this student treated, when the claim ended in treatment; otherwise
+   * what the case was asking for while they held it. The two differ on a shared
+   * case, which shrinks as each stage does its part.
+   */
   treatmentTypeIds: string[]
   claimStatus: (typeof claims.status.enumValues)[number]
   caseStatus: (typeof cases.status.enumValues)[number]
@@ -264,7 +268,7 @@ export async function listCaseHistoryForStudent(
       claimId: claims.id,
       caseId: claims.caseId,
       referenceCode: cases.referenceCode,
-      treatmentTypeIds: cases.treatmentTypeIds,
+      treatmentTypeIds: sql<string[]>`coalesce(${claims.treatedTreatmentIds}, ${cases.treatmentTypeIds})`,
       claimStatus: claims.status,
       caseStatus: cases.status,
       releaseReason: claims.releaseReason,
@@ -290,7 +294,21 @@ export async function countTreatedCasesForStudent(studentId: string): Promise<nu
   const [row] = await db
     .select({ total: count() })
     .from(claims)
-    .where(and(eq(claims.studentId, studentId), eq(claims.status, 'COMPLETED')))
+    .where(
+      and(
+        eq(claims.studentId, studentId),
+        /**
+         * The presence of a treated set, not the claim's status.
+         *
+         * A NO_SHOW outcome closes the claim as COMPLETED too — the claim
+         * finished, the treatment did not — so counting by status credited a
+         * student for a patient who never turned up. `treatedTreatmentIds` is
+         * written only where treatment actually happened, which is the question
+         * being asked.
+         */
+        isNotNull(claims.treatedTreatmentIds),
+      ),
+    )
 
   return Number(row?.total ?? 0)
 }

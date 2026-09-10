@@ -327,6 +327,20 @@ export const claims = snoon.table(
      */
     contactAssertedAt: timestamp('contact_asserted_at', { withTimezone: true }),
 
+    /**
+     * What this student actually treated, recorded when the claim closes.
+     *
+     * Not derivable from the case afterwards: a case shrinks as parts of it are
+     * done, so a fifth year who did the root canal on a case that also wanted a
+     * partial denture would later appear — reading the case as it stands — to
+     * have done the denture, which their stage cannot even perform. A student
+     * reports this number to their college, so it has to say what happened
+     * rather than what is left.
+     *
+     * Null on a claim that ended without treatment.
+     */
+    treatedTreatmentIds: text('treated_treatment_ids').array(),
+
     releasedAt: timestamp('released_at', { withTimezone: true }),
     /** Why the claim ended. Read by the queue so a student is not re-offered a case they lost. */
     releaseReason: text('release_reason'),

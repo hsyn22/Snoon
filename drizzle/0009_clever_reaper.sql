@@ -1,0 +1,1 @@
+ALTER TABLE "snoon"."claims" ADD COLUMN "treated_treatment_ids" text[];

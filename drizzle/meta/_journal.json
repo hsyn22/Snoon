@@ -64,6 +64,13 @@
       "when": 1789076012880,
       "tag": "0008_loving_firebrand",
       "breakpoints": true
+    },
+    {
+      "idx": 9,
+      "version": "7",
+      "when": 1789076327308,
+      "tag": "0009_clever_reaper",
+      "breakpoints": true
     }
   ]
 }

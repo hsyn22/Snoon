@@ -134,13 +134,20 @@ export async function recordOutcome(
       .update(cases)
       .set({ status: outcome, updatedAt: new Date() })
       .where(and(eq(cases.id, caseId), eq(cases.status, 'APPOINTMENT_CONFIRMED')))
-      .returning({ id: cases.id })
+      .returning({ id: cases.id, treatmentTypeIds: cases.treatmentTypeIds })
 
     if (moved.length === 0) return { ok: false, reason: 'WRONG_STATUS' }
 
     await tx
       .update(claims)
-      .set({ status: 'COMPLETED', releasedAt: new Date(), releaseReason: OUTCOME_REASON[outcome] })
+      .set({
+        status: 'COMPLETED',
+        releasedAt: new Date(),
+        releaseReason: OUTCOME_REASON[outcome],
+        // Only on a completed case: a no-show or a cancellation treated nobody,
+        // and must not count towards what a student reports to their college.
+        treatedTreatmentIds: outcome === 'COMPLETED' ? moved[0]!.treatmentTypeIds : null,
+      })
       .where(eq(claims.id, claim.claimId))
 
     await tx.insert(caseEvents).values({
@@ -342,7 +349,15 @@ export async function returnRemainderToQueue(
     // case being unfinished is a fact about the case, not about them.
     await tx
       .update(claims)
-      .set({ status: 'COMPLETED', releasedAt: new Date(), releaseReason: CASE_REASON.PART_COMPLETED })
+      .set({
+        status: 'COMPLETED',
+        releasedAt: new Date(),
+        releaseReason: CASE_REASON.PART_COMPLETED,
+        // What they did, not what is left. The case is about to shrink to the
+        // remainder, so reading it afterwards would credit them with the other
+        // stage's work.
+        treatedTreatmentIds: record.treatmentTypeIds.filter((id) => capable.has(id)),
+      })
       .where(eq(claims.id, claim.claimId))
 
     await tx.insert(caseEvents).values({

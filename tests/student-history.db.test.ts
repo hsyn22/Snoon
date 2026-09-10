@@ -84,6 +84,31 @@ describe.skipIf(!hasDatabase)('a student’s case history', async () => {
     }
   })
 
+  it('records what was treated, not what the case says later', async () => {
+    const studentId = await makeStudent()
+    const caseId = await makeCase(['filling', 'scaling'])
+    await treat(studentId, caseId)
+
+    const [entry] = await listCaseHistoryForStudent(studentId)
+    expect(entry?.treatmentTypeIds.sort()).toEqual(['filling', 'scaling'])
+  })
+
+  it('records nothing treated when the patient did not attend', async () => {
+    const { confirmAppointment: confirm } = await import('@/lib/cases/lifecycle')
+    const studentId = await makeStudent()
+    const caseId = await makeCase()
+
+    await claimCase(caseId, studentId)
+    await assertContactMade(studentId, caseId, GRACE_HOURS)
+    await confirmContactByPatient(caseId)
+    await confirm(studentId, caseId, new Date(Date.now() + 3 * 86400_000))
+    await recordOutcome(studentId, caseId, 'NO_SHOW')
+
+    // A no-show treated nobody and must not count towards the number a student
+    // reports to their college.
+    expect(await countTreatedCasesForStudent(studentId)).toBe(0)
+  })
+
   it('cannot contain a patient name or phone number', async () => {
     const studentId = await makeStudent()
     await treat(studentId, await makeCase())
@@ -146,5 +171,10 @@ describe.skipIf(!hasDatabase)('a student’s case history', async () => {
 
     const [entry] = await listCaseHistoryForStudent(fifth)
     expect(entry?.releaseReason).toBe(CASE_REASON.PART_COMPLETED)
+
+    // What they did, not what is left. The case has shrunk to the partial
+    // denture by now, and crediting a fifth year with it would be doubly wrong:
+    // they did not do it, and their stage cannot.
+    expect(entry?.treatmentTypeIds).toEqual(['root-canal'])
   })
 })
