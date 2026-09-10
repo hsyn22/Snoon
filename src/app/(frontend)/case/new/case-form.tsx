@@ -137,6 +137,10 @@ export function CaseForm({
             </label>
           ))}
         </div>
+        {/* A patient cannot know that students have a fixed university
+            timetable. Without saying so, a later "could you come on Saturday?"
+            reads as the site ignoring what they filled in. */}
+        <p className="mt-2 text-xs text-foreground-muted">{caseForm.daysNotice}</p>
         <FieldError id="availabilityDays-error" message={errorFor('availabilityDays', errors.availabilityDays)} />
       </fieldset>
 

@@ -113,6 +113,14 @@ export const caseForm = {
 
   daysLabel: 'أي أيام تكدر تجي؟',
   daysHint: 'اختر كل الأيام اللي تناسبك — كل ما تختار أكثر، تلكى طالب أسرع.',
+  /**
+   * The thing a patient cannot know and has to be told: a student is in clinic
+   * on the days their timetable says, not on the days that suit the patient.
+   * Without this the "can you come Saturday?" message later reads as the site
+   * ignoring what they filled in.
+   */
+  daysNotice:
+    'انتبه: الطلبة عندهم جدول جامعي ثابت وما يكدرون يشتغلون كل الأيام. إذا أكو طالب يكدر ياخذ حالتك بيوم ما اخترته، راح نسألك أول — وما ينحجز شي إلا إذا وافقت انت.',
 
   nameLabel: 'الاسم',
   nameHint: 'الاسم اللي يناديك بيه الطالب.',
@@ -166,6 +174,25 @@ export const caseForm = {
 } as const
 
 /** The page shown after a case is submitted, and the patient's tracking page. */
+/**
+ * The patient being asked whether they could come on a day they did not pick.
+ *
+ * Phrased as a question about a day, never about a person: the patient is not
+ * choosing between students, and the product does not put people in a list.
+ */
+export const dayRequest = {
+  title: 'أكو طالب يكدر ياخذ حالتك',
+  body: (day: string) =>
+    `أكو طالب يكدر ياخذ حالتك بس دوامه يوم ${day}، وانت ما اخترت هذا اليوم. تكدر تجي بيه؟`,
+  yes: (day: string) => `إي، أكدر أجي ${day}`,
+  no: 'لا، ما أكدر',
+
+  accepted: 'تمام. انحجزت حالتك وراح يتصل بيك الطالب.',
+  declined: 'تمام. ما راح نسألك عن هذا اليوم مرة لخ.',
+  gone: 'هاي الحالة انحجزت من طالب ثاني.',
+  failed: 'ما كدرنا نسجّل جوابك. جرّب مرة لخ.',
+} as const
+
 export const caseTracking = {
   successTitle: 'انرسلت حالتك',
   successBody: 'راح يشوفها طلبة طب الأسنان بمدينتك، وأول ما يحجزها طالب راح يتصل بيك.',
@@ -273,6 +300,10 @@ export const studentProfile = {
   collegePlaceholder: 'اختر كليتك',
   collegeHint: 'اختر الجامعة أول.',
 
+  clinicDaysLabel: 'أيام دوامك بالعيادة',
+  clinicDaysHint:
+    'اختر الأيام اللي تكون بيها بالعيادة. نعرضلك الحالات اللي تناسب أيامك، وإذا حالة أيامها ما تناسبك تكدر تسأل المريض إذا يكدر يجي بيوم من أيامك.',
+
   stageLabel: 'المرحلة',
   stagePlaceholder: 'اختر مرحلتك',
 
@@ -295,6 +326,8 @@ export const studentProfile = {
     stageRequired: 'اختر مرحلتك.',
     stageUnknown: 'هاي المرحلة مو متوفرة.',
     documentRequired: 'ارفع وثيقة التسجيل.',
+    clinicDaysRequired: 'اختر يوم واحد على الأقل من أيام دوامك.',
+    clinicDaysInvalid: 'في يوم مو صحيح بالاختيار.',
     documentTooBig: 'الملف كبير كلش. لازم أقل من 5 ميغا.',
     documentWrongType: 'نوع الملف مو مقبول. ارفع صورة أو PDF.',
     alreadySubmitted: 'معلوماتك منرسلة من قبل.',
@@ -324,6 +357,26 @@ export const studentQueue = {
   caseSubmitted: 'قُدّمت',
 
   claim: 'احجز الحالة',
+
+  /**
+   * A case whose days do not overlap this student's clinic days. They cannot
+   * claim it — they could never schedule it — but they can ask.
+   */
+  dayMismatchTag: 'أيامك ما تناسب',
+  dayMismatchBody:
+    'المريض ما اختار أي يوم من أيام دوامك. تكدر تسأله إذا يكدر يجي بيوم من أيامك، وإذا وافق تنحجز الحالة إلك تلقائياً.',
+  dayMismatchOffer: 'راح نسأله عن',
+  askDays: 'اسأل المريض عن أيامك',
+  asking: 'قيد الإرسال…',
+  askedAlready: 'سألنا المريض. ننتظر جوابه.',
+  askFailedUnavailable: 'هاي الحالة ما عادت متاحة.',
+  askFailedNoDays: 'كل أيام دوامك موجودة أصلاً بأيام المريض — تكدر تحجزها مباشرة.',
+  askFailedGeneric: 'ما كدرنا ندز السؤال. جرّب مرة لخ.',
+
+  noClinicDaysTitle: 'ما محددة أيام دوامك',
+  noClinicDaysBody:
+    'حدد أيام دوامك بالعيادة حتى نعرف أي حالات تناسبك. بدونها راح نعرضلك كل الحالات.',
+  noClinicDaysAction: 'حدد أيامك',
   claiming: 'قيد الحجز…',
 
   claimFailedUnavailable: 'هاي الحالة انحجزت من طالب ثاني. شوف باقي الحالات.',
@@ -467,7 +520,28 @@ export const telegramCopy = {
       'راح نعلمك أول ما ياخذها طالب.',
     ].join('\n'),
 
-  /** Sent to the student when their contact window runs out. */
+  /** Asked when a student's clinic days do not match the days the patient picked. */
+  dayRequest: (referenceCode: string, day: string) =>
+    [
+      `أكو طالب يكدر ياخذ حالتك ${referenceCode}.`,
+      '',
+      `بس دوامه بالعيادة يوم ${day}، وانت ما اخترت هذا اليوم.`,
+      'تكدر تجي بيه؟',
+    ].join('\n'),
+
+  /** Sent to the student when the patient agrees to their day. */
+  dayRequestAccepted: (referenceCode: string, day: string) =>
+    [
+      `المريض وافق يجي يوم ${day}.`,
+      '',
+      `حالة ${referenceCode} صارت إلك. افتح الموقع حتى تشوف معلومات التواصل وتتصل بيه.`,
+    ].join('\n'),
+
+  /** Sent to the student when the patient says no, or somebody else got it. */
+  dayRequestDeclined: (referenceCode: string) =>
+    `ما وافق المريض على أيامك بحالة ${referenceCode}. تكدر تشوف باقي الحالات بالموقع.`,
+
+  /** Sent to the student when the patient's tracking link is how they answered. */
   claimExpired: 'انتهت مهلة التواصل وراحت الحالة لطالب ثاني. تكدر تحجز حالة جديدة من الموقع.',
 } as const
 

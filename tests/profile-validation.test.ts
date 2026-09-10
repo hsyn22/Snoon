@@ -25,7 +25,13 @@ const PLACES: ProfilePlaces = {
 const GOOD_DOC = { size: 1024, type: 'image/jpeg' }
 
 function fields(overrides: Partial<ProfileFields> = {}): ProfileFields {
-  return { universityId: 'uni-a', collegeId: 'college-a', stageId: 'stage-4', ...overrides }
+  return {
+    universityId: 'uni-a',
+    collegeId: 'college-a',
+    stageId: 'stage-4',
+    clinicDays: ['sun', 'tue'],
+    ...overrides,
+  }
 }
 
 describe('validateProfile', () => {
@@ -116,14 +122,39 @@ describe('validateProfile', () => {
     )
   })
 
+  describe('clinic days', () => {
+    it('requires at least one', () => {
+      // Without them the queue cannot tell a case this student could schedule
+      // from one they could never attend.
+      const result = validateProfile(fields({ clinicDays: [] }), PLACES, GOOD_DOC)
+      expect(result.ok).toBe(false)
+      if (!result.ok) expect(result.errors.clinicDays).toBe(studentProfile.errors.clinicDaysRequired)
+    })
+
+    it('rejects a day that is not a clinic day', () => {
+      // Friday is never offered — it is always a holiday — so it cannot arrive
+      // from the form either.
+      const result = validateProfile(fields({ clinicDays: ['sun', 'fri'] }), PLACES, GOOD_DOC)
+      expect(result.ok).toBe(false)
+      if (!result.ok) expect(result.errors.clinicDays).toBe(studentProfile.errors.clinicDaysInvalid)
+    })
+
+    it('carries them through when valid', () => {
+      const result = validateProfile(fields({ clinicDays: ['sat', 'mon'] }), PLACES, GOOD_DOC)
+      expect(result.ok).toBe(true)
+      if (result.ok) expect(result.value.clinicDays).toEqual(['sat', 'mon'])
+    })
+  })
+
   it('reports every problem at once rather than one at a time', () => {
     const result = validateProfile(
-      { universityId: '', collegeId: '', stageId: '' },
+      { universityId: '', collegeId: '', stageId: '', clinicDays: [] },
       PLACES,
       { size: 99, type: 'text/html' },
     )
     expect(result.ok).toBe(false)
     if (!result.ok) expect(Object.keys(result.errors).sort()).toEqual([
+      'clinicDays',
       'collegeId',
       'document',
       'stageId',

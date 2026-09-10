@@ -1,10 +1,12 @@
 import { getAllTreatmentTypes, getStudentCaseScope } from '@/lib/config'
 import { listOpenCasesForStudent } from '@/db/queries/cases'
+import { pendingRequestCaseIds } from '@/db/queries/day-requests'
 import { listCasePhotos } from '@/db/queries/case-photos'
 import { CasePhotoGrid } from '@/components/case-photo-grid'
 import { caseForm, casePhotos as photoCopy, studentQueue } from '@/lib/copy'
 import { formatCaseDate } from '@/lib/dates'
 import { ClaimButton } from './claim-button'
+import { AskDaysButton } from './ask-days-button'
 
 /**
  * The queue a verified student sees.
@@ -26,10 +28,13 @@ export async function CaseQueue({
   studentId,
   collegeId,
   stageId,
+  clinicDays,
 }: {
   studentId: string
   collegeId: string
   stageId: string
+  /** Empty means "any day" — every student recorded before clinic days existed. */
+  clinicDays: readonly string[]
 }) {
   const scope = await getStudentCaseScope(collegeId, stageId)
 
@@ -51,6 +56,19 @@ export async function CaseQueue({
   const anyOtherStage = cases.some((entry) =>
     entry.treatmentTypeIds.some((id) => !capableSet.has(id)),
   )
+
+  /**
+   * Whether this student could actually attend a case's days.
+   *
+   * A student with no clinic days recorded is treated as available on any day,
+   * which is what every student looked like before the field existed — adding it
+   * must not silently empty their queue.
+   */
+  const clinic = new Set(clinicDays)
+  const canAttend = (days: readonly string[]) =>
+    clinic.size === 0 || days.some((day) => clinic.has(day))
+
+  const alreadyAsked = await pendingRequestCaseIds(studentId)
 
   const photosByCase = new Map(
     await Promise.all(
@@ -93,6 +111,19 @@ export async function CaseQueue({
         const otherStage = entry.treatmentTypeIds
           .filter((id) => !capableSet.has(id))
           .map((id) => treatments.find((t) => t.id === id)?.nameAr ?? id)
+
+        /**
+         * A case whose days this student could never attend is shown, not
+         * hidden — the patient may well be able to come on another day, and only
+         * they can say. What the student cannot do is claim it: that would take
+         * the case off the queue for an appointment nobody can keep.
+         */
+        const attendable = canAttend(entry.availabilityDays)
+        const offerDays = attendable
+          ? []
+          : clinicDays
+              .filter((day) => !entry.availabilityDays.includes(day))
+              .map((day) => caseForm.weekDays[day as keyof typeof caseForm.weekDays] ?? day)
         const days = entry.availabilityDays
           .filter((day): day is keyof typeof caseForm.weekDays => day in caseForm.weekDays)
           .map((day) => caseForm.weekDays[day])
@@ -136,7 +167,26 @@ export async function CaseQueue({
               label={photoCopy.studentLabel}
             />
 
-            <ClaimButton caseId={entry.id} />
+            {attendable ? (
+              <ClaimButton caseId={entry.id} />
+            ) : (
+              <div className="mt-3 rounded-md border border-border bg-surface-muted p-3">
+                <p className="text-xs font-medium">
+                  <span className="rounded border border-border px-1 py-0.5">
+                    {studentQueue.dayMismatchTag}
+                  </span>
+                </p>
+                <p className="mt-2 text-xs text-foreground-muted">
+                  {studentQueue.dayMismatchBody}
+                </p>
+                {offerDays.length > 0 ? (
+                  <p className="mt-1 text-xs">
+                    {studentQueue.dayMismatchOffer}: {offerDays.join('، ')}
+                  </p>
+                ) : null}
+                <AskDaysButton caseId={entry.id} alreadyAsked={alreadyAsked.has(entry.id)} />
+              </div>
+            )}
           </article>
         )
       })}

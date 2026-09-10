@@ -6,6 +6,7 @@ import { generateReferenceCode } from '@/lib/reference-code'
 import { generateTrackingToken, hashTrackingToken } from '@/lib/tracking-token'
 import type { WeekDay } from '@/lib/config/schema'
 import { CASE_REASON } from '@/lib/cases/reasons'
+import { isUniqueViolation } from '@/db/unique-violation'
 
 /**
  * Data access for cases.
@@ -42,15 +43,6 @@ export type SubmitCaseResult = {
 
 /** How many times to retry if a generated reference code is already taken. */
 const REFERENCE_CODE_ATTEMPTS = 5
-
-function isUniqueViolation(error: unknown): boolean {
-  return (
-    typeof error === 'object' &&
-    error !== null &&
-    'code' in error &&
-    (error as { code?: unknown }).code === '23505'
-  )
-}
 
 /**
  * Insert a case and its opening audit row in one transaction, so a case can

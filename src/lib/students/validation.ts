@@ -1,4 +1,4 @@
-import type { College, Stage, University } from '@/lib/config/schema'
+import { isWeekDay, type College, type Stage, type University } from '@/lib/config/schema'
 import { studentProfile } from '@/lib/copy'
 
 /**
@@ -15,6 +15,11 @@ export type ProfileFields = {
   universityId: string
   collegeId: string
   stageId: string
+  /**
+   * The days this student is in clinic. Required for a new profile: without it
+   * the queue cannot tell a case they could schedule from one they could not.
+   */
+  clinicDays: string[]
 }
 
 export type ProfileFieldErrors = Partial<Record<keyof ProfileFields | 'document', string>>
@@ -53,6 +58,9 @@ export function validateProfile(
     errors.universityId = e.universityUnknown
   }
 
+  if (fields.clinicDays.length === 0) errors.clinicDays = e.clinicDaysRequired
+  else if (!fields.clinicDays.every(isWeekDay)) errors.clinicDays = e.clinicDaysInvalid
+
   const college = places.colleges.find((c) => c.id === fields.collegeId)
   if (!fields.collegeId) errors.collegeId = e.collegeRequired
   else if (!college) errors.collegeId = e.collegeUnknown
@@ -79,6 +87,7 @@ export function validateProfile(
       universityId: fields.universityId,
       collegeId: fields.collegeId,
       stageId: fields.stageId,
+      clinicDays: fields.clinicDays,
     },
   }
 }

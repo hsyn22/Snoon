@@ -3,6 +3,7 @@ import { db } from '@/db'
 import { caseEvents, cases, claims, students } from '@/db/schema'
 import { getContactWindowHours } from '@/lib/config/settings'
 import { CASE_REASON } from '@/lib/cases/reasons'
+import { isUniqueViolation } from '@/db/unique-violation'
 
 /**
  * Claiming, and the contact window that follows it.
@@ -24,15 +25,6 @@ export type ClaimFailureReason =
 export type ClaimResult =
   | { ok: true; claimId: string; contactDeadlineAt: Date }
   | { ok: false; reason: ClaimFailureReason }
-
-function isUniqueViolation(error: unknown): boolean {
-  return (
-    typeof error === 'object' &&
-    error !== null &&
-    'code' in error &&
-    (error as { code?: unknown }).code === '23505'
-  )
-}
 
 /**
  * Bind a student to a case, atomically.

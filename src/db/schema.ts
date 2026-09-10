@@ -272,6 +272,19 @@ export const students = snoon.table(
     collegeId: text('college_id').notNull(),
     stageId: text('stage_id').notNull(),
 
+    /**
+     * The days this student is actually in clinic.
+     *
+     * Matching used the patient's days for nothing at all: a student in clinic
+     * on Sunday could be shown a case from a patient who can only come on
+     * Tuesday, claim it, ring, and find neither of them could do anything about
+     * it — a wasted claim, a wasted call, and a trip back through the queue.
+     *
+     * Empty means "any day", which is what every student recorded before this
+     * existed, so adding it changes nothing for them until they fill it in.
+     */
+    clinicDays: text('clinic_days').array().notNull().default([]),
+
     verificationStatus: verificationStatus('verification_status').notNull().default('PENDING'),
 
     /**
@@ -293,6 +306,68 @@ export const students = snoon.table(
     // The student-facing queue is filtered by verification first, then by where
     // the student actually studies.
     index('students_verification_college_idx').on(table.verificationStatus, table.collegeId),
+  ],
+)
+
+/**
+ * How a day request ends.
+ *
+ * SUPERSEDED covers both "somebody else got the case" and "the patient said yes
+ * to a different day" — from the asking student's side they are the same thing,
+ * and neither is a refusal by the patient.
+ */
+export const dayRequestStatus = snoon.enum('day_request_status', [
+  'PENDING',
+  'ACCEPTED',
+  'DECLINED',
+  'SUPERSEDED',
+  'EXPIRED',
+])
+
+/**
+ * A student asking a patient about a day the patient did not pick.
+ *
+ * Students are in clinic on the days their timetable says, not the days a
+ * patient happens to be free, so insisting on an overlap would hide most cases
+ * from most students. Instead a student whose days do not overlap can *ask* —
+ * and only the patient's answer turns that into a claim. The student never gets
+ * the case, or the phone number, by asking.
+ *
+ * One row per day rather than one per student, because that is the question the
+ * patient is actually answering: "can you come on Saturday?", not "do you want
+ * student X". It also settles what happens when two students want the same day —
+ * the patient is asked once, and the earliest request wins — without the patient
+ * ever choosing between people, which the product deliberately does not do.
+ */
+export const dayRequests = snoon.table(
+  'day_requests',
+  {
+    id: uuid('id').primaryKey().defaultRandom(),
+
+    caseId: uuid('case_id')
+      .notNull()
+      .references(() => cases.id, { onDelete: 'cascade' }),
+    studentId: uuid('student_id')
+      .notNull()
+      .references(() => students.id, { onDelete: 'cascade' }),
+
+    /** One of 'sat'…'thu'. A day the patient did NOT choose. */
+    requestedDay: text('requested_day').notNull(),
+
+    status: dayRequestStatus('status').notNull().default('PENDING'),
+    respondedAt: timestamp('responded_at', { withTimezone: true }),
+
+    createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+  },
+  (table) => [
+    // A student may ask about a given day once. Without this, a refresh or a
+    // determined student could bury a patient in the same question.
+    uniqueIndex('one_pending_day_request')
+      .on(table.caseId, table.studentId, table.requestedDay)
+      .where(sql`status = 'PENDING'`),
+    // The patient's list, and the "who asked first" ordering.
+    index('day_requests_case_day_idx').on(table.caseId, table.requestedDay, table.createdAt),
+    index('day_requests_student_idx').on(table.studentId, table.createdAt),
   ],
 )
 

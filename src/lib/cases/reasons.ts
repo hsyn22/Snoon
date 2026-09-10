@@ -16,6 +16,7 @@
 export const CASE_REASON = {
   SUBMITTED: 'Case submitted by patient.',
   CLAIMED: 'Case claimed by student.',
+  CLAIMED_BY_DAY_REQUEST: 'Patient agreed to a day a student offered, and the case went to them.',
   CONTACT_ASSERTED: 'Student reported making contact; awaiting the patient to confirm.',
   CONTACT_CONFIRMED: 'Patient confirmed a student made contact.',
   NO_CONTACT_REPORTED: 'Patient reported that no student had contacted them yet.',
@@ -41,6 +42,7 @@ export type CaseReason = (typeof CASE_REASON)[keyof typeof CASE_REASON]
 export const CASE_REASON_AR: Record<CaseReason, string> = {
   [CASE_REASON.SUBMITTED]: 'المريض قدّم الحالة.',
   [CASE_REASON.CLAIMED]: 'طالب حجز الحالة.',
+  [CASE_REASON.CLAIMED_BY_DAY_REQUEST]: 'المريض وافق على يوم عرضه طالب، وراحت له الحالة.',
   [CASE_REASON.CONTACT_ASSERTED]: 'الطالب گال إنه اتصل، وننتظر تأكيد المريض.',
   [CASE_REASON.CONTACT_CONFIRMED]: 'المريض أكّد إنه وصله اتصال.',
   [CASE_REASON.NO_CONTACT_REPORTED]: 'المريض گال إنه ما وصله اتصال لحد الآن.',

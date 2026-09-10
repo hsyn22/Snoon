@@ -66,6 +66,29 @@ describe.skipIf(!hasDatabase)('claiming', async () => {
     }
   })
 
+  describe('the database is the second line of defence', () => {
+    it('answers cleanly when the partial unique index refuses the claim', async () => {
+      // The conditional update is the first guard and normally catches this. The
+      // index behind it only fires if two requests somehow both passed the
+      // status check — and until this test, the code catching that violation
+      // looked for the SQLSTATE on the wrong object and turned a clean "no
+      // longer available" into an unhandled error.
+      const caseId = await makeCase()
+      const first = await makeStudent()
+      const second = await makeStudent()
+
+      await claimCase(caseId, first)
+      // Put the case back to REQUESTED without releasing the claim, so the
+      // conditional update succeeds and only the index can refuse the insert.
+      await db.update(cases).set({ status: 'REQUESTED' }).where(eq(cases.id, caseId))
+
+      expect(await claimCase(caseId, second)).toEqual({ ok: false, reason: 'CASE_UNAVAILABLE' })
+
+      const rows = await db.select({ id: claims.id }).from(claims).where(eq(claims.caseId, caseId))
+      expect(rows).toHaveLength(1)
+    })
+  })
+
   describe('a case can never be claimed twice', () => {
     it('lets the first student claim and refuses the second', async () => {
       const caseId = await makeCase()

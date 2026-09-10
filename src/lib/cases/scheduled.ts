@@ -5,6 +5,7 @@ import {
 } from '@/lib/config/settings'
 import { deleteExpiredCasePhotos } from '@/lib/images/retention'
 import { scrubExpiredContactDetails } from './retention'
+import { supersedeStaleDayRequests } from '@/db/queries/day-requests'
 import { expireOverdueClaimsAndNotify } from './expiry'
 import { expireStaleRequestedCases } from './lifecycle'
 
@@ -33,6 +34,7 @@ export type ScheduledRunReport = {
   casesExpired: number
   photosDeleted: number
   contactsScrubbed: number
+  dayRequestsClosed: number
   ranAt: string
 }
 
@@ -56,12 +58,18 @@ export async function runScheduledJobs(now: Date = new Date()): Promise<Schedule
   const contactCutoff = new Date(now.getTime() - contactDays * 24 * 60 * 60 * 1000)
   const contactsScrubbed = await scrubExpiredContactDetails(contactCutoff)
 
+  // Questions about cases that have since been claimed or expired. Leaving them
+  // live would have a patient answering about a case that is no longer theirs
+  // to give.
+  const dayRequestsClosed = await supersedeStaleDayRequests()
+
   return {
     claimsExpired: claims.released,
     claimNotificationsSent: claims.notified,
     casesExpired,
     photosDeleted,
     contactsScrubbed,
+    dayRequestsClosed,
     ranAt: now.toISOString(),
   }
 }

@@ -19,8 +19,10 @@ import { formatAppointment, formatCaseDate } from '@/lib/dates'
 import { formatPhoneForDisplay } from '@/lib/phone'
 import { isTelegramConfigured } from '@/lib/telegram/config'
 import { isSubjectLinked } from '@/db/queries/telegram'
+import { pendingDaysForCase } from '@/db/queries/day-requests'
 import { TelegramInvite } from './telegram-invite'
 import { ConfirmContact } from './confirm-contact'
+import { DayAnswer } from './day-answer'
 import { hasPendingContactAssertion } from './confirm-queries'
 
 /**
@@ -91,6 +93,10 @@ export default async function TrackCasePage({
   const photos = await listCasePhotos(record.id)
 
   const telegramAvailable = isTelegramConfigured()
+  // Only while the case is still open: a claimed case is not going anywhere.
+  const pendingDays =
+    record.status === 'REQUESTED' ? await pendingDaysForCase(record.id) : []
+
   const patientLinked = telegramAvailable ? await isSubjectLinked({ type: 'PATIENT_CASE', id: record.id }) : false
 
   const headerList = await headers()
@@ -147,6 +153,14 @@ export default async function TrackCasePage({
         ) : null}
 
         {awaitingConfirmation ? <ConfirmContact trackingToken={token} /> : null}
+
+        {/* Students are in clinic on the days their timetable says. When one
+            could take this case on a day the patient did not pick, the patient
+            is asked — here as well as in the bot, because Telegram is optional
+            and every question the bot asks has to be answerable without it. */}
+        {pendingDays.map((day) => (
+          <DayAnswer key={day} trackingToken={token} day={day} />
+        ))}
 
         {/* Rendered from the server, not from the form's own state: answering
             "yes" moves the case out of MATCHED, which unmounts the question —

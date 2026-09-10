@@ -10,12 +10,18 @@ import { students } from '@/db/schema'
 import { auth } from '@/lib/auth'
 import { getColleges, getStages, getUniversities } from '@/lib/config'
 import { studentProfile } from '@/lib/copy'
-import { validateProfile } from '@/lib/students/validation'
+import { validateProfile, type ProfileFieldErrors } from '@/lib/students/validation'
 
 export type ProfileFormState = {
-  errors?: Partial<Record<'universityId' | 'collegeId' | 'stageId' | 'document', string>>
+  errors?: ProfileFieldErrors
   formError?: string
-  values?: { universityId?: string; collegeId?: string; stageId?: string }
+  /** Handed back so a rejected submission does not empty the form. */
+  values?: {
+    universityId?: string
+    collegeId?: string
+    stageId?: string
+    clinicDays?: string[]
+  }
 }
 
 function read(formData: FormData, key: string): string {
@@ -34,6 +40,7 @@ export async function submitProfileAction(
     universityId: read(formData, 'universityId'),
     collegeId: read(formData, 'collegeId'),
     stageId: read(formData, 'stageId'),
+    clinicDays: formData.getAll('clinicDays').map(String),
   }
   const values = fields
   const document = formData.get('document')
@@ -91,6 +98,7 @@ export async function submitProfileAction(
       universityId: validated.value.universityId,
       collegeId: validated.value.collegeId,
       stageId: validated.value.stageId,
+      clinicDays: validated.value.clinicDays,
       verificationStatus: 'PENDING',
       verificationDocumentPath: documentId,
     })

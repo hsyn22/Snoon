@@ -90,6 +90,7 @@ export default async function StudentHomePage() {
       id: students.id,
       collegeId: students.collegeId,
       stageId: students.stageId,
+      clinicDays: students.clinicDays,
       verificationStatus: students.verificationStatus,
       verificationDocumentPath: students.verificationDocumentPath,
     })
@@ -170,6 +171,7 @@ export default async function StudentHomePage() {
             studentId={profile.id}
             collegeId={profile.collegeId}
             stageId={profile.stageId}
+            clinicDays={profile.clinicDays}
           />
         )}
         {/* Only once verified: before that there is nothing to have a record of,

@@ -2,13 +2,16 @@ import { eq } from 'drizzle-orm'
 import { db } from '@/db'
 import { cases } from '@/db/schema'
 import { linkChat, revokeLinksForChat, getSubjectForChat } from '@/db/queries/telegram'
-import { telegramConfirm, telegramCopy, telegramStudentDoc } from '@/lib/copy'
+import { dayRequest, telegramConfirm, telegramCopy, telegramStudentDoc } from '@/lib/copy'
 import {
   attachVerificationDocument,
   MAX_DOCUMENT_BYTES,
 } from '@/lib/students/document-intake'
 import { downloadTelegramFile } from './client'
 import { confirmContactByPatient, reportNoContactByPatient } from '@/lib/cases/contact'
+import { acceptDay, declineDay } from '@/db/queries/day-requests'
+import { notifyStudentOfDayAnswer } from '@/lib/notifications/day-requests'
+import { DAY_ANSWER_PREFIX, parseDayAnswer } from './day-answers'
 import { looksLikeInviteToken } from './invite-token'
 
 /**
@@ -93,6 +96,57 @@ async function handleContactCallback(
 }
 
 /**
+ * The patient answering "could you come on <day>?".
+ *
+ * As with the contact buttons, the case comes from the chat's binding and never
+ * from the payload — callback data is attacker-controlled. The payload names the
+ * *day* and the answer, neither of which identifies anyone.
+ *
+ * A yes claims the case for whoever asked about that day first, through the same
+ * atomic path an ordinary claim uses, and tells them. A no closes that day so
+ * the patient is not asked it again by the next student with the same timetable.
+ */
+async function handleDayCallback(
+  chatId: string,
+  data: string,
+  callbackId: string | undefined,
+): Promise<WebhookOutcome> {
+  const parsed = parseDayAnswer(data)
+  if (!parsed) return NO_REPLY
+
+  const subject = await getSubjectForChat(chatId)
+  if (!subject || subject.type !== 'PATIENT_CASE') {
+    return {
+      reply: { chatId, text: telegramConfirm.nothingToConfirm },
+      answerCallbackId: callbackId,
+    }
+  }
+
+  if (parsed.answer === 'no') {
+    await declineDay(subject.id, parsed.day)
+    return { reply: { chatId, text: dayRequest.declined }, answerCallbackId: callbackId }
+  }
+
+  const result = await acceptDay(subject.id, parsed.day)
+
+  if (!result.ok) {
+    return {
+      reply: {
+        chatId,
+        text: result.reason === 'CASE_UNAVAILABLE' ? dayRequest.gone : dayRequest.failed,
+      },
+      answerCallbackId: callbackId,
+    }
+  }
+
+  // The student is told they have the case. Best-effort, and after the claim:
+  // a message that fails must not undo a claim the patient just granted.
+  await notifyStudentOfDayAnswer(result.studentId, result.referenceCode, parsed.day)
+
+  return { reply: { chatId, text: dayRequest.accepted }, answerCallbackId: callbackId }
+}
+
+/**
  * A student sending their proof of enrolment.
  *
  * Photographing a card and sending it in Telegram is far less work on a cheap
@@ -165,6 +219,9 @@ export async function handleTelegramUpdate(update: TelegramUpdate): Promise<Webh
     }
     if (data === CONFIRM_CONTACT_YES || data === CONFIRM_CONTACT_NO) {
       return handleContactCallback(String(callbackChatId), data, callback.id)
+    }
+    if (data.startsWith(DAY_ANSWER_PREFIX)) {
+      return handleDayCallback(String(callbackChatId), data, callback.id)
     }
     return { reply: null, answerCallbackId: callback.id }
   }

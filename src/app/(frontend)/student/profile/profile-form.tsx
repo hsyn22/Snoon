@@ -3,14 +3,17 @@
 import { useActionState, useState } from 'react'
 import { useFormStatus } from 'react-dom'
 import { useDismissibleErrors } from '@/components/use-dismissible-errors'
-import type { College, Stage, University } from '@/lib/config/schema'
-import { studentProfile } from '@/lib/copy'
+import { WEEK_DAYS, type College, type Stage, type University } from '@/lib/config/schema'
+import { caseForm, studentProfile } from '@/lib/copy'
 import { submitProfileAction, type ProfileFormState } from './actions'
 
 const INITIAL: ProfileFormState = {}
 
 const labelClass = 'block text-sm font-medium text-foreground'
 const hintClass = 'mt-1 text-xs text-foreground-muted'
+const optionClass =
+  'flex min-h-11 items-center gap-2 rounded-md border border-border bg-surface px-3 text-sm'
+
 const controlClass =
   'mt-2 min-h-11 w-full rounded-md border border-border bg-surface px-3 text-foreground'
 
@@ -136,6 +139,26 @@ export function ProfileForm({
         </select>
         <FieldError id="stageId-error" message={errorFor('stageId', errors.stageId)} />
       </div>
+
+      <fieldset>
+        <legend className={labelClass}>{studentProfile.clinicDaysLabel}</legend>
+        <p className={hintClass}>{studentProfile.clinicDaysHint}</p>
+        <div className="mt-2 grid grid-cols-2 gap-2">
+          {WEEK_DAYS.map((day) => (
+            <label key={day} className={optionClass}>
+              <input
+                type="checkbox"
+                name="clinicDays"
+                value={day}
+                defaultChecked={state.values?.clinicDays?.includes(day)}
+                className="size-4"
+              />
+              {caseForm.weekDays[day]}
+            </label>
+          ))}
+        </div>
+        <FieldError id="clinicDays-error" message={errorFor('clinicDays', errors.clinicDays)} />
+      </fieldset>
 
       <div>
         <label htmlFor="document" className={labelClass}>
