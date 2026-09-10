@@ -224,6 +224,40 @@ do anywhere" rather than "nothing". Without that, adding a college hid every cas
 students until someone filled in the whole matrix by hand — and the symptom is an empty
 queue, which reads as "no patients" rather than as a missing row.
 
+### Days, and asking about a day the patient did not pick
+
+A student is in clinic on the days their timetable says. A patient names the days they can
+come. سنون collected both and matched on neither, so a student in clinic on Sunday could be
+shown a case from a patient who could only come on Tuesday, claim it, ring, and find neither
+of them could do anything — a wasted claim, a wasted call, and a trip back through the queue.
+
+Requiring an overlap would be worse: it would hide most cases from most students. So:
+
+- **Overlap → claim as usual.**
+- **No overlap → the case is still shown, but cannot be claimed.** The student may *ask*
+  instead, and asking grants nothing: no case, no phone number, no hold on the queue.
+- **Only the patient's yes turns a request into a claim**, through the same conditional
+  update an ordinary claim uses, so "a case can never be claimed twice" survives the second
+  path into claiming.
+
+`day_requests` holds **one row per day**, not per student. That is the question the patient
+is actually answering — "can you come on Saturday?", not "do you want student X" — and it
+settles two students wanting the same day without the patient ever choosing between people:
+they are asked once, and the earliest asker wins. A partial unique index stops one student
+asking the same thing twice.
+
+Asked in both channels, because Telegram is optional: inline buttons in the bot, and the
+same question on the tracking link. The callback payload carries the **day**, never the case,
+for the same reason the contact buttons do — callback data is attacker-controlled, and the
+case comes from the chat's own binding.
+
+**The patient is told about this on the form**, next to the day picker. They cannot know that
+students have a fixed university timetable, and without saying so a later "could you come on
+Saturday?" reads as the site ignoring what they filled in.
+
+`students.clinic_days` is empty for every student recorded before this existed, and empty
+means "any day" — adding the field must not silently empty anyone's queue.
+
 ### The contact window
 
 After claiming, the student has a limited window to contact the patient. **Start at 48
