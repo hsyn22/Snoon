@@ -1,0 +1,127 @@
+# What ClinMatch and AsnanLink do, and what سنون should take from it
+
+Researched 10 September 2026. Both sites block automated fetching, so this is
+built from their own public descriptions rather than from using the products.
+Treat the feature claims as their marketing, not as verified behaviour.
+
+## ClinMatch (clinmatch.io) — United States
+
+Same problem, **opposite direction**. In سنون a patient posts a case and students
+claim it. In ClinMatch a *student* posts a listing — "I need a full prophy,
+X-rays, periodontal charting" — and patients browse the listings and submit
+their contact details.
+
+That inversion carries the whole product with it:
+
+- Students get **leads**; programs track "views, patient leads, listing status,
+  and conversion signals". The vocabulary is a sales funnel.
+- The **college is a customer**, not just a place. A program gets a workspace: a
+  student roster, verification oversight, and the ability to draft listings on a
+  student's behalf.
+- **Cost is stated on each listing**, before anyone spends time on a
+  conversation.
+- It is US dental-hygiene shaped — prophy, perio charting, hygiene programs.
+
+## AsnanLink (asnanlink.app) — Cairo, Egypt
+
+**This one is a near-twin of سنون, in Arabic, and it launched a fortnight ago.**
+General matching opened 25 August 2026.
+
+Same direction as سنون: the patient describes the problem in ordinary words, the
+platform turns it into a structured case and matches it to a student. Same three
+matching axes — they call them "skill level, availability, and location", which
+is stage capability, days and city.
+
+What they have that سنون does not:
+
+- **Students set their own availability** — days, time slots, frequency — and
+  matching uses it.
+- **Appointments are confirmed in the platform** by the patient.
+- **Cases are "reviewed"** before they reach students.
+- **Treatment summaries and procedure tracking** for the student's portfolio.
+- **Patient feedback and follow-up** after treatment.
+- They say plainly: free to register, "you only pay for treatment when your case
+  is matched" — so they answer the cost question up front.
+
+They do not appear to have anything سنون has around **not needing an account to
+be a patient**, which is سنون's sharpest advantage and worth keeping.
+
+## What is actually worth taking
+
+Ranked by what it would do for a real patient or student here, not by how novel
+it is.
+
+### 1. Match on days. This is a bug, not a feature gap.
+
+سنون collects the patient's available days, stores them, shows them — and
+**never matches on them**. `listOpenCasesForStudent` filters on city and
+treatment overlap only, and a student has no availability recorded at all.
+
+So a student who is in clinic on Sunday can be shown a case from a patient who
+can only come on Tuesday. They claim it, they ring, and neither of them can do
+anything about it. That costs the student a claim, the patient a call, and the
+case a trip back through the queue.
+
+Both AsnanLink and the ordinary logic of a clinic timetable say the same thing:
+the student's clinic days belong in their profile, and the queue should prefer —
+or at least mark — cases whose days overlap.
+
+### 2. Say what it costs
+
+A patient's first question is "how much". سنون currently answers it nowhere. The
+university may charge for materials even where the treatment is free, and that
+is exactly the kind of surprise that makes someone not turn up.
+
+This is not payments, which stay out of the MVP. It is one admin-editable
+sentence per college, shown before a patient submits. Cheap, and it removes the
+biggest unknown in the whole flow.
+
+### 3. What the student still needs
+
+A student is here because their college asks for a set number of specific cases.
+ClinMatch has them state that as a listing; سنون can capture the same fact
+without inverting the product — "I still need 3 fillings and one root canal" on
+the student's profile — and use it to order their queue.
+
+It makes the queue useful rather than merely correct, and it is the honest input
+to the fair-distribution question (open decision 1) that is currently guesswork.
+
+### 4. The college as a participant — later, and only with a real relationship
+
+ClinMatch's program workspace solves a bottleneck سنون will hit: today Haider
+approves every student ID by hand. A supervisor who can vouch for their own
+students removes that, and makes the platform something a college adopts rather
+than tolerates.
+
+Not now. It needs an institutional relationship before it needs code, and
+CLAUDE.md is right that manual review is correct at this scale.
+
+### Deliberately not taking
+
+- **Ratings and feedback on students.** Excluded in the MVP, and rightly: a
+  student practising under supervision is not a service provider being reviewed.
+  A private "did the treatment happen" check to the patient is a different thing
+  and might be worth it — it would be a check on the outcome the student
+  reported.
+- **Students posting listings.** The whole design of سنون rests on cases being
+  clinical cases rather than students advertising for patients. The guide is
+  explicit: no browsing people, no ranking, no competing for patients.
+- **Case review before matching.** It adds a person to the critical path when
+  there is one person. The wrong-number report and the rate limits already cover
+  the abuse it would catch.
+
+## The thing worth saying out loud
+
+AsnanLink is the same idea, in Arabic, one country away, and already live. That
+is not a reason to hurry — it is a reason to be clear about what سنون is for.
+Their patients register; سنون's do not, and in Iraq that friction is the
+difference between someone submitting and someone giving up. That advantage is
+worth defending over adding features to match them.
+
+## Sources
+
+- <https://www.clinmatch.io/>
+- <https://www.clinmatch.io/colleges>
+- <https://www.clinmatch.io/help>
+- <https://www.asnanlink.app/en>
+- <https://www.asnanlink.app/en/how-it-works>
