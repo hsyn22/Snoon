@@ -615,8 +615,7 @@ Setup needs three environment variables (`TELEGRAM_BOT_TOKEN`, `TELEGRAM_BOT_USE
 `getUpdates` instead and feeds them through the same `handleTelegramUpdate` the route uses —
 only the delivery differs. Never run it while a webhook is registered: Telegram refuses
 `getUpdates` in that case, which is a useful safeguard against two consumers racing for the
-same updates. Still to come: the patient confirming contact through the bot,
-which is the leading answer to open decision 4.
+same updates.
 
 ---
 
@@ -688,7 +687,9 @@ These are genuinely unresolved. If a task depends on one, stop and ask rather th
    has value — but any filter here shrinks the pool of students who can see a case, so the
    leaning is optional-and-multi-select with "any" as the default, never required. Blocked on
    real data: which universities have dental colleges, and in which cities. Do not invent that
-   list.
+   list. `docs/dental-colleges-draft.md` holds web research to be corrected, not a decision —
+   fourteen cities with a college were found, and the column the web cannot answer is which
+   of them run a teaching clinic that takes outside patients at all.
 7. **Which cities to launch in.** The current 18-city list in `src/lib/config/index.ts` is a
    placeholder written by Claude, not a decision. Realistically the launch is one or two
    cities.
