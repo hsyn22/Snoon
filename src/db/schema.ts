@@ -118,6 +118,21 @@ export const cases = snoon.table(
     trackingTokenHash: text('tracking_token_hash').notNull(),
     trackingTokenRevokedAt: timestamp('tracking_token_revoked_at', { withTimezone: true }),
 
+    /**
+     * When the contact details above were erased.
+     *
+     * A finished case does not need a phone number. It needs to still exist —
+     * an admin has to be able to answer "what happened to SN-4KP7QW" months
+     * later, and the event log is the only record of a case that went wrong —
+     * but the name, number and free text are the parts that would harm someone
+     * if this table ever leaked, and they have no remaining purpose.
+     *
+     * So the row is scrubbed rather than deleted, and marked, because a case
+     * that had a patient must stay distinguishable from one whose details were
+     * never filled in.
+     */
+    contactScrubbedAt: timestamp('contact_scrubbed_at', { withTimezone: true }),
+
     createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
     updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
   },

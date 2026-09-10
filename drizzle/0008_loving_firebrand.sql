@@ -1,0 +1,1 @@
+ALTER TABLE "snoon"."cases" ADD COLUMN "contact_scrubbed_at" timestamp with time zone;

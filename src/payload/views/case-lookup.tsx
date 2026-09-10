@@ -19,7 +19,7 @@ import {
   getUniversities,
 } from '@/lib/config'
 import { describeReason } from '@/lib/cases/reasons'
-import { caseForm, caseStatus } from '@/lib/copy'
+import { caseForm, caseStatus, common } from '@/lib/copy'
 import { formatAppointment, formatCaseDate, formatCaseDateTime } from '@/lib/dates'
 import { normaliseReferenceCode } from '@/lib/reference-code'
 
@@ -519,10 +519,21 @@ function CaseDetail({
             fontSize: '0.9rem',
           }}
         >
-          <Field label="الاسم">{record.patientName}</Field>
-          <Field label="الهاتف">
-            <Ltr>{record.patientPhone}</Ltr>
-          </Field>
+          {/* Erased once the case has been over long enough. The row survives so
+              this page can still answer "what happened to SN-…"; the number does
+              not, because a finished case has no use for it. */}
+          {record.contactScrubbedAt ? (
+            <Field label="معلومات التواصل">
+              {common.contactScrubbed} — {formatCaseDate(record.contactScrubbedAt)}
+            </Field>
+          ) : (
+            <>
+              <Field label="الاسم">{record.patientName}</Field>
+              <Field label="الهاتف">
+                <Ltr>{record.patientPhone}</Ltr>
+              </Field>
+            </>
+          )}
         </dl>
       </section>
 

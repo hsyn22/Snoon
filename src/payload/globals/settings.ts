@@ -85,6 +85,19 @@ export const Settings: GlobalConfig = {
       admin: { description: 'حد إضافي على السرعة، مو بس على العدد المفتوح.' },
     },
     {
+      name: 'contactRetentionDays',
+      type: 'number',
+      required: true,
+      defaultValue: 90,
+      min: 7,
+      max: 3650,
+      label: 'مدة الاحتفاظ بمعلومات التواصل بعد انتهاء الحالة (بالأيام)',
+      admin: {
+        description:
+          'بعد هذي المدة، اسم المريض ورقمه وملاحظاته تنمحى نهائياً من الحالة. الحالة نفسها تبقى — رمزها وسجلها ونوع العلاج — حتى تكدر تجاوب إذا أحد سأل عن حالة قديمة. رقم الموبايل هو أخطر شي بالنظام، وحالة خالصة ما تحتاجه.',
+      },
+    },
+    {
       name: 'photoRetentionDays',
       type: 'number',
       required: true,

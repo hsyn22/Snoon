@@ -30,6 +30,7 @@ export const CASE_REASON = {
   WRONG_NUMBER: 'The person reached never asked for treatment; number put on cooldown.',
   CONTACT_CONFIRMED_BY_ADMIN: 'Admin confirmed contact after the patient answered neither channel.',
   RELEASED_BY_ADMIN: 'Admin returned the case to the queue after the patient answered neither channel.',
+  CONTACT_SCRUBBED: 'Contact details erased after the retention period.',
   PART_COMPLETED: 'Student completed the treatments their stage may perform.',
   REMAINDER_QUEUED: 'Remaining treatments returned to the queue for another stage.',
 } as const
@@ -56,6 +57,7 @@ export const CASE_REASON_AR: Record<CaseReason, string> = {
     'الإدارة أكّدت التواصل بعد ما المريض ما رد على الإشعار ولا على الرابط.',
   [CASE_REASON.RELEASED_BY_ADMIN]:
     'الإدارة رجّعت الحالة للقائمة بعد ما المريض ما رد على الإشعار ولا على الرابط.',
+  [CASE_REASON.CONTACT_SCRUBBED]: 'انمحت معلومات التواصل بعد انتهاء مدة الاحتفاظ بيها.',
   [CASE_REASON.PART_COMPLETED]: 'الطالب خلّص العلاجات اللي تخص مرحلته.',
   [CASE_REASON.REMAINDER_QUEUED]: 'باقي العلاجات رجعت للقائمة حتى ياخذها طالب من مرحلة ثانية.',
 }

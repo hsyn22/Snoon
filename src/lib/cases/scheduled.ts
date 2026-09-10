@@ -1,18 +1,27 @@
-import { getCaseExpiryDays, getPhotoRetentionDays } from '@/lib/config/settings'
+import {
+  getCaseExpiryDays,
+  getContactRetentionDays,
+  getPhotoRetentionDays,
+} from '@/lib/config/settings'
 import { deleteExpiredCasePhotos } from '@/lib/images/retention'
+import { scrubExpiredContactDetails } from './retention'
 import { expireOverdueClaimsAndNotify } from './expiry'
 import { expireStaleRequestedCases } from './lifecycle'
 
 /**
  * Everything that has to happen on a timer rather than because someone clicked.
  *
- * Two jobs, run together because they are cheap and both want the same cadence:
+ * Four jobs, run together because they are cheap and all want the same cadence:
  *
  * 1. Claims whose contact window ran out — the case goes back to the queue and
  *    both sides are told. Without this a student who never called holds a
  *    patient's case indefinitely, which is the failure the whole window exists
  *    to prevent.
  * 2. Cases nobody ever claimed, past their useful life.
+ * 3. Photographs on cases that are over.
+ * 4. The contact details on cases that have been over for longer. A phone number
+ *    on a finished case has no remaining purpose, and every day it stays is
+ *    exposure with no upside.
  *
  * Idempotent by construction: every transition inside is a conditional update
  * guarded by the status it may come from, so running this twice in a minute — or
@@ -23,6 +32,7 @@ export type ScheduledRunReport = {
   claimNotificationsSent: number
   casesExpired: number
   photosDeleted: number
+  contactsScrubbed: number
   ranAt: string
 }
 
@@ -40,11 +50,18 @@ export async function runScheduledJobs(now: Date = new Date()): Promise<Schedule
   const photoCutoff = new Date(now.getTime() - retentionDays * 24 * 60 * 60 * 1000)
   const photosDeleted = await deleteExpiredCasePhotos(photoCutoff)
 
+  // Longer than photographs: a patient may ring months later asking what
+  // happened, and an admin needs to be able to answer.
+  const contactDays = await getContactRetentionDays()
+  const contactCutoff = new Date(now.getTime() - contactDays * 24 * 60 * 60 * 1000)
+  const contactsScrubbed = await scrubExpiredContactDetails(contactCutoff)
+
   return {
     claimsExpired: claims.released,
     claimNotificationsSent: claims.notified,
     casesExpired,
     photosDeleted,
+    contactsScrubbed,
     ranAt: now.toISOString(),
   }
 }

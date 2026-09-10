@@ -91,6 +91,8 @@ export const common = {
   notFoundBody: 'الرابط اللي فتحته مو صحيح أو انحذف.',
   backHome: 'رجوع للرئيسية',
   referenceCodeLabel: 'رمز الحالة',
+  /** Shown where a phone number used to be, once retention has erased it. */
+  contactScrubbed: 'انمحت بعد انتهاء مدة الاحتفاظ',
 
   /** Error pages. The default Next.js screen is English and says nothing useful. */
   errorRetry: 'جرّب مرة لخ',

@@ -8,6 +8,7 @@ import * as migration_20260909_130322_case_photo_thumb from './20260909_130322_c
 import * as migration_20260909_175751_phone_guard_settings from './20260909_175751_phone_guard_settings';
 import * as migration_20260909_180258_stage_defaults from './20260909_180258_stage_defaults';
 import * as migration_20260910_212909_contact_grace from './20260910_212909_contact_grace';
+import * as migration_20260910_213352_contact_retention from './20260910_213352_contact_retention';
 
 export const migrations = [
   {
@@ -58,6 +59,11 @@ export const migrations = [
   {
     up: migration_20260910_212909_contact_grace.up,
     down: migration_20260910_212909_contact_grace.down,
-    name: '20260910_212909_contact_grace'
+    name: '20260910_212909_contact_grace',
+  },
+  {
+    up: migration_20260910_213352_contact_retention.up,
+    down: migration_20260910_213352_contact_retention.down,
+    name: '20260910_213352_contact_retention'
   },
 ];

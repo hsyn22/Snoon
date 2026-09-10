@@ -128,3 +128,21 @@ export const getContactGraceHours = cache(async (): Promise<number> => {
   const value = settings.contactGraceHours
   return typeof value === 'number' && value > 0 ? value : FALLBACK_CONTACT_GRACE_HOURS
 })
+
+
+const FALLBACK_CONTACT_RETENTION_DAYS = 90
+
+/**
+ * How long a finished case keeps the patient's name, number and notes.
+ *
+ * Longer than photographs, because a patient may ring months later asking what
+ * happened, and an admin needs to be able to answer. Not forever, because a
+ * phone number on a closed case has no remaining purpose and every day it stays
+ * is exposure with no upside.
+ */
+export const getContactRetentionDays = cache(async (): Promise<number> => {
+  const payload = await getPayload({ config })
+  const settings = await payload.findGlobal({ slug: 'settings' })
+  const value = settings.contactRetentionDays
+  return typeof value === 'number' && value > 0 ? value : FALLBACK_CONTACT_RETENTION_DAYS
+})

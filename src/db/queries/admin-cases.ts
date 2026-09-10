@@ -109,6 +109,8 @@ export type AdminCaseView = {
   patientName: string
   patientPhone: string
   trackingTokenRevokedAt: Date | null
+  /** Set once retention erased the two fields above. */
+  contactScrubbedAt: Date | null
   createdAt: Date
   updatedAt: Date
   /** Newest first: the live claim, if any, is the first row. */
@@ -142,6 +144,7 @@ export async function findCaseForAdmin(referenceCode: string): Promise<AdminCase
       patientName: cases.patientName,
       patientPhone: cases.patientPhone,
       trackingTokenRevokedAt: cases.trackingTokenRevokedAt,
+      contactScrubbedAt: cases.contactScrubbedAt,
       createdAt: cases.createdAt,
       updatedAt: cases.updatedAt,
     })

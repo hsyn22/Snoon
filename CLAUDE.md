@@ -700,7 +700,17 @@ These are genuinely unresolved. If a task depends on one, stop and ask rather th
 7. **Which cities to launch in.** The current 18-city list in `src/lib/config/index.ts` is a
    placeholder written by Claude, not a decision. Realistically the launch is one or two
    cities.
-8. **Retention periods** for cases, photos and contact details after completion.
+8. ~~**Retention periods**~~ **Decided, and all three are Payload settings.** Photographs go
+   60 days after a case reaches a terminal state; contact details — name, phone **and the
+   patient's own notes** — go at 90 days; the case row itself is kept indefinitely.
+   `scrubExpiredContactDetails` erases rather than deletes, and marks `contact_scrubbed_at`,
+   for two reasons: an admin has to be able to answer "what happened to SN-4KP7QW" when
+   someone rings months later, and for a case that went wrong the event log is the only
+   record there is. A case that had a patient must also stay distinguishable from one whose
+   details were never filled in. Scrubbing takes the keys with it — the tracking token is
+   revoked, and any Telegram binding for the case, since neither can lead anywhere useful and
+   both are live credentials. Revisit the 90 days if it turns out patients ring later than
+   that.
 
 ---
 

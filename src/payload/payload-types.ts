@@ -650,6 +650,10 @@ export interface Setting {
    */
   maxCasesPerPhonePerDay: number;
   /**
+   * بعد هذي المدة، اسم المريض ورقمه وملاحظاته تنمحى نهائياً من الحالة. الحالة نفسها تبقى — رمزها وسجلها ونوع العلاج — حتى تكدر تجاوب إذا أحد سأل عن حالة قديمة. رقم الموبايل هو أخطر شي بالنظام، وحالة خالصة ما تحتاجه.
+   */
+  contactRetentionDays: number;
+  /**
    * بعد ما تنغلق الحالة، الصور تنحذف نهائياً بعد هذي المدة. ما نحتفظ بصور داخل فم المريض أكثر من اللازم.
    */
   photoRetentionDays: number;
@@ -667,6 +671,7 @@ export interface SettingsSelect<T extends boolean = true> {
   wrongNumberBlockDays?: T;
   maxOpenCasesPerPhone?: T;
   maxCasesPerPhonePerDay?: T;
+  contactRetentionDays?: T;
   photoRetentionDays?: T;
   updatedAt?: T;
   createdAt?: T;

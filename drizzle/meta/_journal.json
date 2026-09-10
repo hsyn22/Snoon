@@ -57,6 +57,13 @@
       "when": 1788976395865,
       "tag": "0007_right_calypso",
       "breakpoints": true
+    },
+    {
+      "idx": 8,
+      "version": "7",
+      "when": 1789076012880,
+      "tag": "0008_loving_firebrand",
+      "breakpoints": true
     }
   ]
 }
