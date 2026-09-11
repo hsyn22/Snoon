@@ -1,7 +1,8 @@
 import type { Metadata } from 'next'
-import Link from 'next/link'
 import type { LegalSection } from '@/lib/legal'
-import { common, site } from '@/lib/copy'
+import { PageShell } from '@/components/site-chrome'
+import { ButtonLink } from '@/components/ui/button'
+import { common } from '@/lib/copy'
 
 /**
  * The privacy notice and the terms share a shape, so they share a component.
@@ -20,21 +21,15 @@ export function LegalPage({
   sections: readonly LegalSection[]
 }) {
   return (
-    <div className="mx-auto flex min-h-dvh max-w-2xl flex-col px-4">
-      <header className="py-6">
-        <Link href="/" className="text-sm text-foreground-muted">
-          {site.name}
-        </Link>
-      </header>
-
-      <main id="main" className="grow pb-10">
+    <PageShell width="wide">
+      <>
         <h1 className="text-2xl font-bold">{title}</h1>
         <p className="mt-2 text-pretty text-foreground-muted">{intro}</p>
 
         <div className="mt-8 space-y-8">
           {sections.map((section) => (
             <section key={section.heading}>
-              <h2 className="font-semibold">{section.heading}</h2>
+              <h2 className="font-bold">{section.heading}</h2>
               <div className="mt-2 space-y-2 text-sm text-foreground-muted">
                 {section.paragraphs.map((paragraph) => (
                   <p key={paragraph} className="text-pretty">
@@ -46,11 +41,13 @@ export function LegalPage({
           ))}
         </div>
 
-        <Link href="/" className="mt-10 inline-block text-sm text-accent underline">
-          {common.backHome}
-        </Link>
-      </main>
-    </div>
+        <div className="mt-10">
+          <ButtonLink href="/" variant="quiet" className="text-sm">
+            {common.backHome}
+          </ButtonLink>
+        </div>
+      </>
+    </PageShell>
   )
 }
 

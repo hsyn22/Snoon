@@ -9,8 +9,13 @@ import { countTreatedCasesForStudent, listCaseHistoryForStudent } from '@/db/que
 import { auth } from '@/lib/auth'
 import { CASE_REASON } from '@/lib/cases/reasons'
 import { getAllTreatmentTypes } from '@/lib/config'
-import { site, studentClaim, studentHistory } from '@/lib/copy'
+import { studentClaim, studentHistory } from '@/lib/copy'
 import { formatCaseDate } from '@/lib/dates'
+import { PageShell } from '@/components/site-chrome'
+import { PageHeader } from '@/components/ui/section'
+import { ButtonLink } from '@/components/ui/button'
+import { Card, CardBody, CardRibbon, Chip, MetaRow } from '@/components/ui/card'
+import { CalendarIcon, CheckIcon, ClockIcon } from '@/components/ui/icon'
 
 /**
  * A student's own record of the cases they have held.
@@ -47,34 +52,40 @@ export default async function StudentHistoryPage() {
   const nameOf = (id: string) => treatments.find((t) => t.id === id)?.nameAr ?? id
 
   return (
-    <div className="mx-auto flex min-h-dvh max-w-md flex-col px-4">
-      <header className="py-6">
-        <Link href="/student" className="text-sm text-foreground-muted">
-          {site.name}
-        </Link>
-      </header>
+    <PageShell>
+      <>
+        <PageHeader
+          eyebrow={studentHistory.eyebrow}
+          title={studentHistory.title}
+          lead={studentHistory.intro}
+        />
 
-      <main id="main" className="grow pb-10">
-        <h1 className="text-xl font-bold">{studentHistory.title}</h1>
-        <p className="mt-1 text-sm text-foreground-muted">{studentHistory.intro}</p>
-
-        <div className="mt-4 grid grid-cols-2 gap-3">
-          <div className="rounded-lg border border-border bg-surface p-4">
-            <p className="text-xs text-foreground-muted">{studentHistory.treatedLabel}</p>
-            {/* Western digits inside Arabic need their own run or they re-order. */}
-            <p className="ltr-run mt-1 text-2xl font-bold">{treated}</p>
-          </div>
-          <div className="rounded-lg border border-border bg-surface p-4">
-            <p className="text-xs text-foreground-muted">{studentHistory.totalLabel}</p>
-            <p className="ltr-run mt-1 text-2xl font-bold">{entries.length}</p>
-          </div>
+        {/* The two numbers a student's college actually asks them for, big
+            enough to read without looking. ClinMatch puts the same shape at the
+            top of their program dashboard and it is the right one. */}
+        <div className="grid grid-cols-2 gap-3">
+          <Card>
+            <CardBody>
+              <p className="text-xs text-foreground-muted">{studentHistory.treatedLabel}</p>
+              {/* Western digits inside Arabic need their own run or they re-order. */}
+              <p className="ltr-run mt-1 text-3xl font-bold text-accent">{treated}</p>
+            </CardBody>
+          </Card>
+          <Card>
+            <CardBody>
+              <p className="text-xs text-foreground-muted">{studentHistory.totalLabel}</p>
+              <p className="ltr-run mt-1 text-3xl font-bold">{entries.length}</p>
+            </CardBody>
+          </Card>
         </div>
 
         {entries.length === 0 ? (
-          <section className="mt-4 rounded-lg border border-border bg-surface p-5">
-            <h2 className="font-semibold">{studentHistory.emptyTitle}</h2>
-            <p className="mt-2 text-sm text-foreground-muted">{studentHistory.emptyBody}</p>
-          </section>
+          <Card className="mt-4">
+            <CardBody className="p-5">
+              <h2 className="font-bold">{studentHistory.emptyTitle}</h2>
+              <p className="mt-2 text-sm text-foreground-muted">{studentHistory.emptyBody}</p>
+            </CardBody>
+          </Card>
         ) : (
           <div className="mt-4 space-y-3">
             {entries.map((entry) => {
@@ -84,45 +95,55 @@ export default async function StudentHistoryPage() {
               const handedOn = entry.releaseReason === CASE_REASON.PART_COMPLETED
 
               return (
-                <article
-                  key={entry.claimId}
-                  className="rounded-lg border border-border bg-surface p-4"
-                >
-                  <div className="flex flex-wrap items-baseline justify-between gap-2">
+                <Card key={entry.claimId}>
+                  <CardRibbon
+                    label={
+                      handedOn ? studentHistory.handedOn : studentHistory.outcome[entry.claimStatus]
+                    }
+                    tone={
+                      entry.claimStatus === 'ACTIVE'
+                        ? 'accent'
+                        : entry.claimStatus === 'COMPLETED'
+                          ? 'positive'
+                          : 'neutral'
+                    }
+                  />
+                  <CardBody>
                     <p className="reference-code text-sm font-bold">{entry.referenceCode}</p>
-                    <p className="text-xs font-medium">
-                      {handedOn
-                        ? studentHistory.handedOn
-                        : studentHistory.outcome[entry.claimStatus]}
-                    </p>
-                  </div>
 
-                  <dl className="mt-3 space-y-2 text-sm">
-                    <div>
-                      <dt className="text-xs text-foreground-muted">{studentHistory.treatments}</dt>
-                      <dd>{entry.treatmentTypeIds.map(nameOf).join('، ')}</dd>
+                    <ul className="mt-3 flex flex-wrap gap-1.5">
+                      {entry.treatmentTypeIds.map(nameOf).map((name) => (
+                        <li key={name}>
+                          <Chip icon={<CheckIcon className="size-3.5" />}>{name}</Chip>
+                        </li>
+                      ))}
+                    </ul>
+
+                    <div className="mt-3 space-y-1.5">
+                      <MetaRow icon={<CalendarIcon />} label={studentHistory.claimedAt}>
+                        <span className="text-foreground-muted">
+                          {formatCaseDate(entry.claimedAt)}
+                        </span>
+                      </MetaRow>
+                      {entry.closedAt ? (
+                        <MetaRow icon={<ClockIcon />} label={studentHistory.closedAt}>
+                          <span className="text-foreground-muted">
+                            {formatCaseDate(entry.closedAt)}
+                          </span>
+                        </MetaRow>
+                      ) : null}
                     </div>
-                    <div>
-                      <dt className="text-xs text-foreground-muted">{studentHistory.claimedAt}</dt>
-                      <dd className="text-foreground-muted">{formatCaseDate(entry.claimedAt)}</dd>
-                    </div>
-                    {entry.closedAt ? (
-                      <div>
-                        <dt className="text-xs text-foreground-muted">{studentHistory.closedAt}</dt>
-                        <dd className="text-foreground-muted">{formatCaseDate(entry.closedAt)}</dd>
-                      </div>
+
+                    {entry.claimStatus === 'ACTIVE' ? (
+                      <Link
+                        href={`/student/case/${entry.caseId}`}
+                        className="mt-3 inline-block text-sm font-bold text-accent underline"
+                      >
+                        {studentClaim.title}
+                      </Link>
                     ) : null}
-                  </dl>
-
-                  {entry.claimStatus === 'ACTIVE' ? (
-                    <Link
-                      href={`/student/case/${entry.caseId}`}
-                      className="mt-3 inline-block text-sm text-accent underline"
-                    >
-                      {studentClaim.title}
-                    </Link>
-                  ) : null}
-                </article>
+                  </CardBody>
+                </Card>
               )
             })}
           </div>
@@ -130,10 +151,12 @@ export default async function StudentHistoryPage() {
 
         <p className="mt-6 text-xs text-foreground-muted">{studentHistory.note}</p>
 
-        <Link href="/student" className="mt-6 inline-block text-sm text-foreground-muted underline">
-          {studentClaim.backToQueue}
-        </Link>
-      </main>
-    </div>
+        <div className="mt-6">
+          <ButtonLink href="/student" variant="quiet" className="text-sm">
+            {studentClaim.backToQueue}
+          </ButtonLink>
+        </div>
+      </>
+    </PageShell>
   )
 }

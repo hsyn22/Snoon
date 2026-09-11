@@ -2,6 +2,7 @@
 
 import { useActionState } from 'react'
 import { useFormStatus } from 'react-dom'
+import { buttonClass } from '@/components/ui/button'
 import { studentQueue } from '@/lib/copy'
 import { askDaysAction, type AskDaysState } from './queue-actions'
 
@@ -13,7 +14,7 @@ function Button() {
     <button
       type="submit"
       disabled={pending}
-      className="mt-3 min-h-11 w-full rounded-md border border-border px-4 text-sm font-medium disabled:opacity-60"
+      className={buttonClass('secondary', 'mt-3 w-full text-sm')}
     >
       {pending ? studentQueue.asking : studentQueue.askDays}
     </button>

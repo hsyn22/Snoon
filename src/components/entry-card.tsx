@@ -1,4 +1,5 @@
 import Link from 'next/link'
+import { buttonClass } from '@/components/ui/button'
 
 type EntryCardProps = {
   title: string
@@ -16,20 +17,20 @@ type EntryCardProps = {
 export function EntryCard({ title, body, action, note, href }: EntryCardProps) {
   return (
     <div className="flex flex-col rounded-lg border border-border bg-surface p-5 shadow-sm">
-      <h3 className="text-lg font-semibold text-foreground">{title}</h3>
+      <h3 className="text-lg font-bold text-foreground">{title}</h3>
       <p className="mt-2 grow text-sm text-foreground-muted">{body}</p>
 
       {href ? (
         <Link
           href={href}
-          className="mt-5 inline-flex min-h-11 items-center justify-center rounded-md bg-accent px-4 text-sm font-medium text-accent-foreground"
+          className={buttonClass('primary', 'mt-5 w-full text-sm')}
         >
           {action}
         </Link>
       ) : (
         <span
           aria-disabled="true"
-          className="mt-5 inline-flex min-h-11 items-center justify-center rounded-md bg-surface-muted px-4 text-sm font-medium text-foreground-muted"
+          className={buttonClass('secondary', 'mt-5 w-full cursor-not-allowed border-transparent bg-surface-muted text-sm text-foreground-muted hover:border-transparent hover:text-foreground-muted')}
         >
           {action}
         </span>

@@ -5,13 +5,11 @@ import { useFormStatus } from 'react-dom'
 import { useDismissibleErrors } from '@/components/use-dismissible-errors'
 import { studentAuth } from '@/lib/copy'
 import type { AuthFormState } from './actions'
+import { buttonClass } from '@/components/ui/button'
+// One set of field styles for every form in the product — see ui/field.tsx.
+import { controlClass, FormSection, hintClass, labelClass } from '@/components/ui/field'
 
 const INITIAL: AuthFormState = {}
-
-const labelClass = 'block text-sm font-medium text-foreground'
-const hintClass = 'mt-1 text-xs text-foreground-muted'
-const controlClass =
-  'mt-2 min-h-11 w-full rounded-md border border-border bg-surface px-3 text-foreground'
 
 function FieldError({ id, message }: { id: string; message?: string }) {
   if (!message) return null
@@ -28,7 +26,7 @@ function SubmitButton({ label }: { label: string }) {
     <button
       type="submit"
       disabled={pending}
-      className="min-h-11 w-full rounded-md bg-accent px-4 font-medium text-accent-foreground disabled:opacity-60"
+      className={buttonClass('primary', 'w-full')}
     >
       {pending ? studentAuth.signingIn : label}
     </button>
@@ -54,61 +52,63 @@ export function AuthForm({
 
   return (
     <form action={formAction} onInput={onInput} className="space-y-5" noValidate>
-      {withName ? (
+      <FormSection title={studentAuth.accountSection}>
+        {withName ? (
+          <div>
+            <label htmlFor="name" className={labelClass}>
+              {studentAuth.nameLabel}
+            </label>
+            <p className={hintClass}>{studentAuth.nameHint}</p>
+            <input
+              id="name"
+              name="name"
+              type="text"
+              autoComplete="name"
+              defaultValue={values?.name ?? ''}
+              className={controlClass}
+              aria-invalid={Boolean(errors.name)}
+              aria-describedby={errors.name ? 'name-error' : undefined}
+            />
+            <FieldError id="name-error" message={errorFor('name', errors.name)} />
+          </div>
+        ) : null}
+
         <div>
-          <label htmlFor="name" className={labelClass}>
-            {studentAuth.nameLabel}
+          <label htmlFor="email" className={labelClass}>
+            {studentAuth.emailLabel}
           </label>
-          <p className={hintClass}>{studentAuth.nameHint}</p>
           <input
-            id="name"
-            name="name"
-            type="text"
-            autoComplete="name"
-            defaultValue={values?.name ?? ''}
-            className={controlClass}
-            aria-invalid={Boolean(errors.name)}
-            aria-describedby={errors.name ? 'name-error' : undefined}
+            id="email"
+            name="email"
+            type="email"
+            autoComplete="email"
+            dir="ltr"
+            defaultValue={values?.email ?? ''}
+            className={`${controlClass} text-start`}
+            aria-invalid={Boolean(errors.email)}
+            aria-describedby={errors.email ? 'email-error' : undefined}
           />
-          <FieldError id="name-error" message={errorFor('name', errors.name)} />
+          <FieldError id="email-error" message={errorFor('email', errors.email)} />
         </div>
-      ) : null}
 
-      <div>
-        <label htmlFor="email" className={labelClass}>
-          {studentAuth.emailLabel}
-        </label>
-        <input
-          id="email"
-          name="email"
-          type="email"
-          autoComplete="email"
-          dir="ltr"
-          defaultValue={values?.email ?? ''}
-          className={`${controlClass} text-start`}
-          aria-invalid={Boolean(errors.email)}
-          aria-describedby={errors.email ? 'email-error' : undefined}
-        />
-        <FieldError id="email-error" message={errorFor('email', errors.email)} />
-      </div>
-
-      <div>
-        <label htmlFor="password" className={labelClass}>
-          {studentAuth.passwordLabel}
-        </label>
-        {withName ? <p className={hintClass}>{studentAuth.passwordHint}</p> : null}
-        <input
-          id="password"
-          name="password"
-          type="password"
-          autoComplete={withName ? 'new-password' : 'current-password'}
-          dir="ltr"
-          className={`${controlClass} text-start`}
-          aria-invalid={Boolean(errors.password)}
-          aria-describedby={errors.password ? 'password-error' : undefined}
-        />
-        <FieldError id="password-error" message={errorFor('password', errors.password)} />
-      </div>
+        <div>
+          <label htmlFor="password" className={labelClass}>
+            {studentAuth.passwordLabel}
+          </label>
+          {withName ? <p className={hintClass}>{studentAuth.passwordHint}</p> : null}
+          <input
+            id="password"
+            name="password"
+            type="password"
+            autoComplete={withName ? 'new-password' : 'current-password'}
+            dir="ltr"
+            className={`${controlClass} text-start`}
+            aria-invalid={Boolean(errors.password)}
+            aria-describedby={errors.password ? 'password-error' : undefined}
+          />
+          <FieldError id="password-error" message={errorFor('password', errors.password)} />
+        </div>
+      </FormSection>
 
       {state.formError ? (
         <p role="alert" className="rounded-md bg-surface-muted p-3 text-sm text-danger">

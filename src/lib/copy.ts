@@ -65,6 +65,7 @@ export const howItWorks = {
  * the page talking rather than the page offering.
  */
 export const home = {
+  backToHome: 'الرئيسية',
   eyebrow: 'علاج أسنان بإشراف جامعي',
 
   /** Two-tone: the first half takes the accent, the second stays dark. */
@@ -96,6 +97,14 @@ export const home = {
 } as const
 
 export const footer = {
+  /** Columns by audience — a patient and a student want different links. */
+  forPatients: 'للمرضى',
+  forStudents: 'للطلبة',
+  submitCase: 'قدّم حالة',
+  howItWorks: 'شلون تشتغل',
+  studentSignUp: 'سجّل كطالب',
+  studentDashboard: 'حسابي',
+
   disclaimer:
     'سنون منصة توصيل بين المرضى وطلبة طب الأسنان. العلاج يقدّمه الطالب داخل عيادة الجامعة وتحت إشراف جامعي. سنون ما يقدّم خدمة طبية وما يتحمل مسؤولية العلاج.',
   privacy: 'الخصوصية',
@@ -139,6 +148,7 @@ export const common = {
 
 /** The patient case-submission form. */
 export const caseForm = {
+  eyebrow: 'حالة جديدة',
   title: 'شنو يوجعك؟',
   intro: 'كَلنا شنو تحتاج وراح نوصّلك بطالب طب أسنان بمدينتك. ما تحتاج حساب، وما تدفع شي لسنون.',
 
@@ -245,6 +255,7 @@ export const dayRequest = {
 } as const
 
 export const caseTracking = {
+  yourDetails: 'معلوماتك',
   successTitle: 'انرسلت حالتك',
   successBody: 'راح يشوفها طلبة طب الأسنان بمدينتك، وأول ما يحجزها طالب راح يتصل بيك.',
 
@@ -270,6 +281,11 @@ export const caseTracking = {
 
 /** Student sign-up, login, and the states between signing up and seeing cases. */
 export const studentAuth = {
+  eyebrow: 'للطلبة',
+  accountSection: 'بيانات الحساب',
+  /** A person's greeting, not a page name — both competitors open this way. */
+  welcomeBack: 'أهلاً بيك مرة لخ',
+  loginLead: 'حساب واحد يكفي: سجّل، وثّق تسجيلك بالكلية، وشوف الحالات اللي تناسب مرحلتك.',
   signUpTitle: 'حساب جديد للطلبة',
   signUpIntro: 'الحساب للطلبة المرحلة الرابعة والخامسة بطب الأسنان.',
   loginTitle: 'دخول الطلبة',
@@ -341,6 +357,11 @@ export const studentStatus = {
 
 /** The step where a student says where they study and proves it. */
 export const studentProfile = {
+  eyebrow: 'توثيق الحساب',
+  documentSection: 'وثيقة التسجيل',
+  studySection: 'وين تدرس',
+  daysSection: 'أيام دوامك بالعيادة',
+  documentLead: 'صورة واضحة للهوية الجامعية أو وثيقة التسجيل. إدارة سنون بس تشوفها.',
   title: 'معلومات دراستك',
   intro: 'حدد وين تدرس وارفع وثيقة تثبت إنك طالب، وإدارة سنون راح تراجعها.',
 
@@ -388,8 +409,27 @@ export const studentProfile = {
 
 /** The verified student's queue of available cases, and the case they hold. */
 export const studentQueue = {
+  eyebrow: 'قائمة الحالات',
   title: 'الحالات المتاحة',
   intro: 'هذي حالات تناسب مرحلتك وعيادتك. أول ما تحجز وحدة تظهرلك معلومات التواصل.',
+
+  /**
+   * A result count above the list. Costs nothing, orients immediately, and is
+   * the first thing a student looks for when they open the page again.
+   *
+   * Arabic counts by shape, not by a single plural: one and two have their own
+   * forms, three to ten take the broken plural, and eleven upwards goes back to
+   * the singular. Getting this wrong is the kind of thing that makes a product
+   * read as translated rather than written.
+   */
+  count: (n: number) =>
+    n === 1
+      ? 'حالة وحدة'
+      : n === 2
+        ? 'حالتين'
+        : n <= 10
+          ? `${n} حالات`
+          : `${n} حالة`,
 
   emptyTitle: 'ما أكو حالات متاحة هسه',
   emptyBody: 'ارجع شوفها بعدين. الحالات الجديدة تظهر هنا أول ما تنقدّم.',
@@ -443,6 +483,7 @@ export const studentQueue = {
  * have I done" is the question they came with, and the site could not answer it.
  */
 export const studentHistory = {
+  eyebrow: 'سجلّك',
   title: 'حالاتي',
   intro: 'الحالات اللي أخذتها من سنون.',
   link: 'شوف حالاتي',

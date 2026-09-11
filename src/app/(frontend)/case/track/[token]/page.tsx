@@ -1,9 +1,20 @@
 import type { Metadata } from 'next'
 import { headers } from 'next/headers'
-import Link from 'next/link'
 import { getCaseByTrackingToken, getCurrentAppointment } from '@/db/queries/cases'
 import { listCasePhotos } from '@/db/queries/case-photos'
 import { CasePhotoGrid } from '@/components/case-photo-grid'
+import { Card, CardBody, CardRibbon, Chip, MetaRow, statusTone } from '@/components/ui/card'
+import {
+  AlertIcon,
+  CalendarIcon,
+  ClockIcon,
+  NoteIcon,
+  PhoneIcon,
+  PinIcon,
+  UserIcon,
+} from '@/components/ui/icon'
+import { PageShell } from '@/components/site-chrome'
+import { ButtonLink } from '@/components/ui/button'
 import { getAllTreatmentTypes, getCityById } from '@/lib/config'
 import {
   caseForm,
@@ -13,7 +24,6 @@ import {
   common,
   patientAppointment,
   patientConfirm,
-  site,
 } from '@/lib/copy'
 import { formatAppointment, formatCaseDate } from '@/lib/dates'
 import { formatPhoneForDisplay } from '@/lib/phone'
@@ -38,10 +48,28 @@ export const metadata: Metadata = {
   robots: { index: false, follow: false, nocache: true },
 }
 
-function Row({ label, value }: { label: string; value: React.ReactNode }) {
+/**
+ * One of the patient's own answers, played back.
+ *
+ * These stay as a labelled list rather than becoming icon rows: this block is
+ * "what you told us", and a patient checking their own phone number needs the
+ * word رقم الهاتف beside it, not a pictogram they have to interpret.
+ */
+function Row({
+  label,
+  value,
+  icon,
+}: {
+  label: string
+  value: React.ReactNode
+  icon?: React.ReactNode
+}) {
   return (
     <div className="border-b border-border py-3 last:border-b-0">
-      <dt className="text-xs text-foreground-muted">{label}</dt>
+      <dt className="flex items-center gap-1.5 text-xs text-foreground-muted">
+        {icon ? <span className="text-accent">{icon}</span> : null}
+        {label}
+      </dt>
       <dd className="mt-1 text-sm text-foreground">{value}</dd>
     </div>
   )
@@ -61,13 +89,15 @@ export default async function TrackCasePage({
 
   if (!record) {
     return (
-      <main className="mx-auto flex min-h-dvh max-w-xl flex-col justify-center px-4">
+      <PageShell>
         <h1 className="text-2xl font-bold">{caseTracking.invalidTitle}</h1>
         <p className="mt-2 text-foreground-muted">{caseTracking.invalidBody}</p>
-        <Link href="/" className="mt-6 text-sm text-accent underline">
-          {common.backHome}
-        </Link>
-      </main>
+        <div className="mt-6">
+          <ButtonLink href="/" variant="secondary">
+            {common.backHome}
+          </ButtonLink>
+        </div>
+      </PageShell>
     )
   }
 
@@ -80,9 +110,9 @@ export default async function TrackCasePage({
 
   // Resolve the stored IDs to Arabic names, keeping any unknown ID visible
   // rather than silently dropping a treatment the patient asked for.
-  const treatments = record.treatmentTypeIds
-    .map((id) => allTreatments.find((treatment) => treatment.id === id)?.nameAr ?? id)
-    .join('، ')
+  const treatments = record.treatmentTypeIds.map(
+    (id) => allTreatments.find((treatment) => treatment.id === id)?.nameAr ?? id,
+  )
 
   // Notifications are optional and the section is simply absent when no bot is
   // configured, rather than offering something that cannot work.
@@ -110,46 +140,72 @@ export default async function TrackCasePage({
     .join('، ')
 
   return (
-    <div className="mx-auto flex min-h-dvh max-w-xl flex-col px-4">
-      <header className="py-6">
-        <Link href="/" className="text-sm text-foreground-muted">
-          {site.name}
-        </Link>
-      </header>
-
-      <main id="main" className="grow pb-10">
+    <PageShell>
+      <>
         {isNew ? (
-          <section className="rounded-lg border border-border bg-accent-muted p-4">
-            <h1 className="text-xl font-bold">{caseTracking.successTitle}</h1>
-            <p className="mt-2 text-sm">{caseTracking.successBody}</p>
-          </section>
-        ) : (
-          <h1 className="text-xl font-bold">{caseTracking.statusLabel}</h1>
-        )}
+          <Card tone="accent" className="mb-4">
+            <CardBody>
+              <h1 className="text-xl font-bold">{caseTracking.successTitle}</h1>
+              <p className="mt-2 text-sm">{caseTracking.successBody}</p>
+            </CardBody>
+          </Card>
+        ) : null}
 
-        <section className="mt-6 rounded-lg border border-border bg-surface p-4">
-          <p className="text-xs text-foreground-muted">{caseTracking.referenceLabel}</p>
-          <p className="reference-code mt-1 text-2xl font-bold">{record.referenceCode}</p>
-          <p className="mt-2 text-xs text-foreground-muted">{caseTracking.referenceHint}</p>
-        </section>
+        {/* The status card. Everything a patient opens this page to find out is
+            on it: where the case has got to, the code they read out on the
+            phone, what they asked for, and when they can come. It used to be a
+            code at the top and a status buried in a table at the bottom. */}
+        <Card>
+          <CardRibbon
+            label={caseStatus[record.status]}
+            detail={caseTracking.statusLabel}
+            tone={statusTone[record.status]}
+          />
+          <CardBody>
+            <p className="text-xs text-foreground-muted">{caseTracking.referenceLabel}</p>
+            <p className="reference-code mt-1 text-2xl font-bold">{record.referenceCode}</p>
+            <p className="mt-2 text-xs text-foreground-muted">{caseTracking.referenceHint}</p>
 
-        <section className="mt-4 rounded-lg border border-border bg-surface p-4">
-          <p className="text-xs text-foreground-muted">{caseTracking.linkLabel}</p>
-          {/* break-all so a long token wraps instead of forcing the page to
-              scroll sideways on a narrow phone. */}
-          <p className="ltr-run mt-1 block break-all text-xs text-foreground">{trackingUrl}</p>
-          <p className="mt-2 text-xs text-foreground-muted">{caseTracking.linkHint}</p>
-          <p className="mt-2 text-xs font-medium text-warning">{caseTracking.linkWarning}</p>
-        </section>
+            <ul className="mt-4 flex flex-wrap gap-1.5">
+              {treatments.map((name) => (
+                <li key={name}>
+                  <Chip>{name}</Chip>
+                </li>
+              ))}
+            </ul>
+
+            <div className="mt-4 space-y-1.5">
+              <MetaRow icon={<PinIcon />} label={caseTracking.cityLabel}>
+                {city?.nameAr ?? record.cityId}
+              </MetaRow>
+              <MetaRow icon={<CalendarIcon />} label={caseTracking.daysLabel}>
+                {days}
+              </MetaRow>
+              <MetaRow icon={<ClockIcon />} label={caseTracking.submittedAtLabel}>
+                {/* No direction wrapper: formatCaseDate spells the month in
+                    Arabic, so the string is naturally RTL. Forcing LTR here is
+                    what scrambled it. */}
+                <span className="text-foreground-muted">{formatCaseDate(record.createdAt)}</span>
+              </MetaRow>
+            </div>
+          </CardBody>
+        </Card>
 
         {/* The appointment is the single most useful thing on this page once it
-            exists, so it sits above everything else. */}
+            exists, so it sits directly under the status. */}
         {appointment ? (
-          <section className="mt-4 rounded-lg border border-border bg-accent-muted p-4">
-            <p className="text-xs text-foreground-muted">{patientAppointment.label}</p>
-            <p className="mt-1 text-base font-bold">{formatAppointment(appointment.scheduledFor)}</p>
-            <p className="mt-2 text-xs text-foreground-muted">{patientAppointment.hint}</p>
-          </section>
+          <Card tone="accent" className="mt-4">
+            <CardBody>
+              <p className="flex items-center gap-1.5 text-xs text-foreground-muted">
+                <CalendarIcon className="text-accent" />
+                {patientAppointment.label}
+              </p>
+              <p className="mt-1 text-base font-bold">
+                {formatAppointment(appointment.scheduledFor)}
+              </p>
+              <p className="mt-2 text-xs text-foreground-muted">{patientAppointment.hint}</p>
+            </CardBody>
+          </Card>
         ) : null}
 
         {awaitingConfirmation ? <ConfirmContact trackingToken={token} /> : null}
@@ -167,9 +223,11 @@ export default async function TrackCasePage({
             so without this the patient taps and the question simply disappears
             with nothing to show it worked. */}
         {record.status === 'CONTACTED' ? (
-          <section className="mt-4 rounded-lg border border-border bg-surface p-4">
-            <p className="text-sm">{patientConfirm.confirmed}</p>
-          </section>
+          <Card className="mt-4">
+            <CardBody>
+              <p className="text-sm">{patientConfirm.confirmed}</p>
+            </CardBody>
+          </Card>
         ) : null}
 
         {telegramAvailable ? (
@@ -178,22 +236,43 @@ export default async function TrackCasePage({
 
         <CasePhotoGrid photos={photos} label={photoCopy.patientLabel} trackingToken={token} />
 
-        <dl className="mt-6 rounded-lg border border-border bg-surface px-4">
-          <Row label={caseTracking.statusLabel} value={caseStatus[record.status]} />
-          <Row label={caseTracking.cityLabel} value={city?.nameAr ?? record.cityId} />
-          <Row label={caseTracking.treatmentLabel} value={treatments} />
-          <Row label={caseTracking.daysLabel} value={days} />
-          <Row label={caseTracking.nameLabel} value={record.patientName} />
-          <Row
-            label={caseTracking.phoneLabel}
-            value={<span className="ltr-run">{formatPhoneForDisplay(record.patientPhone)}</span>}
-          />
-          {record.notes ? <Row label={caseTracking.notesLabel} value={record.notes} /> : null}
-          {/* No direction wrapper: formatCaseDate spells the month in Arabic, so
-              the string is naturally RTL. Forcing LTR here is what scrambled it. */}
-          <Row label={caseTracking.submittedAtLabel} value={formatCaseDate(record.createdAt)} />
-        </dl>
-      </main>
-    </div>
+        {/* The tracking link, below the case rather than above it. It is the
+            credential and it matters, but it is not what someone opens the page
+            to read — they are already holding it. */}
+        <Card className="mt-4">
+          <CardBody>
+            <p className="text-xs text-foreground-muted">{caseTracking.linkLabel}</p>
+            {/* break-all so a long token wraps instead of forcing the page to
+                scroll sideways on a narrow phone. */}
+            <p className="ltr-run mt-1 block break-all text-xs text-foreground">{trackingUrl}</p>
+            <p className="mt-2 text-xs text-foreground-muted">{caseTracking.linkHint}</p>
+            <p className="mt-2 flex items-start gap-1.5 text-xs font-bold text-foreground">
+              <AlertIcon className="mt-0.5 text-warm" />
+              <span>{caseTracking.linkWarning}</span>
+            </p>
+          </CardBody>
+        </Card>
+
+        {/* What the patient told us, played back so they can check it. */}
+        <Card className="mt-4">
+          <CardBody className="py-0">
+            <h2 className="sr-only">{caseTracking.yourDetails}</h2>
+            <dl>
+              <Row icon={<UserIcon />} label={caseTracking.nameLabel} value={record.patientName} />
+              <Row
+                icon={<PhoneIcon />}
+                label={caseTracking.phoneLabel}
+                value={
+                  <span className="ltr-run">{formatPhoneForDisplay(record.patientPhone)}</span>
+                }
+              />
+              {record.notes ? (
+                <Row icon={<NoteIcon />} label={caseTracking.notesLabel} value={record.notes} />
+              ) : null}
+            </dl>
+          </CardBody>
+        </Card>
+      </>
+    </PageShell>
   )
 }

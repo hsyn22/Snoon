@@ -4,10 +4,19 @@ import { useActionState } from 'react'
 import { useFormStatus } from 'react-dom'
 import { patientConfirm } from '@/lib/copy'
 import { answerContactAction, type ConfirmState } from './confirm-actions'
+import { buttonClass, type ButtonVariant } from '@/components/ui/button'
 
 const INITIAL: ConfirmState = {}
 
-function Answer({ value, label, tone }: { value: 'YES' | 'NO'; label: string; tone: string }) {
+function Answer({
+  value,
+  label,
+  tone,
+}: {
+  value: 'YES' | 'NO'
+  label: string
+  tone: ButtonVariant
+}) {
   const { pending } = useFormStatus()
   return (
     <button
@@ -15,7 +24,7 @@ function Answer({ value, label, tone }: { value: 'YES' | 'NO'; label: string; to
       name="answer"
       value={value}
       disabled={pending}
-      className={`min-h-11 flex-1 rounded-md px-4 text-sm font-medium disabled:opacity-60 ${tone}`}
+      className={buttonClass(tone, 'flex-1 text-sm')}
     >
       {label}
     </button>
@@ -45,9 +54,9 @@ export function ConfirmContact({ trackingToken }: { trackingToken: string }) {
         <Answer
           value="YES"
           label={patientConfirm.yes}
-          tone="bg-accent text-accent-foreground"
+          tone="primary"
         />
-        <Answer value="NO" label={patientConfirm.no} tone="border border-border bg-surface" />
+        <Answer value="NO" label={patientConfirm.no} tone="secondary" />
       </form>
     </section>
   )

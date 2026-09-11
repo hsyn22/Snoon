@@ -16,7 +16,6 @@ import {
   caseForm,
   casePhotos as photoCopy,
   caseStatus,
-  site,
   studentClaim,
   studentLifecycle,
 } from '@/lib/copy'
@@ -25,6 +24,10 @@ import { formatAppointment, formatCaseDateTime, toBaghdadInputValue } from '@/li
 import { formatPhoneForDisplay } from '@/lib/phone'
 import { listCasePhotos } from '@/db/queries/case-photos'
 import { CasePhotoGrid } from '@/components/case-photo-grid'
+import { Card, CardBody, CardRibbon, Chip, statusTone } from '@/components/ui/card'
+import { AlertIcon, CalendarIcon, CheckIcon, NoteIcon, PhoneIcon, UserIcon } from '@/components/ui/icon'
+import { PageShell } from '@/components/site-chrome'
+import { ButtonLink } from '@/components/ui/button'
 import { AssertContact } from './assert-contact'
 import { WrongNumberReport } from './wrong-number'
 import { AppointmentStep, OutcomeStep, RemainderStep } from './lifecycle-steps'
@@ -37,10 +40,21 @@ export const metadata: Metadata = {
 
 export const dynamic = 'force-dynamic'
 
-function Row({ label, value }: { label: string; value: React.ReactNode }) {
+function Row({
+  label,
+  value,
+  icon,
+}: {
+  label: string
+  value: React.ReactNode
+  icon?: React.ReactNode
+}) {
   return (
     <div className="border-b border-border py-3 last:border-b-0">
-      <dt className="text-xs text-foreground-muted">{label}</dt>
+      <dt className="flex items-center gap-1.5 text-xs text-foreground-muted">
+        {icon ? <span className="text-accent">{icon}</span> : null}
+        {label}
+      </dt>
       <dd className="mt-1 text-sm text-foreground">{value}</dd>
     </div>
   )
@@ -81,7 +95,7 @@ export default async function ClaimedCasePage({
     const closed = await getClosedCaseForStudent(caseId, student.id)
 
     return (
-      <main className="mx-auto flex min-h-dvh max-w-md flex-col justify-center px-4">
+      <PageShell>
         {closed ? (
           <>
             <h1 className="text-2xl font-bold">
@@ -112,10 +126,12 @@ export default async function ClaimedCasePage({
             <p className="mt-2 text-foreground-muted">{studentClaim.notFoundBody}</p>
           </>
         )}
-        <Link href="/student" className="mt-6 text-sm text-accent underline">
-          {studentClaim.backToQueue}
-        </Link>
-      </main>
+        <div className="mt-6">
+          <ButtonLink href="/student" variant="secondary">
+            {studentClaim.backToQueue}
+          </ButtonLink>
+        </div>
+      </PageShell>
     )
   }
 
@@ -126,7 +142,10 @@ export default async function ClaimedCasePage({
     getStageCapabilityTreatmentIds(student.collegeId, student.stageId),
   ])
   const nameOfTreatment = (id: string) => treatments.find((t) => t.id === id)?.nameAr ?? id
-  const treatmentNames = record.treatmentTypeIds.map(nameOfTreatment).join('، ')
+  const treatmentChips = record.treatmentTypeIds.map((id) => ({
+    name: nameOfTreatment(id),
+    mine: true,
+  }))
 
   /**
    * What this case still needs that this student's stage may not perform.
@@ -145,48 +164,77 @@ export default async function ClaimedCasePage({
     .join('، ')
 
   return (
-    <div className="mx-auto flex min-h-dvh max-w-md flex-col px-4">
-      <header className="py-6">
-        <Link href="/student" className="text-sm text-foreground-muted">
-          {site.name}
+    <PageShell
+      action={
+        <Link href="/student" className="text-sm text-foreground-muted underline">
+          {studentClaim.backToQueue}
         </Link>
-      </header>
-
-      <main id="main" className="grow pb-10">
-        <h1 className="text-xl font-bold">{studentClaim.title}</h1>
-        <p className="mt-2 text-sm text-foreground-muted">{studentClaim.intro}</p>
+      }
+    >
+      <>
+        {/* The status first, and in colour: the whole page changes meaning with
+            it — whether to ring, whether to book, whether it is finished. */}
+        <Card className="mb-4">
+          <CardRibbon
+            label={caseStatus[record.status]}
+            detail={studentClaim.title}
+            tone={statusTone[record.status]}
+          />
+          <CardBody>
+            <p className="reference-code text-sm font-bold">{record.referenceCode}</p>
+            <p className="mt-2 text-sm text-foreground-muted">{studentClaim.intro}</p>
+            <ul className="mt-3 flex flex-wrap gap-1.5">
+              {treatmentChips.map((chip) => (
+                <li key={chip.name}>
+                  <Chip icon={<CheckIcon className="size-3.5" />}>{chip.name}</Chip>
+                </li>
+              ))}
+            </ul>
+          </CardBody>
+        </Card>
 
         {/* The contact window only governs a case still waiting to be contacted.
             Leaving it up after the patient confirmed would tell a student to
             hurry towards a deadline that no longer applies to them. */}
         {record.status === 'MATCHED' ? (
-          <section
-            className={`mt-4 rounded-lg border p-4 ${
-              record.isPastContactDeadline ? 'border-danger' : 'border-border bg-accent-muted'
-            }`}
-          >
-            <p className="text-xs text-foreground-muted">{studentClaim.deadlineLabel}</p>
-            <p className="mt-1 text-sm font-medium">
-              {record.isPastContactDeadline
-                ? studentClaim.deadlinePassed
-                : formatCaseDateTime(record.contactDeadlineAt)}
-            </p>
-            <p className="mt-2 text-xs text-foreground-muted">{studentClaim.deadlineHint}</p>
-          </section>
+          <Card className={record.isPastContactDeadline ? 'border-danger' : ''} tone="accent">
+            <CardBody>
+              <p className="text-xs text-foreground-muted">{studentClaim.deadlineLabel}</p>
+              <p className="mt-1 text-sm font-bold">
+                {record.isPastContactDeadline
+                  ? studentClaim.deadlinePassed
+                  : formatCaseDateTime(record.contactDeadlineAt)}
+              </p>
+              <p className="mt-2 text-xs text-foreground-muted">{studentClaim.deadlineHint}</p>
+            </CardBody>
+          </Card>
         ) : null}
 
-        <section className="mt-4 rounded-lg border border-border bg-surface p-4">
-          <p className="text-xs text-foreground-muted">{studentClaim.phoneLabel}</p>
-          {/* tel: so one tap dials — this screen exists to produce a phone call. */}
-          <a
-            href={`tel:${record.patientPhone}`}
-            className="ltr-run mt-1 block text-2xl font-bold text-accent"
-          >
-            {formatPhoneForDisplay(record.patientPhone)}
-          </a>
-          <p className="mt-3 text-xs text-foreground-muted">{studentClaim.callAdvice}</p>
-          <p className="mt-2 text-xs font-medium text-warning">{studentClaim.phonePrivacy}</p>
-        </section>
+        {/* The number, and what to say. This is the whole point of the screen:
+            everything above it is context and everything below is what happens
+            after the call. */}
+        <Card className="mt-4">
+          <CardBody>
+            <p className="flex items-center gap-1.5 text-xs text-foreground-muted">
+              <PhoneIcon className="text-accent" />
+              {studentClaim.phoneLabel}
+            </p>
+            {/* tel: so one tap dials — this screen exists to produce a phone call. */}
+            <a
+              href={`tel:${record.patientPhone}`}
+              className="ltr-run mt-1 block text-2xl font-bold text-accent"
+            >
+              {formatPhoneForDisplay(record.patientPhone)}
+            </a>
+            <p className="mt-3 rounded-md bg-accent-muted p-3 text-xs text-foreground">
+              {studentClaim.callAdvice}
+            </p>
+            <p className="mt-2 flex items-start gap-1.5 text-xs font-bold text-foreground">
+              <AlertIcon className="mt-0.5 text-warm" />
+              <span>{studentClaim.phonePrivacy}</span>
+            </p>
+          </CardBody>
+        </Card>
 
         {/* One step at a time: the case's own status decides what comes next,
             so a student is never shown an action the lifecycle would refuse. */}
@@ -204,12 +252,17 @@ export default async function ClaimedCasePage({
 
         {record.status === 'APPOINTMENT_CONFIRMED' && appointment ? (
           <>
-            <section className="mt-4 rounded-lg border border-border bg-accent-muted p-4">
-              <p className="text-xs text-foreground-muted">
-                {studentLifecycle.appointmentSetTitle}
-              </p>
-              <p className="mt-1 text-sm font-medium">{formatAppointment(appointment.scheduledFor)}</p>
-            </section>
+            <Card tone="accent" className="mt-4">
+              <CardBody>
+                <p className="flex items-center gap-1.5 text-xs text-foreground-muted">
+                  <CalendarIcon className="text-accent" />
+                  {studentLifecycle.appointmentSetTitle}
+                </p>
+                <p className="mt-1 text-sm font-bold">
+                  {formatAppointment(appointment.scheduledFor)}
+                </p>
+              </CardBody>
+            </Card>
 
             {remainingForOtherStage.length > 0 ? (
               <RemainderStep caseId={caseId} remaining={remainingForOtherStage} />
@@ -234,17 +287,24 @@ export default async function ClaimedCasePage({
 
         <CasePhotoGrid photos={photos} label={photoCopy.studentLabel} />
 
-        <dl className="mt-4 rounded-lg border border-border bg-surface px-4">
-          <Row label={studentClaim.nameLabel} value={record.patientName} />
-          <Row label={studentClaim.treatmentsLabel} value={treatmentNames} />
-          <Row label={studentClaim.daysLabel} value={days} />
-          {record.notes ? <Row label={studentClaim.notesLabel} value={record.notes} /> : null}
-        </dl>
+        <Card className="mt-4">
+          <CardBody className="py-0">
+            <dl>
+              <Row icon={<UserIcon />} label={studentClaim.nameLabel} value={record.patientName} />
+              <Row icon={<CalendarIcon />} label={studentClaim.daysLabel} value={days} />
+              {record.notes ? (
+                <Row icon={<NoteIcon />} label={studentClaim.notesLabel} value={record.notes} />
+              ) : null}
+            </dl>
+          </CardBody>
+        </Card>
 
-        <Link href="/student" className="mt-6 inline-block text-sm text-foreground-muted underline">
-          {studentClaim.backToQueue}
-        </Link>
-      </main>
-    </div>
+        <div className="mt-6">
+          <ButtonLink href="/student" variant="quiet" className="text-sm">
+            {studentClaim.backToQueue}
+          </ButtonLink>
+        </div>
+      </>
+    </PageShell>
   )
 }

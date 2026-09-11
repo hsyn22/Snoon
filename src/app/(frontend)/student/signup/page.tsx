@@ -1,6 +1,10 @@
 import type { Metadata } from 'next'
 import Link from 'next/link'
-import { studentAuth, studentSignUpClosed, site } from '@/lib/copy'
+import { PageShell } from '@/components/site-chrome'
+import { PageHeader } from '@/components/ui/section'
+import { ButtonLink } from '@/components/ui/button'
+import { Card, CardBody } from '@/components/ui/card'
+import { studentAuth, studentSignUpClosed } from '@/lib/copy'
 import { isEmailConfigured } from '@/lib/email'
 import { AuthForm } from '../auth-form'
 import { signUpAction } from '../actions'
@@ -15,25 +19,19 @@ export default function StudentSignUpPage() {
   // worse than no account. Say so instead of showing a form that cannot work.
   if (!isEmailConfigured()) {
     return (
-      <div className="mx-auto flex min-h-dvh max-w-md flex-col px-4">
-        <header className="py-6">
-          <Link href="/" className="text-sm text-foreground-muted">
-            {site.name}
-          </Link>
-        </header>
-        <main id="main" className="grow">
-          <section className="rounded-lg border border-border bg-surface p-5">
+      <PageShell>
+        <Card>
+          <CardBody className="p-5">
             <h1 className="text-xl font-bold">{studentSignUpClosed.title}</h1>
             <p className="mt-2 text-sm text-foreground-muted">{studentSignUpClosed.body}</p>
-          </section>
-          <Link
-            href="/student/login"
-            className="mt-4 flex min-h-11 items-center justify-center rounded-md border border-border px-4 font-medium"
-          >
+          </CardBody>
+        </Card>
+        <div className="mt-4">
+          <ButtonLink href="/student/login" variant="secondary">
             {studentAuth.loginAction}
-          </Link>
-        </main>
-      </div>
+          </ButtonLink>
+        </div>
+      </PageShell>
     )
   }
 
@@ -42,28 +40,23 @@ export default function StudentSignUpPage() {
 
 function SignUpForm() {
   return (
-    <div className="mx-auto flex min-h-dvh max-w-md flex-col px-4">
-      <header className="py-6">
-        <Link href="/" className="text-sm text-foreground-muted">
-          {site.name}
-        </Link>
-      </header>
+    <PageShell>
+      <>
+        <PageHeader
+          eyebrow={studentAuth.eyebrow}
+          title={studentAuth.signUpTitle}
+          lead={studentAuth.signUpIntro}
+        />
 
-      <main id="main" className="grow pb-10">
-        <h1 className="text-2xl font-bold">{studentAuth.signUpTitle}</h1>
-        <p className="mt-2 text-sm text-foreground-muted">{studentAuth.signUpIntro}</p>
-
-        <div className="mt-8">
-          <AuthForm action={signUpAction} submitLabel={studentAuth.signUpAction} withName />
-        </div>
+        <AuthForm action={signUpAction} submitLabel={studentAuth.signUpAction} withName />
 
         <p className="mt-6 text-sm text-foreground-muted">
           {studentAuth.haveAccount}{' '}
-          <Link href="/student/login" className="text-accent underline">
+          <Link href="/student/login" className="font-bold text-accent underline">
             {studentAuth.goToLogin}
           </Link>
         </p>
-      </main>
-    </div>
+      </>
+    </PageShell>
   )
 }

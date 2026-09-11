@@ -1,7 +1,8 @@
 import type { Metadata } from 'next'
-import Link from 'next/link'
 import { getCities, getTreatmentTypes } from '@/lib/config'
-import { Wordmark } from '@/components/brand/wordmark'
+import { PageShell } from '@/components/site-chrome'
+import { PageHeader } from '@/components/ui/section'
+import { ButtonLink } from '@/components/ui/button'
 import { caseForm, common } from '@/lib/copy'
 import { CaseForm } from './case-form'
 
@@ -22,27 +23,22 @@ export default async function NewCasePage() {
   const [cities, treatmentTypes] = await Promise.all([getCities(), getTreatmentTypes()])
 
   return (
-    <div className="flex min-h-dvh flex-col bg-background">
-      <header className="border-b border-border bg-surface">
-        <div className="mx-auto w-full max-w-xl px-4 py-4">
-          <Link href="/">
-            <Wordmark className="text-accent" />
-          </Link>
+    <PageShell>
+      <>
+        {/* A question a person would ask, not the name of a form. This is the
+            single cheapest thing that stops the page reading as paperwork — and
+            the lead underneath answers what a patient is actually worried about,
+            which is who ends up with their phone number. */}
+        <PageHeader eyebrow={caseForm.eyebrow} title={caseForm.title} lead={caseForm.intro} />
+
+        <CaseForm cities={cities} treatmentTypes={treatmentTypes} />
+
+        <div className="mt-8">
+          <ButtonLink href="/" variant="quiet" className="text-sm">
+            {common.backHome}
+          </ButtonLink>
         </div>
-      </header>
-
-      <main id="main" className="mx-auto w-full max-w-xl grow px-4 pb-12 pt-8">
-        <h1 className="text-2xl font-bold text-accent sm:text-3xl">{caseForm.title}</h1>
-        <p className="mt-2 text-pretty text-sm text-foreground-muted">{caseForm.intro}</p>
-
-        <div className="mt-7">
-          <CaseForm cities={cities} treatmentTypes={treatmentTypes} />
-        </div>
-
-        <Link href="/" className="mt-8 inline-block text-sm text-foreground-muted underline">
-          {common.backHome}
-        </Link>
-      </main>
-    </div>
+      </>
+    </PageShell>
   )
 }

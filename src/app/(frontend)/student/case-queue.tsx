@@ -3,7 +3,10 @@ import { listOpenCasesForStudent } from '@/db/queries/cases'
 import { pendingRequestCaseIds } from '@/db/queries/day-requests'
 import { listCasePhotos } from '@/db/queries/case-photos'
 import { CasePhotoGrid } from '@/components/case-photo-grid'
-import { caseForm, casePhotos as photoCopy, studentQueue } from '@/lib/copy'
+import { Card, CardBody, CardRibbon, Chip, MetaRow } from '@/components/ui/card'
+import { AlertIcon, CalendarIcon, CheckIcon, ClockIcon, NoteIcon } from '@/components/ui/icon'
+import { PageHeader } from '@/components/ui/section'
+import { caseForm, casePhotos as photoCopy, caseStatus, studentQueue } from '@/lib/copy'
 import { formatCaseDate } from '@/lib/dates'
 import { ClaimButton } from './claim-button'
 import { AskDaysButton } from './ask-days-button'
@@ -40,10 +43,12 @@ export async function CaseQueue({
 
   if (scope.cityIds.length === 0 || scope.treatmentTypeIds.length === 0) {
     return (
-      <section className="rounded-lg border border-border bg-surface p-5">
-        <h2 className="font-semibold">{studentQueue.noScopeTitle}</h2>
-        <p className="mt-2 text-sm text-foreground-muted">{studentQueue.noScopeBody}</p>
-      </section>
+      <Card>
+        <CardBody className="p-5">
+          <h2 className="font-bold">{studentQueue.noScopeTitle}</h2>
+          <p className="mt-2 text-sm text-foreground-muted">{studentQueue.noScopeBody}</p>
+        </CardBody>
+      </Card>
     )
   }
 
@@ -78,23 +83,31 @@ export async function CaseQueue({
 
   if (cases.length === 0) {
     return (
-      <section className="rounded-lg border border-border bg-surface p-5">
-        <h2 className="font-semibold">{studentQueue.emptyTitle}</h2>
-        <p className="mt-2 text-sm text-foreground-muted">{studentQueue.emptyBody}</p>
-      </section>
+      <Card>
+        <CardBody className="p-5">
+          <h2 className="font-bold">{studentQueue.emptyTitle}</h2>
+          <p className="mt-2 text-sm text-foreground-muted">{studentQueue.emptyBody}</p>
+        </CardBody>
+      </Card>
     )
   }
 
   return (
     <div className="space-y-4">
-      <div>
-        <h2 className="text-lg font-semibold">{studentQueue.title}</h2>
-        <p className="mt-1 text-sm text-foreground-muted">{studentQueue.intro}</p>
-      </div>
+      <PageHeader
+        eyebrow={studentQueue.eyebrow}
+        title={studentQueue.title}
+        lead={studentQueue.intro}
+      />
+
+      {/* The count above the list. A student opening this page again wants to
+          know whether anything is here before reading a single card. */}
+      <p className="text-sm font-bold text-accent">{studentQueue.count(cases.length)}</p>
 
       {anyOtherStage ? (
-        <p className="rounded-lg border border-border bg-surface p-3 text-xs text-foreground-muted">
-          {studentQueue.otherStageHint}
+        <p className="flex items-start gap-2 rounded-lg border border-border bg-surface p-3 text-xs text-foreground-muted">
+          <AlertIcon className="mt-0.5 text-warm" />
+          <span>{studentQueue.otherStageHint}</span>
         </p>
       ) : null}
 
@@ -105,12 +118,10 @@ export async function CaseQueue({
          * case and which parts are theirs, rather than the case being hidden:
          * they can take it, do their part, and hand the rest back.
          */
-        const treatmentNames = entry.treatmentTypeIds
-          .map((id) => treatments.find((t) => t.id === id)?.nameAr ?? id)
-          .join('، ')
-        const otherStage = entry.treatmentTypeIds
-          .filter((id) => !capableSet.has(id))
-          .map((id) => treatments.find((t) => t.id === id)?.nameAr ?? id)
+        const chips = entry.treatmentTypeIds.map((id) => ({
+          name: treatments.find((t) => t.id === id)?.nameAr ?? id,
+          mine: capableSet.has(id),
+        }))
 
         /**
          * A case whose days this student could never attend is shown, not
@@ -130,64 +141,89 @@ export async function CaseQueue({
           .join('، ')
 
         return (
-          <article key={entry.id} className="rounded-lg border border-border bg-surface p-4">
-            <p className="reference-code text-sm font-bold">{entry.referenceCode}</p>
-
-            <dl className="mt-3 space-y-2 text-sm">
-              <div>
-                <dt className="text-xs text-foreground-muted">{studentQueue.caseTreatments}</dt>
-                <dd className="font-medium">{treatmentNames}</dd>
-                {otherStage.length > 0 ? (
-                  <dd className="mt-1 text-xs text-foreground-muted">
-                    <span className="rounded border border-border px-1 py-0.5">
-                      {studentQueue.otherStageTag}
-                    </span>{' '}
-                    {otherStage.join('، ')}
-                  </dd>
-                ) : null}
-              </div>
-              <div>
-                <dt className="text-xs text-foreground-muted">{studentQueue.caseDays}</dt>
-                <dd>{days}</dd>
-              </div>
-              {entry.notes ? (
-                <div>
-                  <dt className="text-xs text-foreground-muted">{studentQueue.caseNotes}</dt>
-                  <dd className="text-foreground-muted">{entry.notes}</dd>
-                </div>
-              ) : null}
-              <div>
-                <dt className="text-xs text-foreground-muted">{studentQueue.caseSubmitted}</dt>
-                <dd className="text-foreground-muted">{formatCaseDate(entry.createdAt)}</dd>
-              </div>
-            </dl>
-
-            <CasePhotoGrid
-              photos={photosByCase.get(entry.id) ?? []}
-              label={photoCopy.studentLabel}
+          <Card key={entry.id}>
+            {/* The status across the top, in its own colour. Every case in this
+                queue is REQUESTED — the ribbon is not there to distinguish them
+                from each other but to say, before anything else is read, that
+                nobody has taken this one. */}
+            <CardRibbon
+              label={caseStatus.REQUESTED}
+              detail={attendable ? undefined : studentQueue.dayMismatchTag}
+              tone={attendable ? 'accent' : 'warning'}
             />
 
-            {attendable ? (
-              <ClaimButton caseId={entry.id} />
-            ) : (
-              <div className="mt-3 rounded-md border border-border bg-surface-muted p-3">
-                <p className="text-xs font-medium">
-                  <span className="rounded border border-border px-1 py-0.5">
-                    {studentQueue.dayMismatchTag}
-                  </span>
-                </p>
-                <p className="mt-2 text-xs text-foreground-muted">
-                  {studentQueue.dayMismatchBody}
-                </p>
-                {offerDays.length > 0 ? (
-                  <p className="mt-1 text-xs">
-                    {studentQueue.dayMismatchOffer}: {offerDays.join('، ')}
-                  </p>
+            <CardBody>
+              <p className="text-xs text-foreground-muted">
+                {studentQueue.caseReference}{' '}
+                <span className="reference-code font-bold text-foreground">
+                  {entry.referenceCode}
+                </span>
+              </p>
+
+              {/* Treatments as chips. A dashed, muted chip is one this student's
+                  stage may not perform — present on the case, not theirs to do.
+                  That distinction was already computed and was rendered as a
+                  sentence; as a chip it is read without being read. */}
+              <ul className="mt-3 flex flex-wrap gap-1.5">
+                {chips.map((chip) => (
+                  <li key={chip.name}>
+                    <Chip
+                      tone={chip.mine ? 'accent' : 'muted'}
+                      icon={chip.mine ? <CheckIcon className="size-3.5" /> : null}
+                    >
+                      {chip.name}
+                      {chip.mine ? null : (
+                        <span className="font-normal">— {studentQueue.otherStageTag}</span>
+                      )}
+                    </Chip>
+                  </li>
+                ))}
+              </ul>
+
+              <div className="mt-3 space-y-1.5">
+                <MetaRow icon={<CalendarIcon />} label={studentQueue.caseDays}>
+                  {days}
+                </MetaRow>
+                {entry.notes ? (
+                  <MetaRow icon={<NoteIcon />} label={studentQueue.caseNotes}>
+                    <span className="text-foreground-muted">{entry.notes}</span>
+                  </MetaRow>
                 ) : null}
-                <AskDaysButton caseId={entry.id} alreadyAsked={alreadyAsked.has(entry.id)} />
+                <MetaRow icon={<ClockIcon />} label={studentQueue.caseSubmitted}>
+                  <span className="text-foreground-muted">{formatCaseDate(entry.createdAt)}</span>
+                </MetaRow>
               </div>
-            )}
-          </article>
+
+              <CasePhotoGrid
+                photos={photosByCase.get(entry.id) ?? []}
+                label={photoCopy.studentLabel}
+              />
+
+              {attendable ? (
+                <ClaimButton caseId={entry.id} />
+              ) : (
+                <div className="mt-3 rounded-md bg-warm-muted p-3">
+                  <p className="flex items-start gap-2 text-xs text-foreground">
+                    <AlertIcon className="mt-0.5 text-warm" />
+                    <span>{studentQueue.dayMismatchBody}</span>
+                  </p>
+                  {offerDays.length > 0 ? (
+                    <p className="mt-2 flex flex-wrap items-center gap-1.5 text-xs">
+                      <span className="text-foreground-muted">
+                        {studentQueue.dayMismatchOffer}:
+                      </span>
+                      {offerDays.map((day) => (
+                        <Chip key={day} tone="warning">
+                          {day}
+                        </Chip>
+                      ))}
+                    </p>
+                  ) : null}
+                  <AskDaysButton caseId={entry.id} alreadyAsked={alreadyAsked.has(entry.id)} />
+                </div>
+              )}
+            </CardBody>
+          </Card>
         )
       })}
     </div>

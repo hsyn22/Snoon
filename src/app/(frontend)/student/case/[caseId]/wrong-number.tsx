@@ -4,6 +4,7 @@ import { useActionState, useState } from 'react'
 import { useFormStatus } from 'react-dom'
 import { studentClaim } from '@/lib/copy'
 import { reportWrongNumberAction, type WrongNumberState } from './wrong-number-actions'
+import { buttonClass } from '@/components/ui/button'
 
 const INITIAL: WrongNumberState = {}
 
@@ -13,7 +14,7 @@ function Button() {
     <button
       type="submit"
       disabled={pending}
-      className="mt-3 min-h-11 w-full rounded-md border border-danger px-4 text-sm font-medium text-danger disabled:opacity-60"
+      className={buttonClass('danger', 'mt-3 w-full text-sm')}
     >
       {pending ? studentClaim.wrongNumberSaving : studentClaim.wrongNumberAction}
     </button>
@@ -57,7 +58,7 @@ export function WrongNumberReport({ caseId }: { caseId: string }) {
         <button
           type="button"
           onClick={() => setConfirming(true)}
-          className="mt-3 min-h-11 w-full rounded-md border border-border px-4 text-sm text-foreground-muted"
+          className={buttonClass('secondary', 'mt-3 w-full text-sm font-normal text-foreground-muted')}
         >
           {studentClaim.wrongNumberAction}
         </button>

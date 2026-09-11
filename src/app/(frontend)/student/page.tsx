@@ -1,19 +1,21 @@
 import type { Metadata } from 'next'
 import { eq } from 'drizzle-orm'
 import { headers } from 'next/headers'
-import Link from 'next/link'
 import { db } from '@/db'
 import { students } from '@/db/schema'
 import { getActiveClaimForStudent } from '@/db/queries/claims'
 import { auth } from '@/lib/auth'
 import {
-  site,
   studentAuth,
   studentClaim,
   studentHistory,
   studentStatus,
   studentTelegram,
 } from '@/lib/copy'
+import { Card, CardBody } from '@/components/ui/card'
+import { ButtonLink } from '@/components/ui/button'
+import { PageShell } from '@/components/site-chrome'
+import { PageHeader } from '@/components/ui/section'
 import { isTelegramConfigured } from '@/lib/telegram/config'
 import { isSubjectLinked } from '@/db/queries/telegram'
 import { TelegramLink } from './telegram-link'
@@ -25,6 +27,8 @@ export const metadata: Metadata = { title: studentAuth.loginTitle }
 /** Session state is read per request; nothing about a student is cached. */
 export const dynamic = 'force-dynamic'
 
+/** Where a student stands, when it is not yet a queue: waiting on email, on a
+ *  profile, on an admin. One card, one sentence, and the one thing to do next. */
 function Panel({
   title,
   body,
@@ -37,19 +41,18 @@ function Panel({
   action?: { href: string; label: string }
 }) {
   return (
-    <section className="rounded-lg border border-border bg-surface p-5">
-      <h1 className="text-xl font-bold">{title}</h1>
-      <p className="mt-2 text-sm text-foreground-muted">{body}</p>
-      {note ? <p className="mt-3 text-xs text-foreground-muted">{note}</p> : null}
-      {action ? (
-        <Link
-          href={action.href}
-          className="mt-4 flex min-h-11 items-center justify-center rounded-md bg-accent px-4 font-medium text-accent-foreground"
-        >
-          {action.label}
-        </Link>
-      ) : null}
-    </section>
+    <Card>
+      <CardBody className="p-5">
+        <h1 className="text-xl font-bold">{title}</h1>
+        <p className="mt-2 text-sm text-foreground-muted">{body}</p>
+        {note ? <p className="mt-3 text-xs text-foreground-muted">{note}</p> : null}
+        {action ? (
+          <div className="mt-4">
+            <ButtonLink href={action.href}>{action.label}</ButtonLink>
+          </div>
+        ) : null}
+      </CardBody>
+    </Card>
   )
 }
 
@@ -58,28 +61,19 @@ export default async function StudentHomePage() {
 
   if (!session) {
     return (
-      <div className="mx-auto flex min-h-dvh max-w-md flex-col px-4">
-        <header className="py-6">
-          <Link href="/" className="text-sm text-foreground-muted">
-            {site.name}
-          </Link>
-        </header>
-        <main id="main" className="grow space-y-3">
-          <h1 className="text-2xl font-bold">{studentAuth.loginTitle}</h1>
-          <Link
-            href="/student/login"
-            className="mt-4 flex min-h-11 items-center justify-center rounded-md bg-accent px-4 font-medium text-accent-foreground"
-          >
-            {studentAuth.loginAction}
-          </Link>
-          <Link
-            href="/student/signup"
-            className="flex min-h-11 items-center justify-center rounded-md border border-border px-4 font-medium"
-          >
+      <PageShell>
+        <PageHeader
+          eyebrow={studentAuth.eyebrow}
+          title={studentAuth.loginTitle}
+          lead={studentAuth.loginLead}
+        />
+        <div className="space-y-3">
+          <ButtonLink href="/student/login">{studentAuth.loginAction}</ButtonLink>
+          <ButtonLink href="/student/signup" variant="secondary">
             {studentAuth.signUpAction}
-          </Link>
-        </main>
-      </div>
+          </ButtonLink>
+        </div>
+      </PageShell>
     )
   }
 
@@ -109,19 +103,17 @@ export default async function StudentHomePage() {
   const needsDocument = Boolean(profile) && !profile?.verificationDocumentPath
 
   return (
-    <div className="mx-auto flex min-h-dvh max-w-md flex-col px-4">
-      <header className="flex items-center justify-between py-6">
-        <Link href="/" className="text-sm text-foreground-muted">
-          {site.name}
-        </Link>
+    <PageShell
+      width="wide"
+      action={
         <form action={logoutAction}>
           <button type="submit" className="text-sm text-foreground-muted underline">
             {studentAuth.logout}
           </button>
         </form>
-      </header>
-
-      <main id="main" className="grow pb-10">
+      }
+    >
+      <>
         {!session.user.emailVerified ? (
           <Panel
             title={studentStatus.checkEmailTitle}
@@ -143,12 +135,11 @@ export default async function StudentHomePage() {
               body={needsDocument ? studentTelegram.documentMissingBody : studentStatus.pendingBody}
             />
             {needsDocument ? (
-              <Link
-                href="/student/profile/document"
-                className="mt-3 flex min-h-11 items-center justify-center rounded-md border border-border px-4 text-sm font-medium"
-              >
-                {studentStatus.uploadOnSite}
-              </Link>
+              <div className="mt-3">
+                <ButtonLink href="/student/profile/document" variant="secondary" className="text-sm">
+                  {studentStatus.uploadOnSite}
+                </ButtonLink>
+              </div>
             ) : null}
           </>
         ) : profile.verificationStatus === 'REJECTED' ? (
@@ -156,16 +147,17 @@ export default async function StudentHomePage() {
         ) : profile.verificationStatus === 'SUSPENDED' ? (
           <Panel title={studentStatus.suspendedTitle} body={studentStatus.suspendedBody} />
         ) : activeClaim ? (
-          <section className="rounded-lg border border-border bg-accent-muted p-5">
-            <h1 className="text-xl font-bold">{studentClaim.title}</h1>
-            <p className="mt-2 text-sm">{studentClaim.intro}</p>
-            <Link
-              href={`/student/case/${activeClaim.caseId}`}
-              className="mt-4 flex min-h-11 items-center justify-center rounded-md bg-accent px-4 font-medium text-accent-foreground"
-            >
-              {studentClaim.title}
-            </Link>
-          </section>
+          <Card tone="accent">
+            <CardBody className="p-5">
+              <h1 className="text-xl font-bold">{studentClaim.title}</h1>
+              <p className="mt-2 text-sm">{studentClaim.intro}</p>
+              <div className="mt-4">
+                <ButtonLink href={`/student/case/${activeClaim.caseId}`}>
+                  {studentClaim.title}
+                </ButtonLink>
+              </div>
+            </CardBody>
+          </Card>
         ) : (
           <CaseQueue
             studentId={profile.id}
@@ -177,12 +169,11 @@ export default async function StudentHomePage() {
         {/* Only once verified: before that there is nothing to have a record of,
             and the student has a more pressing step in front of them. */}
         {profile?.verificationStatus === 'VERIFIED' ? (
-          <Link
-            href="/student/history"
-            className="mt-4 flex min-h-11 items-center justify-center rounded-md border border-border px-4 text-sm font-medium"
-          >
-            {studentHistory.link}
-          </Link>
+          <div className="mt-4">
+            <ButtonLink href="/student/history" variant="secondary" className="text-sm">
+              {studentHistory.link}
+            </ButtonLink>
+          </div>
         ) : null}
 
         {telegramAvailable && !telegramLinked && profile ? (
@@ -192,7 +183,7 @@ export default async function StudentHomePage() {
         {telegramLinked ? (
           <p className="mt-4 text-xs text-foreground-muted">{studentTelegram.linked}</p>
         ) : null}
-      </main>
-    </div>
+      </>
+    </PageShell>
   )
 }

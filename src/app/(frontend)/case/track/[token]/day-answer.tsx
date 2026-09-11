@@ -4,10 +4,11 @@ import { useActionState } from 'react'
 import { useFormStatus } from 'react-dom'
 import { caseForm, dayRequest } from '@/lib/copy'
 import { answerDayAction, type DayAnswerState } from './day-actions'
+import { buttonClass, type ButtonVariant } from '@/components/ui/button'
 
 const INITIAL: DayAnswerState = {}
 
-function Button({ label, tone }: { label: string; tone: string }) {
+function Button({ label, tone }: { label: string; tone: ButtonVariant }) {
   const { pending } = useFormStatus()
   return (
     <button
@@ -15,7 +16,7 @@ function Button({ label, tone }: { label: string; tone: string }) {
       name="answer"
       value={label === dayRequest.no ? 'NO' : 'YES'}
       disabled={pending}
-      className={`min-h-11 flex-1 rounded-md px-4 text-sm font-medium disabled:opacity-60 ${tone}`}
+      className={buttonClass(tone, 'flex-1 text-sm')}
     >
       {label}
     </button>
@@ -50,8 +51,8 @@ export function DayAnswer({ trackingToken, day }: { trackingToken: string; day: 
       <form action={formAction} className="mt-3 flex gap-2">
         <input type="hidden" name="trackingToken" value={trackingToken} />
         <input type="hidden" name="day" value={day} />
-        <Button label={dayRequest.yes(label)} tone="bg-accent text-accent-foreground" />
-        <Button label={dayRequest.no} tone="border border-border" />
+        <Button label={dayRequest.yes(label)} tone="primary" />
+        <Button label={dayRequest.no} tone="secondary" />
       </form>
 
       {state.error ? (

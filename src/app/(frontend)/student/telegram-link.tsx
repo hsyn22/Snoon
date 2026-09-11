@@ -4,6 +4,7 @@ import { useActionState } from 'react'
 import { useFormStatus } from 'react-dom'
 import { studentTelegram } from '@/lib/copy'
 import { createStudentInviteAction, type StudentInviteState } from './telegram-actions'
+import { buttonClass } from '@/components/ui/button'
 
 const INITIAL: StudentInviteState = {}
 
@@ -13,7 +14,7 @@ function Button({ label }: { label: string }) {
     <button
       type="submit"
       disabled={pending}
-      className="mt-3 min-h-11 w-full rounded-md bg-accent px-4 text-sm font-medium text-accent-foreground disabled:opacity-60"
+      className={buttonClass('primary', 'mt-3 w-full text-sm')}
     >
       {label}
     </button>
@@ -44,7 +45,7 @@ export function TelegramLink({ needsDocument }: { needsDocument: boolean }) {
           // Leaves for telegram.org, and this page's URL is itself a credential
           // on the patient's side. No referrer, and no window.opener either.
           rel="noreferrer"
-          className="mt-3 flex min-h-11 items-center justify-center rounded-md bg-accent px-4 text-sm font-medium text-accent-foreground"
+          className={buttonClass('primary', 'mt-3 w-full text-sm')}
         >
           {studentTelegram.open}
         </a>

@@ -9,6 +9,7 @@ import {
   type LifecycleState,
 } from './lifecycle-actions'
 import { returnRemainderAction, type RemainderState } from './remainder-actions'
+import { buttonClass, type ButtonVariant } from '@/components/ui/button'
 
 const INITIAL: LifecycleState = {}
 
@@ -21,13 +22,21 @@ function Error({ message }: { message?: string }) {
   )
 }
 
-function SubmitButton({ label, busy, tone }: { label: string; busy: string; tone: string }) {
+function SubmitButton({
+  label,
+  busy,
+  tone,
+}: {
+  label: string
+  busy: string
+  tone: ButtonVariant
+}) {
   const { pending } = useFormStatus()
   return (
     <button
       type="submit"
       disabled={pending}
-      className={`min-h-11 w-full rounded-md px-4 text-sm font-medium disabled:opacity-60 ${tone}`}
+      className={buttonClass(tone, 'w-full text-sm')}
     >
       {pending ? busy : label}
     </button>
@@ -75,7 +84,7 @@ export function AppointmentStep({
           <SubmitButton
             label={studentLifecycle.appointmentAction}
             busy={studentLifecycle.appointmentSaving}
-            tone="bg-accent text-accent-foreground"
+            tone="primary"
           />
         </div>
         <Error message={state.error} />
@@ -99,7 +108,7 @@ export function OutcomeStep({ caseId }: { caseId: string }) {
           type="submit"
           name="outcome"
           value="COMPLETED"
-          className="min-h-11 w-full rounded-md bg-accent px-4 text-sm font-medium text-accent-foreground"
+          className={buttonClass('primary', 'w-full text-sm')}
         >
           {studentLifecycle.completed}
         </button>
@@ -175,7 +184,7 @@ function RemainderButton() {
     <button
       type="submit"
       disabled={pending}
-      className="min-h-11 w-full rounded-md border border-border px-4 text-sm font-medium disabled:opacity-60"
+      className={buttonClass('secondary', 'w-full text-sm')}
     >
       {pending ? studentLifecycle.remainderSaving : studentLifecycle.remainderAction}
     </button>

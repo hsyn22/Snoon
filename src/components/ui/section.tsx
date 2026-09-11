@@ -42,3 +42,35 @@ export function Eyebrow({ children }: { children: React.ReactNode }) {
     </p>
   )
 }
+
+/**
+ * The top of a page that is not the landing page.
+ *
+ * Both competitors open every page the same way — a small eyebrow, a warm
+ * headline written as a sentence a person would say, and one line of
+ * reassurance underneath — and it is why their forms do not read as forms.
+ * "خلّينا نعرف شنو يزعجك" is a person asking; "نموذج حالة جديدة" is a database.
+ *
+ * `lead` is the reassurance, and it is the part worth being careful with: it is
+ * where سنون says the thing the visitor is actually worried about, which is
+ * usually what happens to their phone number.
+ */
+export function PageHeader({
+  eyebrow,
+  title,
+  lead,
+}: {
+  eyebrow?: string
+  title: string
+  lead?: string
+}) {
+  return (
+    <div className="mb-6">
+      {eyebrow ? (
+        <p className="text-xs font-bold uppercase tracking-wide text-accent">{eyebrow}</p>
+      ) : null}
+      <h1 className="mt-1 text-balance text-2xl font-bold leading-snug">{title}</h1>
+      {lead ? <p className="mt-2 text-pretty text-sm text-foreground-muted">{lead}</p> : null}
+    </div>
+  )
+}

@@ -2,6 +2,7 @@
 
 import { useActionState } from 'react'
 import { useFormStatus } from 'react-dom'
+import { buttonClass } from '@/components/ui/button'
 import { studentQueue } from '@/lib/copy'
 import { claimCaseAction, type ClaimActionState } from './queue-actions'
 
@@ -13,7 +14,7 @@ function Button() {
     <button
       type="submit"
       disabled={pending}
-      className="min-h-11 w-full rounded-md bg-accent px-4 font-medium text-accent-foreground disabled:opacity-60"
+      className={buttonClass('primary', 'w-full')}
     >
       {pending ? studentQueue.claiming : studentQueue.claim}
     </button>

@@ -544,6 +544,54 @@ tokens are long, random, single-case scoped, and revocable.
   nothing is requested from Google at runtime. It costs about 94KB, which is the single
   largest thing سنون downloads — see the performance note below for why that was accepted.
 
+### The shared vocabulary — build from it, do not restyle locally
+
+Pages used to style themselves. A dozen places each wrote out
+`flex min-h-11 items-center justify-center rounded-md bg-accent …` by hand and
+they had already drifted — different heights, radii, some with a shadow. Nothing
+was individually wrong and nothing lined up, which is most of what made سنون read
+as a form rather than a product.
+
+There is now one set of pieces, and new work uses them rather than adding a
+fourteenth variant:
+
+- `components/ui/button.tsx` — `buttonClass(variant, extra)` and `ButtonLink`.
+  Returned as a class string, not a component, so it works on a `<button>`, a
+  `<Link>` and a bare `<a>` without three wrappers, and so a Client Component can
+  use it without dragging the server in. Four variants; **at most one `primary`
+  per screen**.
+- `components/ui/card.tsx` — `Card`, `CardBody`, `CardRibbon`, `Chip`, `MetaRow`,
+  and `statusTone`, which maps every lifecycle state to a colour. The labels stay
+  in `copy.ts`; only the colour lives here.
+- `components/ui/icon.tsx` — the icon set, drawn inline. A few hundred bytes
+  inside HTML already being downloaded, against tens of kilobytes and a second
+  request for an icon font. All `aria-hidden`: the text beside them carries the
+  meaning.
+- `components/ui/field.tsx` — `FormSection`, `labelClass`, `controlClass`,
+  `optionClass`. **Every input in سنون comes from here**, including the auth and
+  profile forms, which used to define their own.
+- `components/site-chrome.tsx` — `SiteHeader`, `SiteFooter`, `PageShell`. Until
+  this existed only the landing page had chrome and every other page opened on a
+  bare grey `سنون`, so the pages people actually spend time in looked like forms
+  somebody sent them.
+- `components/ui/section.tsx` — `Section`, `Eyebrow`, `PageHeader`.
+
+**The card anatomy is taken from ClinMatch's listing card** and every part of it
+has a direct equivalent here: a status ribbon in the status's own colour, the
+reference code in small type, treatments as chips, then location, days and date
+as icon rows. What was deliberately not taken: their "Featured" pill (an ad slot,
+and the mechanism by which a matching platform becomes a marketplace), their view
+counter (a patient's case is not content with an audience) and their price band.
+See `docs/competitors.md`.
+
+**Colour is never the only signal.** A ribbon carries a colour *and* its Arabic
+label, because it has to survive a cheap screen in daylight and a reader who
+cannot distinguish the hue.
+
+**Prettier is not the house style.** There is no config, its defaults disagree
+with the codebase on semicolons and quotes, and running it on a file rewrites
+every line of that file. Match the surrounding code by hand.
+
 ### Error pages
 
 A crash showed Next's own screen: English, left-to-right, "Application error: a client-side

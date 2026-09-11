@@ -3,6 +3,7 @@ import { db } from '@/db'
 import { caseEvents, cases, claims, dayRequests, students } from '@/db/schema'
 import { CASE_REASON } from '@/lib/cases/reasons'
 import { getContactWindowHours } from '@/lib/config/settings'
+import { WEEK_DAYS } from '@/lib/config/schema'
 import { isUniqueViolation } from '@/db/unique-violation'
 
 /**
@@ -121,13 +122,36 @@ export async function pendingRequestCaseIds(studentId: string): Promise<Set<stri
  */
 export async function pendingDaysForCase(caseId: string): Promise<string[]> {
   const rows = await db
-    .select({ day: dayRequests.requestedDay, first: sql<Date>`min(${dayRequests.createdAt})` })
+    /* Typed as string, not Date: `sql<Date>` only asserts, and the driver hands
+       back whatever Postgres sent — which for an aggregate is a timestamp
+       string. Claiming Date here made `.getTime()` a runtime error. */
+    .select({ day: dayRequests.requestedDay, first: sql<string>`min(${dayRequests.createdAt})` })
     .from(dayRequests)
     .where(and(eq(dayRequests.caseId, caseId), eq(dayRequests.status, 'PENDING')))
     .groupBy(dayRequests.requestedDay)
     .orderBy(sql`min(${dayRequests.createdAt})`)
 
-  return rows.map((row) => row.day)
+  /*
+   * Earliest asker first, then the week's own order.
+   *
+   * Two days asked about in the same statement carry the same `created_at` —
+   * Postgres takes one clock reading per transaction — so the timestamp alone
+   * leaves their order up to the planner, and the patient could be asked about
+   * Tuesday before Saturday on one request and the other way round on the next.
+   * Week order is both deterministic and the order a person expects to read.
+   */
+  const weekIndex = (day: string) => {
+    const index = (WEEK_DAYS as readonly string[]).indexOf(day)
+    return index === -1 ? WEEK_DAYS.length : index
+  }
+
+  return rows
+    .sort(
+      (a, b) =>
+        new Date(a.first).getTime() - new Date(b.first).getTime() ||
+        weekIndex(a.day) - weekIndex(b.day),
+    )
+    .map((row) => row.day)
 }
 
 export type AcceptDayResult =

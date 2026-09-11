@@ -4,6 +4,7 @@ import { useActionState } from 'react'
 import { useFormStatus } from 'react-dom'
 import { studentContact } from '@/lib/copy'
 import { assertContactAction, type AssertContactState } from './actions'
+import { buttonClass } from '@/components/ui/button'
 
 const INITIAL: AssertContactState = {}
 
@@ -13,7 +14,7 @@ function Button() {
     <button
       type="submit"
       disabled={pending}
-      className="mt-3 min-h-11 w-full rounded-md border border-border bg-surface px-4 text-sm font-medium disabled:opacity-60"
+      className={buttonClass('secondary', 'mt-3 w-full text-sm')}
     >
       {studentContact.assertAction}
     </button>

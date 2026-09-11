@@ -2,6 +2,7 @@
 
 import Link from 'next/link'
 import { common } from '@/lib/copy'
+import { buttonClass } from '@/components/ui/button'
 
 /**
  * What a patient or student sees when something throws.
@@ -30,7 +31,7 @@ export default function FrontendError({
         <button
           type="button"
           onClick={reset}
-          className="min-h-11 rounded-md bg-accent px-4 font-medium text-accent-foreground"
+          className={buttonClass('primary')}
         >
           {common.errorRetry}
         </button>
