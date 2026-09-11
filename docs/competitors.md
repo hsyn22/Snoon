@@ -125,3 +125,71 @@ worth defending over adding features to match them.
 - <https://www.clinmatch.io/help>
 - <https://www.asnanlink.app/en>
 - <https://www.asnanlink.app/en/how-it-works>
+
+---
+
+## AsnanLink's actual design, from screenshots (11 Sep 2026)
+
+Haider sent 39 screenshots. This is what they do, and what سنون should take.
+
+### Their visual vocabulary
+
+- **A logo.** A tooth outline containing a person, plus a wordmark and a tagline
+  ("Linking Skills and Smiles"). سنون has text in a system font.
+- **A sticky header carrying one primary action** — a solid blue "Join Early
+  Access →" pill that never leaves the screen — plus a language toggle and a
+  hamburger opening a short list: How it works · FAQs · Safety & Guidelines ·
+  login.
+- **An announcement bar** above the header for the one time-sensitive thing.
+- **A hero with something to look at**: a 3D phone on a blue blob, with floating
+  cards acting out a match — "Patient A needs a crown fix", "Student B is
+  specializing in crown fixing", "It's A Match!".
+- **Two-tone headlines** — accent word, then dark: "**Affordable** Dental Care."
+- **Eyebrow pills** above headings: "University supervised Dental care".
+- **Full-bleed accent bands** alternating with white, so the page has rhythm
+  rather than being one continuous column of cards.
+- **Soft-shadowed cards with generous radii**, each step with a circled icon.
+- App-like components: FAQ accordions, a segmented Patients/Students toggle,
+  pagination, a closing "Ready to get started?" band, a real footer.
+
+### Their patient form
+
+The direct comparison with ours, and the most useful page they sent:
+
+- A **three-step wizard** with a stepper across the top — tell us your problem →
+  your details → confirm phone — the finished step showing a tick.
+- A warm, human heading in accent blue: **"What's bothering you today?"**, not
+  "submit a case".
+- Fields grouped under **small-caps section headers**: PERSONAL INFORMATION,
+  CONTACT.
+- **Accent-coloured labels** with a red asterisk, and **filled grey inputs**
+  rather than bordered white ones.
+- Binary choices as **segmented button pairs**, not a `<select>`.
+- A reassurance line under the phone: *"We only use your number to connect you
+  with a student. No spam, no sharing."*
+- A Back / primary pair at the bottom.
+
+### What we should take
+
+The whole visual vocabulary above. None of it is specific to them — it is simply
+what a finished product looks like, and سنون currently has none of it because the
+tokens are deliberate placeholders.
+
+Worth stealing outright: the human question as a heading, the small-caps section
+grouping, the reassurance line under the phone field (we have a stronger promise
+to make than they do), accent labels, and icons on the "how it works" steps.
+
+### What we should not take, and why
+
+- **"Confirm phone" as step three.** That is an SMS OTP, which costs money per
+  message and is excluded across this project. Worth noticing that this is *their*
+  answer to the wrong-number problem and it is the expensive one; ours is the
+  report-and-cooldown, which is free and which they cannot do because their
+  patients register.
+- **The multi-step wizard.** It makes a long form feel shorter, and it adds round
+  trips and state to lose on a connection that drops — against non-negotiable 7
+  and against the rule that a rejected form must never empty itself. One page that
+  never loses what was typed is better here. Section headers give most of the
+  benefit without the risk.
+- **Date of birth and gender.** We do not collect them and should not start:
+  every field on a patient record needs a reason, and matching does not use these.
