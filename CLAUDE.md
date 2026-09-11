@@ -534,9 +534,15 @@ tokens are long, random, single-case scoped, and revocable.
   over one mistyped digit is where a patient on a slow phone gives up.
 - The student dashboard is a **tool**, not an experience. Repeat visitors need speed and
   density: fast filtering, clear case status, minimal chrome. Visual novelty here is a cost.
-- Do not invent brand colours or pick fonts. The visual identity is still being decided.
-  Use CSS custom properties with placeholder values in one tokens file so the identity can
-  drop in later without touching components.
+- **The identity now exists**, and still lives entirely in `src/styles/tokens.css`. Components
+  reference `var(--…)` and never a literal colour, font or radius, so the whole product is
+  re-themed by editing that one file. A deep teal rather than the corporate blue every clinic
+  site uses, with a warm sand beside it — سنون asks people who cannot afford a dentist to
+  trust it with a photograph of their mouth, and cold is the wrong register for that.
+  If a colour is wrong, it is wrong there. Do not add one to a component.
+- **The typeface is IBM Plex Sans Arabic**, self-hosted by `next/font` at build time so
+  nothing is requested from Google at runtime. It costs about 94KB, which is the single
+  largest thing سنون downloads — see the performance note below for why that was accepted.
 
 ### Error pages
 
@@ -565,10 +571,18 @@ response several times over, which is the whole question on a slow connection.
 
 | page | transferred | first paint | loaded |
 |---|---|---|---|
-| landing | 167 KB | 1.7s | 4.8s |
-| `/case/new` | 172 KB | 1.7s | 4.9s |
+| landing | 167 KB → **269 KB** | 1.7s → **2.1s** | 4.8s → **6.8s** |
+| `/case/new` | 172 KB → **269 KB** | 1.7s → **2.0s** | 4.9s → **6.8s** |
 | tracking, with a photograph | 194 KB | 1.7s | 5.3s |
 | `/case/new`, second visit | 1 KB | 0.5s | 0.6s |
+
+The second numbers are after the design pass, and the difference is almost entirely the
+typeface: about 94KB across four files. It was accepted deliberately rather than by accident.
+`display: 'swap'` means text paints in the fallback at first paint and the real face swaps in
+later, so **nothing is blocked** — first paint moved 0.4s, not four seconds — and a returning
+visitor pays none of it. The alternative was a product that looks unfinished to the students
+it needs to recruit. If that trade ever looks wrong, it reverses by changing two lines in
+`layout.tsx`.
 
 The one real failure it found: **a case with photographs took 23 seconds and 1.1MB**, because
 the grid showed them at about 170px wide and was sending the full 1600px file. Payload now

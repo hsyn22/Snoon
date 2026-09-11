@@ -58,6 +58,43 @@ export const howItWorks = {
   ],
 } as const
 
+/**
+ * The landing page's own copy.
+ *
+ * Separate from `landing`, which holds the three entry points, because this is
+ * the page talking rather than the page offering.
+ */
+export const home = {
+  eyebrow: 'علاج أسنان بإشراف جامعي',
+
+  /** Two-tone: the first half takes the accent, the second stays dark. */
+  headlineAccent: 'علاج أسنان',
+  headlineRest: 'تكدر توصله',
+  subhead:
+    'طلبة طب الأسنان بالسنة الرابعة والخامسة يحتاجون حالات لدراستهم. انت تحتاج علاج. سنون يوصّل بينكم، والعلاج يصير بعيادة الجامعة تحت إشراف الأساتذة.',
+
+  primaryAction: 'قدّم حالتك',
+  secondaryAction: 'أنا طالب',
+
+  /** Three short promises, under the fold on a phone but above it on a laptop. */
+  promises: [
+    { title: 'مجاناً', body: 'سنون ما ياخذ فلوس منك ولا من الطالب.' },
+    { title: 'بدون حساب', body: 'قدّم حالتك برابط واحد. ما تحتاج تسجّل.' },
+    { title: 'تحت إشراف', body: 'العلاج بعيادة الجامعة ويشرف عليه الأساتذة.' },
+  ],
+
+  forPatients: 'للمرضى',
+  forStudents: 'للطلبة',
+
+  studentsTitle: 'طالب طب أسنان؟',
+  studentsBody:
+    'شوف الحالات اللي تناسب مرحلتك وأيام دوامك بعيادتك، واحجز اللي تحتاجه لمتطلباتك. التسجيل يحتاج وثيقة تثبت إنك طالب.',
+  studentsAction: 'دخول الطلبة',
+
+  closingTitle: 'محتاج علاج أسنان؟',
+  closingBody: 'قدّم حالتك بدقيقتين. ما تحتاج حساب ولا فلوس.',
+} as const
+
 export const footer = {
   disclaimer:
     'سنون منصة توصيل بين المرضى وطلبة طب الأسنان. العلاج يقدّمه الطالب داخل عيادة الجامعة وتحت إشراف جامعي. سنون ما يقدّم خدمة طبية وما يتحمل مسؤولية العلاج.',
@@ -102,8 +139,22 @@ export const common = {
 
 /** The patient case-submission form. */
 export const caseForm = {
-  title: 'قدّم حالتك',
-  intro: 'املأ المعلومات وراح نوصلها لطلبة طب الأسنان بمدينتك. ما تحتاج حساب.',
+  title: 'شنو يوجعك؟',
+  intro: 'كَلنا شنو تحتاج وراح نوصّلك بطالب طب أسنان بمدينتك. ما تحتاج حساب، وما تدفع شي لسنون.',
+
+  /**
+   * Section headers. AsnanLink groups its form this way and it is worth taking:
+   * a long single-column form reads shorter when it has two or three named
+   * parts, and it costs none of the round trips a multi-step wizard would.
+   */
+  sectionNeed: 'شنو تحتاج',
+  sectionWhen: 'متى تكدر تجي',
+  sectionContact: 'وين نوصلك',
+  sectionExtra: 'معلومات إضافية',
+
+  /** Under the phone field. The strongest promise this product makes. */
+  phonePromise:
+    'رقمك يظهر لطالب واحد بس — الطالب اللي ياخذ حالتك. ما ننشره، ما نبيعه، وما ندز عليه إعلانات.',
 
   cityLabel: 'المدينة',
   cityPlaceholder: 'اختر مدينتك',
@@ -708,6 +759,13 @@ export const casePhotos = {
     /** Shown by the browser before uploading, so a doomed upload never starts. */
     tooLargeTotal: 'مجموع حجم الصور كبير كلش. اختر صور أقل أو أصغر.',
   },
+
+  /** The native file input renders an English, left-to-right control that no
+   *  amount of CSS can translate. These label a styled one instead. */
+  choose: 'اختر صور',
+  chooseMore: 'اختر صور ثانية',
+  chosen: (count: number) => `اخترت ${count} صور`,
+  chosenOne: 'اخترت صورة وحدة',
 
   patientLabel: 'صورك',
   studentLabel: 'صور الحالة',

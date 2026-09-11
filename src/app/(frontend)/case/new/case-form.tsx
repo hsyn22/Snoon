@@ -8,6 +8,13 @@ import { useDismissibleErrors } from '@/components/use-dismissible-errors'
 import { WEEK_DAYS, type City, type TreatmentType } from '@/lib/config/schema'
 import { caseForm, casePhotos } from '@/lib/copy'
 import { MAX_PHOTOS_PER_CASE, MAX_PHOTO_BYTES, MAX_PHOTO_BYTES_TOTAL } from '@/lib/images/limits'
+import {
+  controlClass,
+  FormSection,
+  hintClass,
+  labelClass,
+  optionClass,
+} from '@/components/ui/field'
 import { submitCaseAction, type CaseFormState } from './actions'
 
 const INITIAL: CaseFormState = {}
@@ -29,7 +36,7 @@ function SubmitButton() {
     <button
       type="submit"
       disabled={pending}
-      className="min-h-11 w-full rounded-md bg-accent px-4 font-medium text-accent-foreground disabled:opacity-60"
+      className="min-h-12 w-full rounded-full bg-accent px-4 font-bold text-accent-foreground shadow-md disabled:opacity-60"
     >
       {pending ? caseForm.submitting : caseForm.submit}
     </button>
@@ -47,12 +54,6 @@ function describePhotoSelection(files: File[]): string | null {
   return null
 }
 
-const labelClass = 'block text-sm font-medium text-foreground'
-const hintClass = 'mt-1 text-xs text-foreground-muted'
-const controlClass =
-  'mt-2 min-h-11 w-full rounded-md border border-border bg-surface px-3 text-foreground'
-const optionClass =
-  'flex min-h-11 items-center gap-2 rounded-md border border-border bg-surface px-3 text-sm'
 
 export function CaseForm({
   cities,
@@ -64,6 +65,8 @@ export function CaseForm({
   const [state, formAction] = useActionState(submitCaseAction, INITIAL)
   // A photograph problem the browser caught, before anything was uploaded.
   const [photoError, setPhotoError] = useState<string | null>(null)
+  // The styled label has to say what the hidden input holds.
+  const [photoCount, setPhotoCount] = useState(0)
   const errors = state.errors ?? {}
   // Clear a field's error as soon as it is edited.
   const { onInput, errorFor } = useDismissibleErrors(state)
@@ -71,7 +74,8 @@ export function CaseForm({
   const values = state.values
 
   return (
-    <form action={formAction} onInput={onInput} className="space-y-6" noValidate>
+    <form action={formAction} onInput={onInput} className="space-y-5" noValidate>
+      <FormSection title={caseForm.sectionNeed}>
       <div>
         <label htmlFor="cityId" className={labelClass}>
           {caseForm.cityLabel}
@@ -120,6 +124,9 @@ export function CaseForm({
         <FieldError id="treatmentTypeIds-error" message={errorFor('treatmentTypeIds', errors.treatmentTypeIds)} />
       </fieldset>
 
+      </FormSection>
+
+      <FormSection title={caseForm.sectionWhen}>
       <fieldset>
         <legend className={labelClass}>{caseForm.daysLabel}</legend>
         <p className={hintClass}>{caseForm.daysHint}</p>
@@ -144,6 +151,9 @@ export function CaseForm({
         <FieldError id="availabilityDays-error" message={errorFor('availabilityDays', errors.availabilityDays)} />
       </fieldset>
 
+      </FormSection>
+
+      <FormSection title={caseForm.sectionContact}>
       <div>
         <label htmlFor="patientName" className={labelClass}>
           {caseForm.nameLabel}
@@ -181,7 +191,14 @@ export function CaseForm({
           aria-describedby={errors.patientPhone ? 'patientPhone-error' : undefined}
         />
         <FieldError id="patientPhone-error" message={errorFor('patientPhone', errors.patientPhone)} />
+        {/* The strongest promise this product makes, said where it is doubted. */}
+        <p className="mt-2 rounded-md bg-accent-muted p-3 text-xs text-foreground">
+          {caseForm.phonePromise}
+        </p>
       </div>
+      </FormSection>
+
+      <FormSection title={caseForm.sectionExtra}>
 
       <div>
         <label htmlFor="photos" className={labelClass}>
@@ -190,6 +207,21 @@ export function CaseForm({
         <p className={hintClass}>{casePhotos.hint}</p>
         {/* The guide requires this warning, in Arabic, on the upload itself. */}
         <p className="mt-2 text-sm font-medium text-warning">{casePhotos.faceWarning}</p>
+        {/* The native control renders its own English, left-to-right button
+            that cannot be translated or restyled. It is kept — it is the thing
+            that actually opens the picker, and it stays reachable by keyboard
+            and screen reader — but visually hidden behind a label that acts as
+            the button. */}
+        <label
+          htmlFor="photos"
+          className="mt-2 flex min-h-12 cursor-pointer items-center justify-center rounded-md border border-dashed border-border bg-surface-muted px-4 text-sm font-medium"
+        >
+          {photoCount === 0
+            ? casePhotos.choose
+            : photoCount === 1
+              ? casePhotos.chosenOne
+              : casePhotos.chosen(photoCount)}
+        </label>
         <input
           id="photos"
           name="photos"
@@ -198,7 +230,7 @@ export function CaseForm({
           multiple
           // capture is deliberately omitted: on a phone this offers both the
           // camera and the gallery, and a patient may already have a photo.
-          className="mt-2 w-full text-sm"
+          className="sr-only"
           onChange={(event) => {
             // Checked here as well as on the server, because the server never
             // gets to answer: a request over the action's body limit is refused
@@ -209,6 +241,7 @@ export function CaseForm({
             const problem = describePhotoSelection(files)
             setPhotoError(problem)
             if (problem) event.target.value = ''
+            setPhotoCount(problem ? 0 : files.length)
           }}
         />
         <p className="mt-2 text-xs text-foreground-muted">{casePhotos.privacy}</p>
@@ -242,6 +275,8 @@ export function CaseForm({
           {state.formError}
         </p>
       ) : null}
+
+      </FormSection>
 
       <SubmitButton />
     </form>

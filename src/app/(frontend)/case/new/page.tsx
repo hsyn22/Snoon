@@ -1,7 +1,8 @@
 import type { Metadata } from 'next'
 import Link from 'next/link'
 import { getCities, getTreatmentTypes } from '@/lib/config'
-import { caseForm, common, site } from '@/lib/copy'
+import { Wordmark } from '@/components/brand/wordmark'
+import { caseForm, common } from '@/lib/copy'
 import { CaseForm } from './case-form'
 
 export const metadata: Metadata = { title: caseForm.title }
@@ -21,18 +22,20 @@ export default async function NewCasePage() {
   const [cities, treatmentTypes] = await Promise.all([getCities(), getTreatmentTypes()])
 
   return (
-    <div className="mx-auto flex min-h-dvh max-w-xl flex-col px-4">
-      <header className="py-6">
-        <Link href="/" className="text-sm text-foreground-muted">
-          {site.name}
-        </Link>
+    <div className="flex min-h-dvh flex-col bg-background">
+      <header className="border-b border-border bg-surface">
+        <div className="mx-auto w-full max-w-xl px-4 py-4">
+          <Link href="/">
+            <Wordmark className="text-accent" />
+          </Link>
+        </div>
       </header>
 
-      <main id="main" className="grow pb-10">
-        <h1 className="text-2xl font-bold">{caseForm.title}</h1>
-        <p className="mt-2 text-sm text-foreground-muted">{caseForm.intro}</p>
+      <main id="main" className="mx-auto w-full max-w-xl grow px-4 pb-12 pt-8">
+        <h1 className="text-2xl font-bold text-accent sm:text-3xl">{caseForm.title}</h1>
+        <p className="mt-2 text-pretty text-sm text-foreground-muted">{caseForm.intro}</p>
 
-        <div className="mt-8">
+        <div className="mt-7">
           <CaseForm cities={cities} treatmentTypes={treatmentTypes} />
         </div>
 

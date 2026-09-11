@@ -20,6 +20,10 @@
   --color-accent: var(--color-accent);
   --color-accent-foreground: var(--color-accent-foreground);
   --color-accent-muted: var(--color-accent-muted);
+  --color-accent-strong: var(--color-accent-strong);
+
+  --color-warm: var(--color-warm);
+  --color-warm-muted: var(--color-warm-muted);
 
   --color-positive: var(--color-positive);
   --color-warning: var(--color-warning);
@@ -28,6 +32,11 @@
   --radius-sm: var(--radius-sm);
   --radius-md: var(--radius-md);
   --radius-lg: var(--radius-lg);
+  --radius-full: var(--radius-full);
+
+  --shadow-sm: var(--shadow-sm);
+  --shadow-md: var(--shadow-md);
+  --shadow-lg: var(--shadow-lg);
 }
 
 @layer base {
