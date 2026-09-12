@@ -21,6 +21,7 @@ import {
   caseStatus,
   caseTracking,
   casePhotos as photoCopy,
+  patientAccount,
   common,
   patientAppointment,
   patientConfirm,
@@ -30,6 +31,8 @@ import { formatPhoneForDisplay } from '@/lib/phone'
 import { isTelegramConfigured } from '@/lib/telegram/config'
 import { isSubjectLinked } from '@/db/queries/telegram'
 import { pendingDaysForCase } from '@/db/queries/day-requests'
+import { auth } from '@/lib/auth'
+import { AttachCase } from './attach-case'
 import { TelegramInvite } from './telegram-invite'
 import { ConfirmContact } from './confirm-contact'
 import { DayAnswer } from './day-answer'
@@ -130,6 +133,19 @@ export default async function TrackCasePage({
   const patientLinked = telegramAvailable ? await isSubjectLinked({ type: 'PATIENT_CASE', id: record.id }) : false
 
   const headerList = await headers()
+
+  /*
+   * Whether to offer "keep this case in my account".
+   *
+   * Only to someone already signed in, and only when this case is not already
+   * theirs. A patient without an account is shown nothing here — the link is the
+   * product and an account is a convenience, and a sign-in prompt on the page
+   * someone opens to check on their treatment reads as a demand.
+   */
+  const session = await auth.api.getSession({ headers: headerList })
+  const ownedByViewer = Boolean(session && record.patientAuthUserId === session.user.id)
+  const offerAttach = Boolean(session) && !record.patientAuthUserId
+
   const host = headerList.get('host') ?? ''
   const protocol = headerList.get('x-forwarded-proto') ?? 'http'
   const trackingUrl = `${protocol}://${host}/case/track/${token}`
@@ -232,6 +248,11 @@ export default async function TrackCasePage({
 
         {telegramAvailable ? (
           <TelegramInvite trackingToken={token} alreadyLinked={patientLinked} />
+        ) : null}
+
+        {offerAttach ? <AttachCase trackingToken={token} /> : null}
+        {ownedByViewer ? (
+          <p className="mt-4 text-xs text-foreground-muted">{patientAccount.linkedNote}</p>
         ) : null}
 
         <CasePhotoGrid photos={photos} label={photoCopy.patientLabel} trackingToken={token} />

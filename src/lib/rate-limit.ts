@@ -109,6 +109,14 @@ export const RATE_LIMITS = {
    * the Google screen and come back a few times.
    */
   socialSignIn: { limit: 20, windowMs: 15 * 60 * 1000 },
+  /*
+   * Recovering a lost tracking link. This limit IS the security control: the
+   * form takes a reference code and a phone number, and someone holding one of
+   * the two could otherwise walk the space of the other from a single address.
+   * Ten an hour leaves a genuine patient room to mistype and makes a search
+   * hopeless. Failures and successes both count.
+   */
+  caseRecovery: { limit: 10, windowMs: 60 * 60 * 1000 },
   telegramInvite: { limit: 10, windowMs: 60 * 60 * 1000 },
   patientAnswer: { limit: 30, windowMs: 60 * 60 * 1000 },
 } as const satisfies Record<string, RateLimitRule>

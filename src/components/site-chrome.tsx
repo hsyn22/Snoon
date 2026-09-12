@@ -57,6 +57,18 @@ export function SiteFooter() {
                   {footer.howItWorks}
                 </Link>
               </li>
+              {/* The way back for a patient who lost their tracking link, which
+                  is the only thing that opens their case. */}
+              <li>
+                <Link href="/case/find" className="hover:text-accent">
+                  {footer.findCase}
+                </Link>
+              </li>
+              <li>
+                <Link href="/case/mine" className="hover:text-accent">
+                  {footer.myCases}
+                </Link>
+              </li>
             </ul>
           </nav>
 

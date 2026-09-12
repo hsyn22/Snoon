@@ -78,6 +78,7 @@ describe('rate limiting', () => {
     }
     expect(Object.keys(RATE_LIMITS).sort()).toEqual(
       [
+        'caseRecovery',
         'caseSubmission',
         'login',
         'patientAnswer',

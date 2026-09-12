@@ -57,6 +57,18 @@ export async function scrubExpiredContactDetails(olderThan: Date): Promise<numbe
           patientName: '',
           patientPhone: '',
           notes: null,
+          /*
+           * The account link goes with the rest of it.
+           *
+           * A patient account is optional and most cases have none, but where
+           * one exists it points at an auth row carrying a real name and a real
+           * email address. Leaving it would keep the case attached to an
+           * identified person months after the name and number on the case were
+           * deliberately erased — which would make the scrub cosmetic. The case
+           * then drops out of that patient's "my cases" list, correctly: there
+           * is nothing left on it to show them.
+           */
+          patientAuthUserId: null,
           contactScrubbedAt: new Date(),
           trackingTokenRevokedAt: sql`coalesce(${cases.trackingTokenRevokedAt}, now())`,
         })

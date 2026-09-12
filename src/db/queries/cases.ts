@@ -28,6 +28,13 @@ export type SubmitCaseInput = {
   /** Already normalised to 07XXXXXXXXX by the caller. */
   patientPhone: string
   notes: string | null
+  /**
+   * The Better Auth user the case belongs to, when the patient happened to be
+   * signed in. Optional and normally absent — a patient account is a
+   * convenience, never a requirement, and the form must behave identically
+   * without one.
+   */
+  patientAuthUserId?: string | null
 }
 
 export type SubmitCaseResult = {
@@ -67,6 +74,7 @@ export async function submitCase(input: SubmitCaseInput): Promise<SubmitCaseResu
             patientName: input.patientName,
             patientPhone: input.patientPhone,
             notes: input.notes,
+            patientAuthUserId: input.patientAuthUserId ?? null,
             trackingTokenHash,
           })
           .returning({ id: cases.id })
@@ -111,6 +119,8 @@ export type PatientCaseView = {
   patientName: string
   patientPhone: string
   notes: string | null
+  /** The account this case belongs to, when the patient chose to have one. */
+  patientAuthUserId: string | null
   createdAt: Date
 }
 
@@ -135,6 +145,9 @@ export async function getCaseByTrackingToken(token: string): Promise<PatientCase
       patientName: cases.patientName,
       patientPhone: cases.patientPhone,
       notes: cases.notes,
+      /* Only so the page can offer "keep this in my account" to a patient who
+         has one and has not attached this case yet. Nothing branches on it. */
+      patientAuthUserId: cases.patientAuthUserId,
       createdAt: cases.createdAt,
     })
     .from(cases)

@@ -1,0 +1,2 @@
+ALTER TABLE "snoon"."cases" ADD COLUMN "patient_auth_user_id" text;--> statement-breakpoint
+CREATE INDEX "cases_patient_auth_user_idx" ON "snoon"."cases" USING btree ("patient_auth_user_id","created_at") WHERE "snoon"."cases"."patient_auth_user_id" is not null;

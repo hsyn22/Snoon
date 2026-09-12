@@ -102,6 +102,8 @@ export const footer = {
   forStudents: 'للطلبة',
   submitCase: 'قدّم حالة',
   howItWorks: 'شلون تشتغل',
+  findCase: 'ضيّعت رابط حالتك؟',
+  myCases: 'حالاتي',
   studentSignUp: 'سجّل كطالب',
   studentDashboard: 'حسابي',
 
@@ -254,8 +256,88 @@ export const dayRequest = {
   failed: 'ما كدرنا نسجّل جوابك. جرّب مرة لخ.',
 } as const
 
+/**
+ * Getting a lost tracking link back.
+ *
+ * Written for someone who thinks they have lost their case. The reassurance
+ * matters more than the instructions: the first thing to say is that the case is
+ * still there.
+ */
+/**
+ * The optional patient account.
+ *
+ * Optional is the whole design. A patient submits a case, gets a link, and is
+ * done — an account is somewhere to find their cases again if they want one, and
+ * nothing in the product may ever require it. The copy has to say that plainly,
+ * because a sign-in button on a medical form reads as a demand unless it is
+ * explicitly told not to.
+ */
+export const patientAccount = {
+  eyebrow: 'حسابك',
+  title: 'حالاتك',
+  lead: 'كل الحالات اللي قدّمتها وانت داخل بحسابك.',
+
+  /** Offered beside the case form, and phrased so nobody thinks it is a step. */
+  optionalTitle: 'تحب تحتفظ بحالاتك؟',
+  optionalBody:
+    'تكدر تدخل بحساب Google حتى تلگى حالاتك بأي وقت بدون ما تحتاج الرابط. اختياري تماماً — الحالة تنقدّم بدون حساب عادي.',
+  signIn: 'المتابعة بحساب Google',
+  signedInAs: 'داخل بحساب',
+  signOut: 'خروج',
+
+  attachTitle: 'تحتفظ بهذي الحالة بحسابك؟',
+  attachBody: 'راح تلگاها بصفحة حالاتك حتى لو ضيّعت الرابط.',
+  attach: 'خزّنها بحسابي',
+  attaching: 'قيد الحفظ…',
+  attached: 'انحفظت بحسابك. تلگاها بصفحة حالاتك.',
+  linkedNote: 'هذي الحالة محفوظة بحسابك.',
+
+  emptyTitle: 'ما أكو حالات بحسابك',
+  emptyBody: 'الحالات اللي تقدّمها وانت داخل بحسابك راح تظهر هنا.',
+  submitCase: 'قدّم حالة',
+
+  /** Said once, where someone would reasonably wonder. */
+  retentionNote:
+    'الحالة القديمة تختفي من هنا بعد ما تنمحي معلومات التواصل حسب مدة الاحتفاظ — رمز الحالة يبقى عدنا إذا احتجت تسأل.',
+
+  errors: {
+    signInFirst: 'لازم تدخل بحسابك أول.',
+    generic: 'ما كدرنا نحفظ الحالة بحسابك. جرّب مرة لخ.',
+  },
+} as const
+
+export const caseRecovery = {
+  eyebrow: 'متابعة حالة',
+  title: 'ضيّعت رابط حالتك؟',
+  lead: 'حالتك محفوظة. اكتب رمز الحالة ورقم الموبايل اللي قدّمت بيه، وراح نطلعلك رابط جديد.',
+  linkLabel: 'ضيّعت الرابط؟',
+
+  section: 'معلومات حالتك',
+  codeLabel: 'رمز الحالة',
+  codeHint: 'الرمز اللي انطاك إيانا وقت قدّمت الحالة، شكله SN-4KP7QW.',
+  phoneLabel: 'رقم الموبايل',
+  phoneHint: 'نفس الرقم اللي كتبته بالحالة.',
+  submit: 'طلّعلي الرابط',
+  submitting: 'قيد البحث…',
+
+  /** Said on the form itself, because a new link means the old one dies. */
+  reissueNote: 'الرابط القديم راح يبطّل يشتغل، والجديد هو اللي تحتفظ بيه.',
+
+  errors: {
+    bothRequired: 'اكتب رمز الحالة ورقم الموبايل.',
+    /**
+     * One message for every failure — a wrong code, wrong number, no such case, a
+     * link that was revoked. Anything more specific tells whoever is guessing
+     * which half to keep.
+     */
+    noMatch: 'ما لگينا حالة بهذا الرمز وهذا الرقم. تأكد منهم وجرّب مرة لخ.',
+    tooMany: 'محاولات كثيرة. انطر ساعة وجرّب مرة لخ، أو راجعنا.',
+  },
+} as const
+
 export const caseTracking = {
   yourDetails: 'معلوماتك',
+  recoverLink: 'ضيّعت رابط حالتك؟',
   successTitle: 'انرسلت حالتك',
   successBody: 'راح يشوفها طلبة طب الأسنان بمدينتك، وأول ما يحجزها طالب راح يتصل بيك.',
 

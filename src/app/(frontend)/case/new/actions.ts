@@ -6,6 +6,7 @@ import { attachCasePhoto, submitCase } from '@/db/queries/cases'
 import { caseForm, casePhotos as photoCopy } from '@/lib/copy'
 import { MAX_PHOTOS_PER_CASE, processCasePhoto } from '@/lib/images/process'
 import { checkRateLimit, clientIp, RATE_LIMITS } from '@/lib/rate-limit'
+import { auth } from '@/lib/auth'
 import { checkPhoneMaySubmit } from '@/db/queries/phone-blocks'
 import { getPhoneSubmissionLimits } from '@/lib/config/settings'
 import {
@@ -100,9 +101,27 @@ export async function submitCaseAction(
     processed.push(result.photo.data)
   }
 
+  /*
+   * If they happen to be signed in, the case is theirs; if not, nothing changes.
+   *
+   * Read from the session and never from the form — a user id a client could set
+   * would let anyone file a case into somebody else's account. Read after
+   * validation so an anonymous submission never pays for a session lookup it
+   * does not need, and wrapped because a broken session must not be able to stop
+   * a patient submitting a case. Being signed in is a convenience; submitting is
+   * the product.
+   */
+  let patientAuthUserId: string | null = null
+  try {
+    const session = await auth.api.getSession({ headers: await headers() })
+    patientAuthUserId = session?.user.id ?? null
+  } catch {
+    patientAuthUserId = null
+  }
+
   let trackingToken: string
   try {
-    const result = await submitCase(validated.value)
+    const result = await submitCase({ ...validated.value, patientAuthUserId })
     trackingToken = result.trackingToken
 
     if (processed.length > 0) {

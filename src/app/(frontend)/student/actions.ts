@@ -6,7 +6,7 @@ import { redirect } from 'next/navigation'
 import { auth } from '@/lib/auth'
 import { studentAuth } from '@/lib/copy'
 import { isEmailConfigured } from '@/lib/email'
-import { isGoogleConfigured } from '@/lib/oauth'
+import { startGoogleSignIn } from '@/lib/auth-social'
 import { checkRateLimit, clientIp, RATE_LIMITS } from '@/lib/rate-limit'
 
 export type AuthFormState = {
@@ -147,39 +147,22 @@ export async function loginAction(
  *   are configuration ones, and a visitor can act on none of them.
  */
 export async function continueWithGoogleAction(): Promise<AuthFormState> {
-  // A deployment without credentials should never render the button at all;
-  // this is the second line, for a form posted at an endpoint that no longer
-  // offers it.
-  if (!isGoogleConfigured()) return { formError: studentAuth.errors.googleUnavailable }
+  const result = await startGoogleSignIn('/student')
 
-  const limited = checkRateLimit(`social:${clientIp(await headers())}`, RATE_LIMITS.socialSignIn)
-  if (!limited.ok) return { formError: studentAuth.errors.tooMany }
-
-  let destination: string
-  try {
-    const result = await auth.api.signInSocial({
-      body: {
-        provider: 'google',
-        // Where Google returns them once they have agreed. `/student` reads
-        // their real status from the database and routes them on — to the
-        // profile form if they are new, to the queue if they are verified.
-        callbackURL: '/student',
-        errorCallbackURL: '/student/login',
-      },
-    })
-    if (!result.url) return { formError: studentAuth.errors.generic }
-    destination = result.url
-  } catch (error) {
-    console.error(
-      'Google sign-in could not start:',
-      error instanceof Error ? error.message : 'unknown error',
-    )
-    return { formError: studentAuth.errors.generic }
+  if (!result.ok) {
+    return {
+      formError:
+        result.reason === 'UNAVAILABLE'
+          ? studentAuth.errors.googleUnavailable
+          : result.reason === 'RATE_LIMITED'
+            ? studentAuth.errors.tooMany
+            : studentAuth.errors.generic,
+    }
   }
 
-  // Outside the try: redirect() works by throwing, and catching it here would
-  // turn a successful sign-in into a generic error.
-  redirect(destination)
+  // Outside any try: redirect() works by throwing, and catching it would turn a
+  // successful sign-in into a generic error.
+  redirect(result.url)
 }
 
 export async function logoutAction(): Promise<void> {

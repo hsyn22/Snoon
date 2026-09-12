@@ -110,6 +110,27 @@ export const cases = snoon.table(
     notes: text('notes'),
 
     /**
+     * The Better Auth user this case belongs to, when the patient chose to have
+     * an account. **Null for most cases, and that must stay the normal path.**
+     *
+     * A patient account is an optional convenience — somewhere to find your
+     * cases again without a link — and never a requirement. Nothing in a
+     * student-facing or admin path may read this column to decide anything: a
+     * case with an account and a case without are the same case, treated
+     * identically, and a query that branches on it is a bug.
+     *
+     * Text rather than a foreign key, as on `students.auth_user_id`: the auth
+     * tables are managed by another tool.
+     *
+     * Erased by the retention scrub along with the name and the phone. An
+     * account row carries a real name and a real address, so leaving this in
+     * place would keep the case attached to an identified person months after
+     * the details were deliberately erased — which would quietly undo the whole
+     * point of scrubbing.
+     */
+    patientAuthUserId: text('patient_auth_user_id'),
+
+    /**
      * SHA-256 of the patient's tracking token, never the token itself. The token
      * is shown once, in the link handed to the patient at submission; if this
      * table leaks, the hashes do not let anyone open a case. Revoking sets
@@ -144,6 +165,11 @@ export const cases = snoon.table(
     // Matching a student's stage capability against a case means asking whether
     // the treatment sets overlap, which needs a GIN index to stay fast.
     index('cases_treatment_type_ids_idx').using('gin', table.treatmentTypeIds),
+    // "My cases" for a signed-in patient. Partial: the column is null on most
+    // rows and an index over those would be mostly empty.
+    index('cases_patient_auth_user_idx')
+      .on(table.patientAuthUserId, table.createdAt)
+      .where(sql`${table.patientAuthUserId} is not null`),
   ],
 )
 

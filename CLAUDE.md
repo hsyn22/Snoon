@@ -562,12 +562,74 @@ can each be missing: both configured shows both paths; Google alone shows the
 button and says in Arabic that password sign-up is not open yet; neither shows
 the closed notice. The middle one is where سنون actually is.
 
-**Patients:** no account at MVP. Friction here directly costs the people the platform exists
-to serve.
+**Patients:** no account is ever required, and that must not change. Friction here directly
+costs the people the platform exists to serve.
 
 A submitted case returns a **case reference code** plus a signed tracking link the patient
 can bookmark, letting them check status and confirm contact without logging in. Tracking
 tokens are long, random, single-case scoped, and revocable.
+
+### The link is the product; the account is a convenience
+
+Two additions, both optional, both for the same problem: a patient with no account has
+exactly one way back to their case, and losing the link used to mean losing the case.
+
+**Link recovery — `/case/find`.** Reference code plus the phone number on the case. Neither
+alone is enough; the code is not a secret (it is read out over the phone) and the phone is
+what سنون is protecting, so the pair stands in for a password. `recoverTrackingLink` in
+`src/db/queries/case-recovery.ts`. Rules it must keep:
+
+- **One answer for every failure.** A wrong code, a wrong number, a case that never existed
+  and a link that was revoked all return the same `{ ok: false }` and the same Arabic
+  sentence. Any difference makes this an oracle for "does SN-4KP7QW exist" or "is this the
+  number on it". An unparseable phone is simply a number that matches nothing, for the same
+  reason.
+- **It reissues rather than resends.** The database holds an HMAC of the token, never the
+  token, so the original is unrecoverable by design. The old link dies — which is the right
+  outcome anyway, since the usual reason somebody is here is that the old one ended up
+  somewhere they no longer control.
+- **A revoked link stays revoked**, or `reportWrongNumber` would stop working: it revokes
+  the token precisely so whoever submitted a stranger's number stops watching that
+  stranger's data.
+- **A scrubbed case cannot be recovered.** The phone column is an empty string after the
+  retention period, and an empty submitted value must never match it.
+- **The rate limit is the security control**, not the comparison — someone holding one of
+  the two values could otherwise walk the space of the other. Ten an hour per address.
+- The phone is **not** handed back to the form on failure, against the general rule that a
+  rejected form keeps what was typed. Two fields is not a case form, and echoing a number
+  into the HTML of a page that just refused is how it ends up in a shared phone's cache.
+
+**The optional patient account — `/case/mine`.** Google only, because the entire
+justification is that it costs seconds; a password plus a verification email is neither.
+`cases.patient_auth_user_id`, null on most rows, and that is the normal path.
+
+- **Nothing may require it, and no student-facing or admin query may branch on it.** A case
+  with an account and a case without are the same case.
+- **It is attached two ways**: at submission, from the session and never from the form; and
+  afterwards from the tracking page, where **the tracking token is the proof of ownership**.
+  The second is the one that matters — the realistic order of events is submit, get a link,
+  and only later decide you would rather not depend on it.
+- **Holding the link does not take a case off an account that already has it.**
+- **The retention scrub nulls the link** along with the name and the phone. An account row
+  carries a real name and a real address, so leaving it would keep the case attached to an
+  identified person months after the details on it were deliberately erased, and make the
+  scrub cosmetic. The case then drops out of that patient's list, correctly: there is
+  nothing left to show them.
+- `listCasesForPatient` has **no contact columns in its projection**, the same discipline the
+  student-facing queries follow.
+- There is deliberately **no sign-in button on `/case/new`**. A sign-in prompt on a medical
+  form reads as a demand however it is worded, and the case form is the one thing in سنون
+  that must never acquire a step.
+
+`tests/patient-account.db.test.ts` holds all of the above against a real database.
+
+Raised at the time and recorded because the reasoning still applies if this is ever revisited:
+a patient account is a poorer fit than it looks — a household shares a phone, so the Google
+account on it may not belong to whoever is submitting; plenty of Android phones here were
+signed in once by a relative; and an account is an email address kept indefinitely for
+someone whose case details we deliberately erase at ninety days. Haider weighed those and
+chose to offer it anyway, optional and alongside link recovery. Optional is what makes that
+safe, so it is the part to defend.
 
 ---
 
@@ -870,8 +932,9 @@ These are genuinely unresolved. If a task depends on one, stop and ask rather th
    record there is. A case that had a patient must also stay distinguishable from one whose
    details were never filled in. Scrubbing takes the keys with it — the tracking token is
    revoked, and any Telegram binding for the case, since neither can lead anywhere useful and
-   both are live credentials. Revisit the 90 days if it turns out patients ring later than
-   that.
+   both are live credentials — **and the optional patient-account link**, which otherwise
+   keeps the case attached to a named, addressable person long after the details on it were
+   erased. Revisit the 90 days if it turns out patients ring later than that.
 
 ---
 
