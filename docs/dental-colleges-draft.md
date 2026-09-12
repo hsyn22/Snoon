@@ -11,8 +11,18 @@ and 2004), so the years are omitted — they do not matter to سنون anyway. W
 only: **does this college exist, is it in this city, and does it run a clinic that takes
 outside patients.**
 
-That last column is the one the web cannot answer and Haider can. A college with no
-patient-facing clinic should not be in the list at all.
+~~That last column is the one the web cannot answer and Haider can. A college with no
+patient-facing clinic should not be in the list at all.~~
+
+**Answered, 12 September 2026.** Haider: *"Almost all, if not all of them."* Every dental
+college in Iraq runs a teaching clinic that takes outside patients — that is how the students
+meet their case requirements in the first place, so a college without one could not graduate
+anyone.
+
+So the teaching-clinic column is **not a filter** and there is no fourth column to fill in.
+What is still unverified is the plainer half: does this college exist, and is it in this
+city. That is what the confidence ratings below are for, and it is still a list to correct
+rather than a list to seed.
 
 ## Confidence
 

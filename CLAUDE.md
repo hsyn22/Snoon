@@ -791,8 +791,11 @@ These are genuinely unresolved. If a task depends on one, stop and ask rather th
    leaning is optional-and-multi-select with "any" as the default, never required. Blocked on
    real data: which universities have dental colleges, and in which cities. Do not invent that
    list. `docs/dental-colleges-draft.md` holds web research to be corrected, not a decision —
-   fourteen cities with a college were found, and the column the web cannot answer is which
-   of them run a teaching clinic that takes outside patients at all.
+   fourteen cities with a college were found. **One half of that is now answered:** Haider
+   says almost every dental college in Iraq runs a teaching clinic that takes outside
+   patients, which stands to reason — it is how their own students meet the case requirement
+   سنون exists to help with. So a teaching clinic is not a filter and the question is the
+   plainer one of which colleges exist and where.
 7. **Which cities to launch in.** The current 18-city list in `src/lib/config/index.ts` is a
    placeholder written by Claude, not a decision. Realistically the launch is one or two
    cities.
