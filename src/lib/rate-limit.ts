@@ -102,6 +102,13 @@ export const RATE_LIMITS = {
   caseSubmission: { limit: 5, windowMs: 60 * 60 * 1000 },
   signUp: { limit: 5, windowMs: 60 * 60 * 1000 },
   login: { limit: 10, windowMs: 15 * 60 * 1000 },
+  /*
+   * Starting a Google sign-in writes an OAuth state row before the visitor has
+   * proved anything, so an unlimited button is a way to fill a table. Looser
+   * than password login because a genuine student may legitimately bounce off
+   * the Google screen and come back a few times.
+   */
+  socialSignIn: { limit: 20, windowMs: 15 * 60 * 1000 },
   telegramInvite: { limit: 10, windowMs: 60 * 60 * 1000 },
   patientAnswer: { limit: 30, windowMs: 60 * 60 * 1000 },
 } as const satisfies Record<string, RateLimitRule>

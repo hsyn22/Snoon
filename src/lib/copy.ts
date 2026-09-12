@@ -283,6 +283,25 @@ export const caseTracking = {
 export const studentAuth = {
   eyebrow: 'للطلبة',
   accountSection: 'بيانات الحساب',
+
+  /**
+   * "Continue with Google". The word Google stays in Latin — it is a product
+   * name, and a student reading Arabic still recognises it that way. It sits in
+   * an LTR run so the bidi algorithm does not throw it against the punctuation
+   * around it.
+   */
+  google: 'المتابعة بحساب Google',
+  googleStarting: 'قيد الفتح…',
+  /** Says what the button spares them, which is the reason to press it. */
+  googleHint: 'بدون كلمة سر وبدون انتظار إيميل تفعيل.',
+  /** Between the Google button and the email fields. */
+  or: 'أو',
+  /**
+   * Shown when Google is the only way in — which is the state سنون is in until
+   * a sending domain exists. Says the truth rather than hiding the fields with
+   * no explanation.
+   */
+  passwordSignUpClosed: 'التسجيل بالإيميل وكلمة السر لسه ما مفتوح. سجّل بحساب Google.',
   /** A person's greeting, not a page name — both competitors open this way. */
   welcomeBack: 'أهلاً بيك مرة لخ',
   loginLead: 'حساب واحد يكفي: سجّل، وثّق تسجيلك بالكلية، وشوف الحالات اللي تناسب مرحلتك.',
@@ -318,6 +337,7 @@ export const studentAuth = {
     generic: 'ما كدرنا نكمل. جرّب مرة لخ بعد شوية.',
     signUpClosed: 'تسجيل الطلبة لسه ما مفتوح. راجعنا بعدين.',
     tooMany: 'محاولات كثيرة بوقت قصير. انطر شوية وجرّب مرة لخ.',
+    googleUnavailable: 'الدخول بحساب Google مو متوفر هسه.',
   },
 } as const
 

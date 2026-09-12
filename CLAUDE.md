@@ -474,7 +474,9 @@ creates no session while email verification is required. Both shape the flow —
 redirects to a "check your email" page that also tells a student who already has an account
 to log in instead, which covers the dead end without adding an oracle.
 
-Email itself is **not configured**, and this blocks student sign-up in production.
+Email itself is **not configured**. That used to block student sign-up outright;
+with "Continue with Google" below it no longer does, and what remains blocked is
+only the password path.
 
 `src/lib/email.ts` prints to the console in development and throws in production. Throwing is
 NOT sufficient on its own: Better Auth sends its verification email as a **background task**,
@@ -499,6 +501,66 @@ only once a sending domain is verified** in their dashboard. Until then it accep
 to the account owner's own address — enough to test, not enough to open registration. So a
 domain is now on the critical path for the student side. The patient side is unaffected and
 works fully.
+
+### "Continue with Google"
+
+The fastest way into سنون, and — until a sending domain exists — the only one
+that works in production. `src/lib/oauth.ts`.
+
+Why it matters more here than it does for the competitor it was taken from:
+password sign-up needs a verification email, email needs Resend, and Resend only
+delivers to arbitrary addresses once a sending domain is verified. Google has
+already verified the address, so there is **no message to send and nothing
+waiting on a domain**. It is the one change that opens student registration
+without one. It also fits the median user exactly: a low-end Android phone is
+already signed into Google, so it is one tap, no password to invent and remember,
+and no inbox to go and check on a slow connection.
+
+Rules it holds to:
+
+- **Students only.** Patients never get an account, and nothing here may ever be
+  offered on the patient side — friction there costs the people this exists to
+  serve.
+- **It does not grant verification, and must never be made to.** Google answers
+  "who owns this address?". Whether somebody may see a patient's phone number is
+  `snoon.students.verification_status`, which an admin sets after reading an
+  enrolment document. A student who signs in with Google lands on the same
+  profile form as everyone else and sees no case until they are approved. The
+  seconds saved are at the account step, which was never the hard part — the
+  document is, and this leaves a student more patience for it.
+  `tests/google-signin.test.ts` asserts that the profile mapper returns exactly
+  `name`, `email` and `emailVerified` and nothing that could be read as a status.
+- **The profile picture is dropped at the boundary.** Google returns a link to
+  the user's photograph and Better Auth would store it by default. سنون shows no
+  faces anywhere, so `mapGoogleProfile` does not keep it — a field needs a reason,
+  not an opportunity.
+- **`emailVerified` comes from Google's claim, not from the fact of signing in.**
+  Google can return an account whose address it has not verified.
+- **Account linking is left at Better Auth's defaults.** Its
+  `requireLocalEmailVerified` default stops an attacker who pre-registered an
+  unverified password account at someone's address from having that person's
+  Google identity linked into the attacker's row on first sign-in. Do not relax
+  it.
+- **Driven from a server action, not Better Auth's browser client**, which would
+  put the whole client in the bundle for one redirect. It is a plain form post:
+  the tap works whether or not the JavaScript has arrived.
+- The Google mark in `google-button.tsx` is **the one component allowed literal
+  colours**. Google's terms require their mark in their four colours, and those
+  belong to Google rather than to `tokens.css` — re-theming سنون must not touch
+  them.
+
+**The redirect URI is built from `BETTER_AUTH_URL`, not from the host the request
+arrived on.** So `<BETTER_AUTH_URL>/api/auth/callback/google` is what must be
+registered in Google Cloud, exactly, port included. A mismatch is refused at
+Google's own screen with `redirect_uri_mismatch` before anything reaches سنون, so
+there is nothing in our logs to explain it. Found by actually driving the button
+in a browser, which sent `redirect_uri=http://localhost:3101/...` while the
+server under test was on 3111.
+
+Sign-up therefore has **three** states, not two, because two independent things
+can each be missing: both configured shows both paths; Google alone shows the
+button and says in Arabic that password sign-up is not open yet; neither shows
+the closed notice. The middle one is where سنون actually is.
 
 **Patients:** no account at MVP. Friction here directly costs the people the platform exists
 to serve.

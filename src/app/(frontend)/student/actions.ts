@@ -6,6 +6,7 @@ import { redirect } from 'next/navigation'
 import { auth } from '@/lib/auth'
 import { studentAuth } from '@/lib/copy'
 import { isEmailConfigured } from '@/lib/email'
+import { isGoogleConfigured } from '@/lib/oauth'
 import { checkRateLimit, clientIp, RATE_LIMITS } from '@/lib/rate-limit'
 
 export type AuthFormState = {
@@ -126,6 +127,59 @@ export async function loginAction(
   }
 
   redirect('/student')
+}
+
+/**
+ * "Continue with Google".
+ *
+ * Driven from the server rather than from Better Auth's browser client, which
+ * would put the whole client into the bundle for one redirect. This is a plain
+ * form posting to a server action: the visitor taps, the server asks Better Auth
+ * where to send them, and they go. Nothing is downloaded to make it work.
+ *
+ * Two things it deliberately does not do:
+ *
+ * - It does not skip verification. Google answers "who is this?"; whether they
+ *   may see a patient is `snoon.students.verification_status`, which an admin
+ *   sets after reading an enrolment document. A student arriving this way lands
+ *   on the same profile form as everyone else.
+ * - It does not report why it failed in any detail. The reasons available here
+ *   are configuration ones, and a visitor can act on none of them.
+ */
+export async function continueWithGoogleAction(): Promise<AuthFormState> {
+  // A deployment without credentials should never render the button at all;
+  // this is the second line, for a form posted at an endpoint that no longer
+  // offers it.
+  if (!isGoogleConfigured()) return { formError: studentAuth.errors.googleUnavailable }
+
+  const limited = checkRateLimit(`social:${clientIp(await headers())}`, RATE_LIMITS.socialSignIn)
+  if (!limited.ok) return { formError: studentAuth.errors.tooMany }
+
+  let destination: string
+  try {
+    const result = await auth.api.signInSocial({
+      body: {
+        provider: 'google',
+        // Where Google returns them once they have agreed. `/student` reads
+        // their real status from the database and routes them on — to the
+        // profile form if they are new, to the queue if they are verified.
+        callbackURL: '/student',
+        errorCallbackURL: '/student/login',
+      },
+    })
+    if (!result.url) return { formError: studentAuth.errors.generic }
+    destination = result.url
+  } catch (error) {
+    console.error(
+      'Google sign-in could not start:',
+      error instanceof Error ? error.message : 'unknown error',
+    )
+    return { formError: studentAuth.errors.generic }
+  }
+
+  // Outside the try: redirect() works by throwing, and catching it here would
+  // turn a successful sign-in into a generic error.
+  redirect(destination)
 }
 
 export async function logoutAction(): Promise<void> {

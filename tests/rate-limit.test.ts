@@ -77,7 +77,16 @@ describe('rate limiting', () => {
       expect(limit.windowMs, name).toBeGreaterThan(0)
     }
     expect(Object.keys(RATE_LIMITS).sort()).toEqual(
-      ['caseSubmission', 'login', 'patientAnswer', 'signUp', 'telegramInvite'].sort(),
+      [
+        'caseSubmission',
+        'login',
+        'patientAnswer',
+        'signUp',
+        // Starting a Google sign-in writes an OAuth state row before the visitor
+        // has proved anything, so the button is a public endpoint that writes.
+        'socialSignIn',
+        'telegramInvite',
+      ].sort(),
     )
   })
 })
