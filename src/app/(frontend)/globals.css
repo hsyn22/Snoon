@@ -1,5 +1,6 @@
 @import 'tailwindcss';
 @import '../../styles/tokens.css';
+@import '../../styles/motion.css';
 
 /*
  * Expose the tokens as Tailwind utilities. `inline` means the utilities resolve
@@ -58,13 +59,33 @@
     outline-offset: 2px;
   }
 
+  /*
+   * Reduced motion. The preference means "do not move things", not "do not show
+   * them" — content still arrives, it simply arrives at once.
+   *
+   * The delay lines are belt and braces rather than a fix for an observed bug,
+   * and the distinction is worth recording. An entrance animation with
+   * `backwards` fill holds its starting state for the whole delay, so squashing
+   * the duration to nothing while leaving a 280ms delay in place *should* leave
+   * an element invisible for 280ms and then pop it in — the exact flash the
+   * preference exists to prevent. In practice it could not be reproduced:
+   * restoring the delay in a reduced-motion browser and sampling at first paint
+   * showed nothing hidden. The lines stay because the reasoning holds and they
+   * cost nothing, not because they were seen to matter.
+   *
+   * What *is* verified: under `reducedMotion: 'reduce'`, nothing on the landing
+   * page renders below half opacity at first paint, while the same page without
+   * the preference starts with seventeen elements hidden and animates them in.
+   */
   @media (prefers-reduced-motion: reduce) {
     *,
     *::before,
     *::after {
       animation-duration: 0.01ms !important;
+      animation-delay: 0s !important;
       animation-iteration-count: 1 !important;
       transition-duration: 0.01ms !important;
+      transition-delay: 0s !important;
       scroll-behavior: auto !important;
     }
   }

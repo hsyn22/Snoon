@@ -734,6 +734,61 @@ it was saved. Three files now cover it, and they are not interchangeable:
   from. It needs `experimental.globalNotFound` in `next.config.ts`, and it bypasses the
   layout, so it imports the stylesheet itself.
 
+### Motion, and the tools that were not used
+
+Haider asked whether an AI site builder — blink.new was the example — could
+design سنون, or "any other tool that produces unique animated websites". The
+answer recorded here because it will be asked again:
+
+**Not that class of tool.** blink.new and its siblings (Lovable, Bolt, v0) are
+app *generators*: they write a codebase, provision a database and authentication,
+and host the result. سنون is not a landing page. It is a case lifecycle with
+atomic claiming, an access-control table enforced by projection types, EXIF
+stripping, retention scrubbing, two-stage case handoff, day matching and 547
+tests — and the privacy rules that make it safe to point at real patients are
+exactly what a generator has no way to know about. Pointing one at this repo
+does not design it; it replaces it.
+
+Where such a tool **is** genuinely useful is the same place ClinMatch and
+AsnanLink were: as a source of visual ideas. Prompt it, screenshot the result,
+and treat the screenshots as reference — see `docs/competitors.md`.
+
+**The want behind the question was right, and is answered in CSS.** Motion is in
+`src/styles/motion.css`: a staggered entrance, scroll-driven reveals, a line that
+draws itself down the "how it works" steps, a slow drift behind the hero, and
+press/lift micro-interactions. No JavaScript, no library, no second request.
+
+The arithmetic is the whole argument. framer-motion is roughly 50KB gzipped and
+GSAP roughly 70KB, against a landing page that weighs 269KB on the wire in total.
+Either would be among the largest things سنون downloads, to move some text.
+Measured after the motion pass on the same Slow 3G rig: **266 KB, first paint
+2.3s, loaded 6.8s** — against 269 KB / 2.1s / 6.8s before. No measurable cost.
+
+Rules it follows, and which new motion must follow too:
+
+- **Transform and opacity only.** Both composite on the GPU. Animating height,
+  top or margin is where a cheap Android starts to stutter.
+- **Never hide content that motion might not reveal.** The scroll-driven rules
+  live inside `@supports (animation-timeline: view())`, and the `opacity: 0`
+  starting state is set *inside* that gate — so a browser without support shows
+  the text plainly. A missing animation must degrade to visible, never to blank.
+  That ordering is the safety property; putting the starting state outside the
+  gate would blank the page on an unsupported browser.
+- **`prefers-reduced-motion` wins**, and the global rule zeroes delays as well as
+  durations. Verified: under the preference nothing on the landing page renders
+  below half opacity at first paint, while the same page without it starts with
+  seventeen elements hidden and animates them in.
+- **The register is calm.** This site asks people who cannot afford a dentist to
+  trust it with a photograph of their mouth. Nothing bounces, nothing spins,
+  nothing slides in from off-screen, and nothing loops in the reader's
+  peripheral vision while they are trying to read. The page should look like it
+  is settling, not performing.
+- Hover effects are behind `@media (hover: hover)`: on a touch screen `:hover`
+  sticks after a tap and leaves one card looking selected for no reason.
+
+The 3D/WebGL landing scene is still out — see "The landing page" below. This is
+what replaces it, at a cost that can be stated in kilobytes.
+
 ### Measured on a slow phone
 
 Non-negotiable 7 is a claim, so it was measured rather than assumed: a production build,

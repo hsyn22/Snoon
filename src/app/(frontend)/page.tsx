@@ -38,27 +38,47 @@ export default function HomePage() {
         {/* Hero. A gradient wash rather than an illustration: سنون has no
             photography yet, and a stock image of a stranger's teeth would be
             worse than none. */}
-        <div className="bg-gradient-to-b from-accent-muted to-background">
+        {/* `hero-drift` animates the ::before below — one very soft radial,
+            drifting over 28 seconds. Slow and small enough to read as depth
+            rather than as movement, and `isolate` keeps it behind the text
+            without a z-index on every child. */}
+        <div className="hero-drift relative isolate overflow-hidden bg-gradient-to-b from-accent-muted to-background before:pointer-events-none before:absolute before:-top-1/3 before:end-[-15%] before:-z-10 before:h-[36rem] before:w-[36rem] before:rounded-full before:bg-[radial-gradient(circle,var(--color-accent)_0%,transparent_65%)] before:opacity-[0.09] before:content-['']">
           <div className="mx-auto w-full max-w-3xl px-4 pb-12 pt-10 sm:pb-16 sm:pt-14">
-            <Eyebrow>{home.eyebrow}</Eyebrow>
+            {/* The entrance stagger. Each step is 70ms behind the last, which is
+                about the shortest gap that still reads as a sequence rather
+                than as everything arriving at once. */}
+            <div className="animate-rise" style={{ '--delay': '0ms' } as React.CSSProperties}>
+              <Eyebrow>{home.eyebrow}</Eyebrow>
+            </div>
 
-            <h1 className="mt-4 text-balance text-3xl font-bold leading-tight sm:text-4xl">
+            <h1
+              className="animate-rise mt-4 text-balance text-3xl font-bold leading-tight sm:text-4xl"
+              style={{ '--delay': '70ms' } as React.CSSProperties}
+            >
               <span className="text-accent">{home.headlineAccent}</span>{' '}
               {home.headlineRest}
             </h1>
 
-            <p className="mt-4 max-w-xl text-pretty text-foreground-muted">{home.subhead}</p>
+            <p
+              className="animate-rise mt-4 max-w-xl text-pretty text-foreground-muted"
+              style={{ '--delay': '140ms' } as React.CSSProperties}
+            >
+              {home.subhead}
+            </p>
 
-            <div className="mt-7 flex flex-col gap-3 sm:flex-row">
+            <div
+              className="animate-rise mt-7 flex flex-col gap-3 sm:flex-row"
+              style={{ '--delay': '210ms' } as React.CSSProperties}
+            >
               <Link
                 href="/case/new"
-                className="inline-flex min-h-12 items-center justify-center rounded-full bg-accent px-6 font-bold text-accent-foreground shadow-md"
+                className="press inline-flex min-h-12 items-center justify-center rounded-full bg-accent px-6 font-bold text-accent-foreground shadow-md"
               >
                 {home.primaryAction}
               </Link>
               <Link
                 href="/student"
-                className="inline-flex min-h-12 items-center justify-center rounded-full border border-border bg-surface px-6 font-medium"
+                className="press inline-flex min-h-12 items-center justify-center rounded-full border border-border bg-surface px-6 font-medium"
               >
                 {home.secondaryAction}
               </Link>
@@ -68,10 +88,11 @@ export default function HomePage() {
                 before anything else: what does it cost, what do I have to sign
                 up for, and is it safe. */}
             <dl className="mt-10 grid gap-4 sm:grid-cols-3">
-              {home.promises.map((promise) => (
+              {home.promises.map((promise, index) => (
                 <div
                   key={promise.title}
-                  className="rounded-lg border border-border bg-surface p-4 shadow-sm"
+                  className="animate-rise lift rounded-lg border border-border bg-surface p-4 shadow-sm"
+                  style={{ '--delay': `${280 + index * 70}ms` } as React.CSSProperties}
                 >
                   <dt className="font-bold text-accent">{promise.title}</dt>
                   <dd className="mt-1 text-sm text-foreground-muted">{promise.body}</dd>
@@ -82,11 +103,16 @@ export default function HomePage() {
         </div>
 
         <Section id="how" tone="muted">
-          <h2 className="text-xl font-bold sm:text-2xl">{howItWorks.title}</h2>
+          <h2 className="reveal text-xl font-bold sm:text-2xl">{howItWorks.title}</h2>
 
-          <ol className="mt-6 space-y-4">
+          {/* The one deliberately expressive thing on the page, and it earns its
+              place: these four steps are a sequence, and a line that fills as
+              you read down them says so more directly than the prose can.
+              `end-*` rather than `left`/`right` — the line runs down the start
+              edge, which in Arabic is the right. */}
+          <ol className="draw-line relative mt-6 space-y-4 after:absolute after:end-[1.0625rem] after:top-4 after:-z-10 after:h-[calc(100%-2rem)] after:w-0.5 after:origin-top after:bg-accent/25 after:content-['']">
             {howItWorks.steps.map((step, index) => (
-              <li key={step} className="flex gap-4">
+              <li key={step} className="reveal flex gap-4">
                 <span
                   aria-hidden="true"
                   className="ltr-run flex size-9 shrink-0 items-center justify-center rounded-full bg-accent text-sm font-bold text-accent-foreground"
@@ -102,11 +128,11 @@ export default function HomePage() {
         {/* The student side gets its own band rather than a card in a row: it is
             one of two audiences, not one of three features. */}
         <Section>
-          <h2 className="text-xl font-bold sm:text-2xl">{home.studentsTitle}</h2>
-          <p className="mt-3 text-pretty text-foreground-muted">{home.studentsBody}</p>
+          <h2 className="reveal text-xl font-bold sm:text-2xl">{home.studentsTitle}</h2>
+          <p className="reveal mt-3 text-pretty text-foreground-muted">{home.studentsBody}</p>
           <Link
             href="/student"
-            className="mt-6 inline-flex min-h-12 items-center justify-center rounded-full bg-accent px-6 font-bold text-accent-foreground"
+            className="press reveal mt-6 inline-flex min-h-12 items-center justify-center rounded-full bg-accent px-6 font-bold text-accent-foreground"
           >
             {home.studentsAction}
           </Link>
@@ -123,11 +149,11 @@ export default function HomePage() {
         </Section>
 
         <Section tone="accent">
-          <h2 className="text-2xl font-bold sm:text-3xl">{home.closingTitle}</h2>
-          <p className="mt-3 text-pretty opacity-90">{home.closingBody}</p>
+          <h2 className="reveal text-2xl font-bold sm:text-3xl">{home.closingTitle}</h2>
+          <p className="reveal mt-3 text-pretty opacity-90">{home.closingBody}</p>
           <Link
             href="/case/new"
-            className="mt-6 inline-flex min-h-12 items-center justify-center rounded-full bg-surface px-6 font-bold text-accent shadow-md"
+            className="press reveal mt-6 inline-flex min-h-12 items-center justify-center rounded-full bg-surface px-6 font-bold text-accent shadow-md"
           >
             {home.primaryAction}
           </Link>

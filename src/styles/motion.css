@@ -1,0 +1,172 @@
+/*
+ * Motion.
+ *
+ * Every rule here is CSS. There is no animation library, no JavaScript and no
+ * second request: this file gzips to about a kilobyte inside a stylesheet the
+ * browser is already fetching. That is the entire reason it is written by hand
+ * rather than reached for off a shelf — framer-motion is roughly 50KB gzipped
+ * and GSAP roughly 70KB, against a landing page that currently weighs 269KB in
+ * total on the wire. Either would be among the largest things سنون downloads,
+ * to move some text.
+ *
+ * The register matters as much as the cost. This is a site asking people who
+ * cannot afford a dentist to trust it with a photograph of their mouth. Motion
+ * here should read as the page settling, not performing: short, small, and over
+ * before anyone notices it started. Nothing bounces, nothing spins, nothing
+ * slides in from off-screen, and nothing moves on a loop in the reader's
+ * peripheral vision while they are trying to read.
+ *
+ * Three rules everything follows:
+ *
+ * 1. **Transform and opacity only.** Both are composited on the GPU, so they do
+ *    not trigger layout or paint. Animating height, top or margin on a cheap
+ *    Android is where a page starts to stutter.
+ * 2. **Never hide content that motion might not reveal.** Scroll-driven
+ *    animation is gated behind `@supports`, and the starting state lives inside
+ *    the same block — so a browser that cannot run it shows the text plainly
+ *    rather than a blank page. A missing animation must degrade to visible, not
+ *    to invisible.
+ * 3. **`prefers-reduced-motion` wins.** globals.css already reduces every
+ *    duration to nothing, which is the correct reading of the preference:
+ *    content still arrives, it simply arrives immediately.
+ */
+
+@layer utilities {
+  /* ---- Entrance -----------------------------------------------------------
+   * What a reader sees in the first second. Rises 8px and fades — small enough
+   * to feel like settling rather than arriving.                              */
+  @keyframes snoon-rise {
+    from {
+      opacity: 0;
+      transform: translateY(8px);
+    }
+    to {
+      opacity: 1;
+      transform: none;
+    }
+  }
+
+  .animate-rise {
+    animation: snoon-rise 0.5s cubic-bezier(0.22, 1, 0.36, 1) backwards;
+  }
+
+  /*
+   * Stagger, as a custom property rather than five classes.
+   *
+   * `backwards` on the animation above is what makes this work: the element
+   * holds the opacity-0 starting state during its delay instead of flashing in
+   * and then animating. Without it a staggered group appears all at once and
+   * then re-animates, which looks like a bug.
+   */
+  .animate-rise[style*='--delay'] {
+    animation-delay: var(--delay);
+  }
+
+  /* ---- Scroll-driven reveal -----------------------------------------------
+   * Sections below the fold fade up as they come into view.
+   *
+   * `animation-timeline: view()` drives the animation from the element's
+   * position in the viewport rather than from a clock, with no scroll listener
+   * and no IntersectionObserver — the browser runs it off the main thread, so
+   * it does not compete with anything on a slow phone.
+   *
+   * Gated behind @supports, and the starting state is set INSIDE the gate. A
+   * browser without support never sets opacity: 0, so it simply shows the
+   * section. That ordering is the whole safety property.                      */
+  @supports (animation-timeline: view()) {
+    @media (prefers-reduced-motion: no-preference) {
+      @keyframes snoon-reveal {
+        from {
+          opacity: 0;
+          transform: translateY(14px);
+        }
+        to {
+          opacity: 1;
+          transform: none;
+        }
+      }
+
+      .reveal {
+        animation: snoon-reveal linear both;
+        animation-timeline: view();
+        /* Starts as the element's top edge enters and finishes a third of the
+           way up, so it is fully readable well before it reaches the middle of
+           the screen. Nobody should ever be waiting for text to finish
+           appearing. */
+        animation-range: entry 10% cover 32%;
+      }
+
+      /*
+       * The line down the "how it works" steps, drawing itself as you scroll.
+       *
+       * The one deliberately expressive thing on the page, and it earns its
+       * place: the four steps are a sequence, and a line that fills as you read
+       * them says so more directly than four paragraphs can. scaleY on a
+       * transform-origin, so it is one composited property.
+       */
+      .draw-line::after {
+        transform: scaleY(0);
+        animation: snoon-draw linear both;
+        animation-timeline: view();
+        animation-range: entry 40% cover 60%;
+      }
+
+      @keyframes snoon-draw {
+        to {
+          transform: scaleY(1);
+        }
+      }
+    }
+  }
+
+  /* ---- The hero's living background ---------------------------------------
+   * A single very soft radial that drifts, so the page is not completely still
+   * behind the headline. Deliberately slow (28s), deliberately tiny in
+   * amplitude, and deliberately behind everything: at this speed it reads as
+   * depth rather than as movement, and it never pulls the eye off the text.
+   *
+   * transform only — no background-position, which repaints.                  */
+  @media (prefers-reduced-motion: no-preference) {
+    @keyframes snoon-drift {
+      0%,
+      100% {
+        transform: translate3d(0, 0, 0) scale(1);
+      }
+      50% {
+        transform: translate3d(-4%, 3%, 0) scale(1.12);
+      }
+    }
+
+    .hero-drift::before {
+      animation: snoon-drift 28s ease-in-out infinite;
+    }
+  }
+
+  /* ---- Micro-interaction ---------------------------------------------------
+   * Cards lift a little under a cursor. Pointer-only: on a touch screen :hover
+   * sticks after a tap, which leaves one card looking selected for no reason. */
+  @media (hover: hover) and (prefers-reduced-motion: no-preference) {
+    .lift {
+      transition:
+        transform 0.2s cubic-bezier(0.22, 1, 0.36, 1),
+        box-shadow 0.2s ease;
+    }
+
+    .lift:hover {
+      transform: translateY(-2px);
+      box-shadow: var(--shadow-md);
+    }
+  }
+
+  /* A pressed button should acknowledge the tap, which on a slow connection is
+     the only feedback there is until the next page arrives. */
+  @media (prefers-reduced-motion: no-preference) {
+    .press {
+      transition: transform 0.12s ease;
+    }
+
+    .press:active {
+      transform: scale(0.975);
+    }
+  }
+}
