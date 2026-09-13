@@ -109,7 +109,7 @@
            way up, so it is fully readable well before it reaches the middle of
            the screen. Nobody should ever be waiting for text to finish
            appearing. */
-        animation-range: entry 10% cover 32%;
+        animation-range: entry 4% entry 92%;
       }
 
       /*
@@ -124,6 +124,10 @@
         transform: scaleY(0);
         animation: snoon-draw linear both;
         animation-timeline: view();
+        /* The one range deliberately left long. Everything else is shortened so
+           it cannot freeze part-drawn; this one is *supposed* to track the
+           reader down the four steps, so being half-drawn when they stop is the
+           effect rather than a bug. */
         animation-range: entry 40% cover 60%;
       }
 
@@ -234,8 +238,8 @@
       position: absolute;
       display: block;
       border-radius: 50%;
-      filter: blur(52px);
-      opacity: 0.72;
+      filter: blur(56px);
+      opacity: 0.6;
     }
 
     :root[data-motion='full'] .mesh span:nth-child(1) {
@@ -253,7 +257,9 @@
       inline-size: 26rem;
       block-size: 26rem;
       background: radial-gradient(circle, var(--color-warm) 0%, transparent 70%);
-      opacity: 0.4;
+      /* Kept low on purpose. Warm against the teal goes muddy long before it
+         goes warm, and at 0.4 the hero read yellow-green rather than calm. */
+      opacity: 0.16;
       animation: snoon-mesh-b 34s ease-in-out infinite;
     }
 
@@ -263,7 +269,7 @@
       inline-size: 30rem;
       block-size: 30rem;
       background: radial-gradient(circle, var(--color-accent-strong) 0%, transparent 72%);
-      opacity: 0.34;
+      opacity: 0.26;
       animation: snoon-mesh-c 41s ease-in-out infinite;
     }
 
@@ -314,7 +320,7 @@
       from {
         opacity: 0;
         transform: translateY(0.45em);
-        filter: blur(6px);
+        filter: blur(4px);
       }
       to {
         opacity: 1;
@@ -352,23 +358,45 @@
      * top. Overrides the shorthand animation, so the timeline and range are
      * restated rather than inherited.                                        */
     @supports (animation-timeline: view()) {
+      /*
+       * No blur, and a short range. Both were wrong and Haider caught it on a
+       * real phone: "almost one third of the screen is blurred. That's annoying,
+       * not polished."
+       *
+       * Two mistakes compounded. The blur was raised to 8px, which is illegible
+       * on body text rather than atmospheric — and it also broke this file's own
+       * first rule, that motion is transform and opacity only, because `filter`
+       * is not a free compositor property the way those two are.
+       *
+       * The deeper one is a property of scroll-driven animation itself, and it
+       * is worth stating plainly because it will catch the next person too:
+       * **a view() timeline is tied to scroll position, not to a clock, so it
+       * does not finish — it freezes wherever the reader stopped.** A card
+       * halfway through its range when somebody stops scrolling stays halfway
+       * forever. A time-based animation always completes; this one never has to.
+       *
+       * So the range has to be short enough that stopping inside it is both
+       * unlikely and barely visible, and the animated properties have to be ones
+       * that are still perfectly readable at fifty per cent. Opacity and a small
+       * lift qualify. Blur does not.
+       */
       @keyframes snoon-reveal-full {
         from {
           opacity: 0;
-          transform: translateY(38px) scale(0.96);
-          filter: blur(8px);
+          transform: translateY(26px) scale(0.985);
         }
         to {
           opacity: 1;
           transform: none;
-          filter: blur(0);
         }
       }
 
       :root[data-motion='full'] .reveal {
         animation: snoon-reveal-full linear both;
         animation-timeline: view();
-        animation-range: entry 8% cover 34%;
+        /* Finished by the time the element is a fifth of the way up the screen.
+           Nobody should ever be waiting for text to finish appearing. */
+        animation-range: entry 4% entry 88%;
       }
 
       /*
@@ -418,26 +446,27 @@
        * `animation-range` is shifted a little later for each child, so the
        * stagger is driven by scroll position rather than by a delay — a delay
        * would fight the scroll timeline and stall halfway if somebody stopped.
-       * Six is enough for every grid on the page; a seventh card simply lands
-       * with the sixth rather than not animating at all.
+       *
+       * Every range now ends inside `entry`, which is the fix for the frozen
+       * cards above: an element is fully resolved by the time its top edge has
+       * finished entering the viewport, so nothing is ever left part-drawn in
+       * the middle of the screen. The offsets are small — four per cent apart —
+       * because the stagger only has to be perceptible, not slow.
        */
       :root[data-motion='full'] .stagger > *:nth-child(1) {
-        animation-range: entry 6% cover 30%;
+        animation-range: entry 2% entry 74%;
       }
       :root[data-motion='full'] .stagger > *:nth-child(2) {
-        animation-range: entry 10% cover 36%;
+        animation-range: entry 6% entry 80%;
       }
       :root[data-motion='full'] .stagger > *:nth-child(3) {
-        animation-range: entry 14% cover 42%;
+        animation-range: entry 10% entry 86%;
       }
       :root[data-motion='full'] .stagger > *:nth-child(4) {
-        animation-range: entry 18% cover 48%;
+        animation-range: entry 14% entry 92%;
       }
-      :root[data-motion='full'] .stagger > *:nth-child(5) {
-        animation-range: entry 22% cover 54%;
-      }
-      :root[data-motion='full'] .stagger > *:nth-child(n + 6) {
-        animation-range: entry 26% cover 60%;
+      :root[data-motion='full'] .stagger > *:nth-child(n + 5) {
+        animation-range: entry 18% entry 98%;
       }
 
       /*
@@ -457,7 +486,7 @@
         background: var(--color-accent);
         animation: snoon-rule linear both;
         animation-timeline: view();
-        animation-range: entry 12% cover 30%;
+        animation-range: entry 10% entry 80%;
       }
 
       @keyframes snoon-rule {
@@ -467,6 +496,68 @@
         to {
           clip-path: inset(0 0 0 0);
         }
+      }
+    }
+  }
+}
+
+/* ===========================================================================
+ * The hero motif.
+ *
+ * Two arcs that draw themselves and meet. On a timer rather than a scroll
+ * timeline, so unlike a reveal it always completes — see the note on frozen
+ * animations above. At `none` and `standard` it is simply a finished drawing,
+ * which is the right resting state for it either way.
+ * ======================================================================== */
+
+@layer utilities {
+  @media (prefers-reduced-motion: no-preference) {
+    :root[data-motion='full'] .motif-arc {
+      /* Comfortably longer than either path, so the dash covers it fully. */
+      stroke-dasharray: 160;
+      animation: snoon-draw-arc 1.4s cubic-bezier(0.22, 1, 0.36, 1) 0.35s backwards;
+    }
+
+    :root[data-motion='full'] .motif-arc-2 {
+      animation-delay: 0.45s;
+    }
+
+    @keyframes snoon-draw-arc {
+      from {
+        stroke-dashoffset: 160;
+      }
+      to {
+        stroke-dashoffset: 0;
+      }
+    }
+
+    :root[data-motion='full'] .motif-node {
+      animation: snoon-motif-node 0.5s cubic-bezier(0.34, 1.4, 0.64, 1) 1.5s backwards;
+      transform-origin: center;
+    }
+
+    :root[data-motion='full'] .motif-node-2 {
+      animation-delay: 1.62s;
+    }
+
+    @keyframes snoon-motif-node {
+      from {
+        transform: scale(0);
+        opacity: 0;
+      }
+    }
+
+    :root[data-motion='full'] .motif-join {
+      stroke-dasharray: 20;
+      animation: snoon-motif-join 0.4s ease-out 1.8s backwards;
+    }
+
+    @keyframes snoon-motif-join {
+      from {
+        stroke-dashoffset: 20;
+      }
+      to {
+        stroke-dashoffset: 0;
       }
     }
   }

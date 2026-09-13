@@ -832,6 +832,22 @@ Rules it follows, and which new motion must follow too:
   durations. Verified: under the preference nothing on the landing page renders
   below half opacity at first paint, while the same page without it starts with
   seventeen elements hidden and animates them in.
+- **A scroll-driven animation does not finish — it freezes where the reader
+  stopped.** This is the property to keep in mind above every other rule here,
+  and getting it wrong produced the worst bug of the design work: at the `full`
+  tier a third of the screen sat permanently blurred, because cards were still
+  inside a long `animation-range` when somebody stopped scrolling. A `view()`
+  timeline is tied to scroll position, not to a clock, so a half-played reveal
+  stays half-played indefinitely. Two consequences, both now enforced:
+  **every reveal range ends inside `entry`**, so an element is fully resolved by
+  the time its top edge finishes entering the viewport; and **only properties
+  that stay readable half-applied may be animated** — opacity and a small lift
+  qualify, `filter: blur()` does not. Blur was also a violation of this file's
+  own first rule, since it is not a free compositor property. The one range left
+  deliberately long is the line down the "how it works" steps, where tracking the
+  reader *is* the effect. `frozen.mjs`-style checking — stop at many scroll
+  positions and assert nothing on screen is part-drawn — is how this was caught
+  and is worth repeating after any change here.
 - **A tier has to be visibly different or it is not a tier.** The first attempt
   failed this, and Haider's verdict was exact: "there is not a lot of difference
   between the normal and the strong — it's only the header." The mesh and the
@@ -916,9 +932,18 @@ because a real question had no answer:
   this one needs no JavaScript, works before hydration, and is already understood
   by a screen reader.
 
+Then a second pass, after Haider looked at it on a phone: **visual elements**,
+because the page was still text in boxes. The hero gained `MatchMotif` — two arcs
+rising from opposite corners to meet, which is the product's own idea drawn as a
+shape rather than decoration, and the answer to a hero with nothing to look at
+when سنون has no photography and should acquire none. Each safety point and each
+step gained its own icon instead of four identical ticks. The mesh was calmed at
+the same time: the warm layer at 0.4 opacity read yellow-green and muddy against
+the teal rather than warm, and now sits at 0.16.
+
 The page reads Payload now, so it carries `revalidate = 300` like `/case/new`.
-Cost of roughly tripling the content: **275 KB against 267**, first paint 2.5s
-against 2.3s.
+Cost of roughly tripling the content and adding the artwork: **277 KB against
+267**, first paint 2.5s against 2.3s.
 
 **Nothing on it overstates.** No testimonials, no user counts, no waiting time,
 and — deliberately — no claim that the treatment itself is free, only that سنون

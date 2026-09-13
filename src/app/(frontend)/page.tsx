@@ -13,7 +13,22 @@ import {
   trustRow,
 } from '@/lib/copy'
 import { getCities, getTreatmentTypes } from '@/lib/config'
-import { CheckIcon, PinIcon } from '@/components/ui/icon'
+import {
+  CallAgreedIcon,
+  CheckIcon,
+  ClinicIcon,
+  ExpiryIcon,
+  ImageNoGeoIcon,
+  MinimalFormIcon,
+  PinIcon,
+  ShieldPhoneIcon,
+  SubmitIcon,
+} from '@/components/ui/icon'
+import { MatchMotif } from '@/components/brand/match-motif'
+
+/** One icon per safety point and per step, in the order the copy lists them. */
+const SAFETY_ICONS = [ShieldPhoneIcon, ImageNoGeoIcon, ExpiryIcon, MinimalFormIcon]
+const STEP_ICONS = [SubmitIcon, CheckIcon, CallAgreedIcon, ClinicIcon]
 
 /**
  * The landing page.
@@ -150,6 +165,17 @@ export default async function HomePage() {
               </Link>
             </div>
 
+            {/* The hero had nothing to look at, which is most of why it read as
+                a form. Not photography — سنون has none and a stock mouth would
+                be worse than nothing — but the product's own idea as a shape:
+                two people who each need what the other has, meeting. */}
+            <div
+              className="animate-rise mt-8 flex justify-center"
+              style={{ '--delay': '280ms' } as React.CSSProperties}
+            >
+              <MatchMotif className="h-20 w-full max-w-sm text-accent sm:h-24" />
+            </div>
+
             {/* Three short promises. They answer the questions a patient asks
                 before anything else: what does it cost, what do I have to sign
                 up for, and is it safe. */}
@@ -158,7 +184,7 @@ export default async function HomePage() {
                 <div
                   key={promise.title}
                   className="animate-rise lift rounded-lg border border-border bg-surface p-4 shadow-sm"
-                  style={{ '--delay': `${280 + index * 70}ms` } as React.CSSProperties}
+                  style={{ '--delay': `${360 + index * 70}ms` } as React.CSSProperties}
                 >
                   <dt className="font-bold text-accent">{promise.title}</dt>
                   <dd className="mt-1 text-sm text-foreground-muted">{promise.body}</dd>
@@ -170,7 +196,7 @@ export default async function HomePage() {
                 A strip rather than four more cards: they are one thought. */}
             <ul
               className="animate-rise mt-6 flex flex-wrap gap-x-5 gap-y-2 text-sm"
-              style={{ '--delay': '500ms' } as React.CSSProperties}
+              style={{ '--delay': '580ms' } as React.CSSProperties}
             >
               {trustRow.map((fact) => (
                 <li key={fact} className="flex items-center gap-1.5 text-foreground-muted">
@@ -213,17 +239,26 @@ export default async function HomePage() {
               `end-*` rather than `left`/`right` — the line runs down the start
               edge, which in Arabic is the right. */}
           <ol className="stagger draw-line relative mt-6 space-y-4 after:absolute after:end-[1.0625rem] after:top-4 after:-z-10 after:h-[calc(100%-2rem)] after:w-0.5 after:origin-top after:bg-accent/25 after:content-['']">
-            {howItWorks.steps.map((step, index) => (
-              <li key={step} className="reveal flex gap-4">
-                <span
-                  aria-hidden="true"
-                  className="ltr-run flex size-9 shrink-0 items-center justify-center rounded-full bg-accent text-sm font-bold text-accent-foreground"
-                >
-                  {index + 1}
-                </span>
-                <p className="text-pretty pt-1.5 text-sm text-foreground-muted">{step}</p>
-              </li>
-            ))}
+            {howItWorks.steps.map((step, index) => {
+              const Icon = STEP_ICONS[index] ?? CheckIcon
+              return (
+                <li key={step} className="reveal flex gap-4">
+                  <span
+                    aria-hidden="true"
+                    className="ltr-run flex size-9 shrink-0 items-center justify-center rounded-full bg-accent text-sm font-bold text-accent-foreground"
+                  >
+                    {index + 1}
+                  </span>
+                  <p className="flex flex-1 items-start gap-2.5 text-pretty pt-1.5 text-sm text-foreground-muted">
+                    {/* The number says where you are in the sequence; the icon
+                        says what happens. Neither carries meaning alone that the
+                        sentence does not, so both are hidden from a reader. */}
+                    <Icon className="mt-0.5 shrink-0 text-accent" />
+                    <span>{step}</span>
+                  </p>
+                </li>
+              )
+            })}
           </ol>
         </Section>
 
@@ -235,18 +270,24 @@ export default async function HomePage() {
           <p className="reveal mt-3 text-pretty text-foreground-muted">{safetySection.body}</p>
 
           <div className="stagger mt-6 grid gap-4 sm:grid-cols-2">
-            {safetySection.points.map((point) => (
+            {safetySection.points.map((point, index) => {
+              const Icon = SAFETY_ICONS[index] ?? CheckIcon
+              return (
               <div
                 key={point.title}
                 className="reveal lift rounded-lg border border-border bg-surface p-4 shadow-sm"
               >
-                <h3 className="flex items-start gap-2 font-bold">
-                  <CheckIcon className="mt-1 shrink-0 text-accent" />
-                  {point.title}
-                </h3>
+                <span
+                  aria-hidden="true"
+                  className="flex size-10 items-center justify-center rounded-lg bg-accent-muted text-accent-strong"
+                >
+                  <Icon className="size-5" />
+                </span>
+                <h3 className="mt-3 font-bold">{point.title}</h3>
                 <p className="mt-2 text-pretty text-sm text-foreground-muted">{point.body}</p>
               </div>
-            ))}
+              )
+            })}
           </div>
         </Section>
 

@@ -137,3 +137,81 @@ export function ArrowIcon({ className }: IconProps) {
     </Svg>
   )
 }
+
+/** A phone with a shield — one student, and only after claiming. */
+export function ShieldPhoneIcon({ className }: IconProps) {
+  return (
+    <Svg className={className}>
+      <rect x="5" y="2.5" width="10" height="19" rx="2.5" />
+      <path d="M10 18.6h0" />
+      <path d="M16.5 8.6c1.6 0 3-.6 3.6-1.2v3.2c0 2.3-1.6 3.9-3.6 4.6-2-.7-3.6-2.3-3.6-4.6V7.4c.6.6 2 1.2 3.6 1.2Z" />
+    </Svg>
+  )
+}
+
+/** An image with the location pin struck through — EXIF stripped. */
+export function ImageNoGeoIcon({ className }: IconProps) {
+  return (
+    <Svg className={className}>
+      <rect x="2.5" y="4" width="19" height="16" rx="2.5" />
+      <path d="M2.5 16.5 8 11.5l4.5 4" />
+      <circle cx="16" cy="9" r="1.4" />
+      <path d="m3.5 20.5 17-17" />
+    </Svg>
+  )
+}
+
+/** A clock with an arrow back — the retention period. */
+export function ExpiryIcon({ className }: IconProps) {
+  return (
+    <Svg className={className}>
+      <path d="M3.2 12a8.8 8.8 0 1 0 2.6-6.2" />
+      <path d="M3 3.2v3.4h3.4" />
+      <path d="M12 7.6V12l3 1.8" />
+    </Svg>
+  )
+}
+
+/** A form with most of it crossed out — we ask for less than we could. */
+export function MinimalFormIcon({ className }: IconProps) {
+  return (
+    <Svg className={className}>
+      <rect x="4" y="3" width="16" height="18" rx="2.5" />
+      <path d="M8 8.2h8" />
+      <path d="M8 12.2h5" />
+      <path d="m8 16.2 2 2 3.5-3.6" />
+    </Svg>
+  )
+}
+
+/** A speech bubble with a tick — the student rings you. */
+export function CallAgreedIcon({ className }: IconProps) {
+  return (
+    <Svg className={className}>
+      <path d="M20.5 12.4c0 4-3.8 7.2-8.5 7.2a9.8 9.8 0 0 1-2.6-.34L4.2 21l1.3-3.7a6.9 6.9 0 0 1-2-4.9C3.5 8.4 7.3 5.2 12 5.2s8.5 3.2 8.5 7.2Z" />
+      <path d="m9 12.4 2 2 4-4.2" />
+    </Svg>
+  )
+}
+
+/** A form being filled — the patient submits. */
+export function SubmitIcon({ className }: IconProps) {
+  return (
+    <Svg className={className}>
+      <path d="M19 13.5V19a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h5.5" />
+      <path d="M15.5 3.6 20.4 8.5 13.2 15.7 8.3 16.3l.6-4.9 6.6-7.8Z" />
+    </Svg>
+  )
+}
+
+/** A chair under a light — treatment at the clinic. */
+export function ClinicIcon({ className }: IconProps) {
+  return (
+    <Svg className={className}>
+      <path d="M6 21v-5.5a3 3 0 0 1 3-3h3.5a3 3 0 0 1 3 3V21" />
+      <path d="M4.5 21h15" />
+      <path d="M9 12.5V8a2.5 2.5 0 0 1 5 0v4.5" />
+      <path d="M17 3.2 20.2 6M20.2 6l-2.4 2.6" />
+    </Svg>
+  )
+}
