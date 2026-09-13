@@ -754,15 +754,69 @@ AsnanLink were: as a source of visual ideas. Prompt it, screenshot the result,
 and treat the screenshots as reference — see `docs/competitors.md`.
 
 **The want behind the question was right, and is answered in CSS.** Motion is in
-`src/styles/motion.css`: a staggered entrance, scroll-driven reveals, a line that
-draws itself down the "how it works" steps, a slow drift behind the hero, and
-press/lift micro-interactions. No JavaScript, no library, no second request.
+`src/styles/motion.css`. No JavaScript, no library, no second request.
 
 The arithmetic is the whole argument. framer-motion is roughly 50KB gzipped and
 GSAP roughly 70KB, against a landing page that weighs 269KB on the wire in total.
 Either would be among the largest things سنون downloads, to move some text.
-Measured after the motion pass on the same Slow 3G rig: **266 KB, first paint
-2.3s, loaded 6.8s** — against 269 KB / 2.1s / 6.8s before. No measurable cost.
+
+### Three tiers, chosen before the first paint
+
+Haider's follow-up was the right one: keep this for middling phones, drop it for
+weak ones, and give a capable device something much stronger. `[data-motion]` on
+`<html>` selects between:
+
+| tier | who gets it | what it is |
+|---|---|---|
+| `none` | ≤2GB, ≤4 cores, data saver, or a reduced-motion preference | nothing moves; no rule in `motion.css` applies |
+| `standard` | **the default, and every unknown** | staggered entrance, scroll reveals, the drawn line, press and lift |
+| `full` | ≥8GB and ≥8 cores (or ≥8 cores and a fine pointer where `deviceMemory` is unimplemented) | a drifting three-layer gradient mesh, the headline a word at a time, parallax depth on scroll, richer reveals, a glowing line tip |
+
+Measured on the same Slow 3G rig, all three: **267 KB, first paint 2.2–2.3s,
+loaded 6.8s.** `none` runs **zero** animations at runtime; `standard` thirteen;
+`full` sixteen.
+
+Things worth not undoing:
+
+- **The decision runs as an inline script in `<head>`**, not an effect.
+  `src/lib/motion-tier.ts` holds it as a string. An effect runs after paint, and
+  on a slow connection the page is painted long before React arrives — which is
+  exactly this visitor. Next's own "preventing flash before hydration" guide is
+  this pattern.
+- **`standard` is the server-rendered default and every fallback.** JavaScript
+  disabled keeps it; React's Strict Mode remount in development resets `<html>`
+  to it; an unrecognised browser stays on it; a thrown exception leaves it. The
+  free tier is the floor, never the expensive one and never nothing.
+- **The gate is `:not([data-motion='none'])`, not a list of the two tiers that
+  animate.** Everything that starts at `opacity: 0` must fail towards visible, so
+  an attribute that is missing or momentarily cleared shows content rather than
+  hiding it.
+- **The full tier's CSS lives in the same stylesheet everyone downloads**, which
+  looks wrong and is not. It is about a kilobyte compressed; a second stylesheet
+  fetched only by capable devices would cost a 400ms round trip before a byte
+  arrives, against roughly twenty milliseconds of transfer. The separate file is
+  the more expensive option, and expensive for exactly the phone being protected.
+- **`deviceMemory` is capped at 8 by spec** to limit fingerprinting, so `>= 8`
+  means "8GB or more". `hardwareConcurrency` alone is a weak signal on Android,
+  where mid-range chips report eight cores of which four are small — it only ever
+  promotes a device in combination with memory or a pointer.
+- **`?motion=none|standard|full` overrides the detection**, so a tier can be seen
+  on a real phone rather than inferred. It matches those three literals only: the
+  value goes straight into an attribute that selects CSS.
+- **Arabic is split per word, never per letter.** Arabic shapes each letter
+  according to its neighbours inside a word, so wrapping letters individually
+  breaks the joins and renders a headline as disconnected forms. Words shape
+  independently, so splitting on spaces is safe — and it is the only split this
+  codebase should ever do to Arabic text. The split is server-rendered, so even
+  the full tier's headline effect involves no JavaScript.
+- Deliberately **not** read from client hints. The server could be told the
+  device memory by header, but reading headers in the root layout opts the whole
+  app out of static prerendering, and a statically served landing page is worth
+  more to a patient on a slow connection than a perfectly chosen tier.
+
+`tests/motion-tier.test.ts` runs the real script string against a fake browser —
+it ships as a string, so it is neither type-checked nor linted, and that is the
+kind of code that rots quietly.
 
 Rules it follows, and which new motion must follow too:
 

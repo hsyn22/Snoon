@@ -31,6 +31,22 @@
  *    content still arrives, it simply arrives immediately.
  */
 
+/*
+ * ---- Tiers ----------------------------------------------------------------
+ *
+ * `[data-motion]` is set on <html> before the first paint by the inline script
+ * in src/lib/motion-tier.ts. Everything below is gated on it:
+ *
+ *   none      no rule here applies. A cheap phone pays nothing.
+ *   standard  the entrance, reveals, drawn line and micro-interactions.
+ *   full      all of that, plus the block at the end of this file.
+ *
+ * The gate is written as `:not([data-motion='none'])` rather than as two
+ * selectors listing standard and full, so a tier that does not exist yet — or an
+ * attribute React has momentarily cleared — still animates rather than silently
+ * disappearing. Everything that starts at `opacity: 0` must fail towards visible.
+ */
+
 @layer utilities {
   /* ---- Entrance -----------------------------------------------------------
    * What a reader sees in the first second. Rises 8px and fades — small enough
@@ -46,7 +62,7 @@
     }
   }
 
-  .animate-rise {
+  :root:not([data-motion='none']) .animate-rise {
     animation: snoon-rise 0.5s cubic-bezier(0.22, 1, 0.36, 1) backwards;
   }
 
@@ -58,7 +74,7 @@
    * and then animating. Without it a staggered group appears all at once and
    * then re-animates, which looks like a bug.
    */
-  .animate-rise[style*='--delay'] {
+  :root:not([data-motion='none']) .animate-rise[style*='--delay'] {
     animation-delay: var(--delay);
   }
 
@@ -86,7 +102,7 @@
         }
       }
 
-      .reveal {
+      :root:not([data-motion='none']) .reveal {
         animation: snoon-reveal linear both;
         animation-timeline: view();
         /* Starts as the element's top edge enters and finishes a third of the
@@ -104,7 +120,7 @@
        * them says so more directly than four paragraphs can. scaleY on a
        * transform-origin, so it is one composited property.
        */
-      .draw-line::after {
+      :root:not([data-motion='none']) .draw-line::after {
         transform: scaleY(0);
         animation: snoon-draw linear both;
         animation-timeline: view();
@@ -137,7 +153,7 @@
       }
     }
 
-    .hero-drift::before {
+    :root:not([data-motion='none']) .hero-drift::before {
       animation: snoon-drift 28s ease-in-out infinite;
     }
   }
@@ -146,13 +162,13 @@
    * Cards lift a little under a cursor. Pointer-only: on a touch screen :hover
    * sticks after a tap, which leaves one card looking selected for no reason. */
   @media (hover: hover) and (prefers-reduced-motion: no-preference) {
-    .lift {
+    :root:not([data-motion='none']) .lift {
       transition:
         transform 0.2s cubic-bezier(0.22, 1, 0.36, 1),
         box-shadow 0.2s ease;
     }
 
-    .lift:hover {
+    :root:not([data-motion='none']) .lift:hover {
       transform: translateY(-2px);
       box-shadow: var(--shadow-md);
     }
@@ -161,12 +177,219 @@
   /* A pressed button should acknowledge the tap, which on a slow connection is
      the only feedback there is until the next page arrives. */
   @media (prefers-reduced-motion: no-preference) {
-    .press {
+    :root:not([data-motion='none']) .press {
       transition: transform 0.12s ease;
     }
 
-    .press:active {
+    :root:not([data-motion='none']) .press:active {
       transform: scale(0.975);
+    }
+  }
+}
+
+/* ===========================================================================
+ * The full tier.
+ *
+ * Only for a device that reported eight or more gigabytes and eight or more
+ * cores — see `src/lib/motion-tier.ts`. Everything here is still CSS, still
+ * transform and opacity, and still gated behind `prefers-reduced-motion`.
+ *
+ * Why this lives in the same stylesheet rather than a second file fetched only
+ * by capable devices: it adds a little over a kilobyte compressed, and on the
+ * connection this project is designed around a second request costs a 400ms
+ * round trip before a single byte arrives. Sending a kilobyte nobody uses is
+ * roughly twenty milliseconds of transfer. The extra file is the more expensive
+ * option, not the cheaper one, and it would be expensive for exactly the phone
+ * we are trying to protect.
+ *
+ * The register does not change with the tier. A capable device gets more depth
+ * and more craft, not more noise — still nothing that bounces, spins, or loops
+ * where somebody is trying to read. See "Motion" in CLAUDE.md.
+ * ======================================================================== */
+
+@layer utilities {
+  @media (prefers-reduced-motion: no-preference) {
+    /* ---- A gradient mesh instead of one flat wash ------------------------
+     * Three very soft radials at different sizes, drifting on different
+     * periods and in different directions, so they never resolve into a
+     * pattern the eye can predict. Blurred and low-opacity enough to read as
+     * depth behind the headline rather than as decoration in front of it.
+     *
+     * `will-change` is deliberately absent: each layer is already promoted by
+     * its own transform animation, and declaring it on three large elements
+     * hands the compositor three full-size textures to hold for the life of
+     * the page. On the hardware this tier targets it is unnecessary; on
+     * anything less it would be the thing that made the page stutter.        */
+    :root[data-motion='full'] .mesh {
+      position: absolute;
+      inset: -20%;
+      z-index: -10;
+      pointer-events: none;
+      overflow: hidden;
+      /* Isolated so the blurred layers below cannot bleed over the header. */
+      contain: paint;
+    }
+
+    :root[data-motion='full'] .mesh span {
+      position: absolute;
+      display: block;
+      border-radius: 50%;
+      filter: blur(60px);
+      opacity: 0.5;
+    }
+
+    :root[data-motion='full'] .mesh span:nth-child(1) {
+      inset-block-start: -10%;
+      inset-inline-end: -5%;
+      inline-size: 34rem;
+      block-size: 34rem;
+      background: radial-gradient(circle, var(--color-accent) 0%, transparent 68%);
+      animation: snoon-mesh-a 26s ease-in-out infinite;
+    }
+
+    :root[data-motion='full'] .mesh span:nth-child(2) {
+      inset-block-start: 18%;
+      inset-inline-start: -12%;
+      inline-size: 26rem;
+      block-size: 26rem;
+      background: radial-gradient(circle, var(--color-warm) 0%, transparent 70%);
+      opacity: 0.28;
+      animation: snoon-mesh-b 34s ease-in-out infinite;
+    }
+
+    :root[data-motion='full'] .mesh span:nth-child(3) {
+      inset-block-end: -20%;
+      inset-inline-end: 22%;
+      inline-size: 30rem;
+      block-size: 30rem;
+      background: radial-gradient(circle, var(--color-accent-strong) 0%, transparent 72%);
+      opacity: 0.22;
+      animation: snoon-mesh-c 41s ease-in-out infinite;
+    }
+
+    @keyframes snoon-mesh-a {
+      0%,
+      100% {
+        transform: translate3d(0, 0, 0) scale(1);
+      }
+      50% {
+        transform: translate3d(-8%, 6%, 0) scale(1.18);
+      }
+    }
+
+    @keyframes snoon-mesh-b {
+      0%,
+      100% {
+        transform: translate3d(0, 0, 0) scale(1.1);
+      }
+      50% {
+        transform: translate3d(10%, -7%, 0) scale(0.92);
+      }
+    }
+
+    @keyframes snoon-mesh-c {
+      0%,
+      100% {
+        transform: translate3d(0, 0, 0) scale(0.95);
+      }
+      50% {
+        transform: translate3d(-6%, -9%, 0) scale(1.15);
+      }
+    }
+
+    /* The single flat wash the standard tier uses is redundant once the mesh
+       is behind it, and two soft washes together muddy the headline. */
+    :root[data-motion='full'] .hero-drift::before {
+      display: none;
+    }
+
+    /* ---- The headline, a word at a time ----------------------------------
+     * Split into one span per WORD, never per letter. Arabic shapes each
+     * letter according to its neighbours inside a word, so wrapping letters
+     * individually breaks the joins and renders the headline as disconnected
+     * forms. Words are separated by spaces and shape independently, so a
+     * per-word split is safe — and it is the only split this file will ever
+     * allow.                                                                 */
+    @keyframes snoon-word {
+      from {
+        opacity: 0;
+        transform: translateY(0.45em);
+        filter: blur(6px);
+      }
+      to {
+        opacity: 1;
+        transform: none;
+        filter: blur(0);
+      }
+    }
+
+    :root[data-motion='full'] .word {
+      display: inline-block;
+      animation: snoon-word 0.7s cubic-bezier(0.22, 1, 0.36, 1) backwards;
+      animation-delay: var(--word-delay, 0ms);
+    }
+
+    /* ---- Depth on scroll -------------------------------------------------
+     * The mesh drifts up more slowly than the page, so the hero has a back and
+     * a front. Driven by the scroll position rather than a clock, off the main
+     * thread, with no listener.                                              */
+    @supports (animation-timeline: scroll()) {
+      :root[data-motion='full'] .mesh {
+        animation: snoon-parallax linear both;
+        animation-timeline: scroll();
+        animation-range: 0 90vh;
+      }
+
+      @keyframes snoon-parallax {
+        to {
+          transform: translate3d(0, 14%, 0);
+        }
+      }
+    }
+
+    /* ---- Richer reveals --------------------------------------------------
+     * The same reveal the standard tier uses, with a little scale and blur on
+     * top. Overrides the shorthand animation, so the timeline and range are
+     * restated rather than inherited.                                        */
+    @supports (animation-timeline: view()) {
+      @keyframes snoon-reveal-full {
+        from {
+          opacity: 0;
+          transform: translateY(22px) scale(0.985);
+          filter: blur(4px);
+        }
+        to {
+          opacity: 1;
+          transform: none;
+          filter: blur(0);
+        }
+      }
+
+      :root[data-motion='full'] .reveal {
+        animation: snoon-reveal-full linear both;
+        animation-timeline: view();
+        animation-range: entry 8% cover 34%;
+      }
+
+      /*
+       * The line's leading edge glows.
+       *
+       * First attempt was a separate highlight element translated down the
+       * list, which needs the list's height inside a transform — and CSS will
+       * not hand you a parent's height without container queries and a fixed
+       * size on the container. This does the same job with no second element
+       * and nothing to measure: the line is already drawn by scaling it from
+       * the top as you scroll, so painting its far end brighter makes the tip
+       * glow and follow the reader for free.
+       */
+      :root[data-motion='full'] .draw-line::after {
+        background: linear-gradient(
+          to bottom,
+          color-mix(in oklch, var(--color-accent) 22%, transparent) 0%,
+          color-mix(in oklch, var(--color-accent) 30%, transparent) 62%,
+          var(--color-accent) 100%
+        );
+      }
     }
   }
 }

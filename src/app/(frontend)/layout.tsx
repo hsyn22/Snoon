@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from 'next'
 import { IBM_Plex_Sans_Arabic } from 'next/font/google'
 import { site, nav } from '@/lib/copy'
+import { DEFAULT_MOTION_TIER, MOTION_TIER_SCRIPT } from '@/lib/motion-tier'
 import './globals.css'
 
 /**
@@ -48,7 +49,26 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
   // RTL is the default direction, not a mode. LTR is the exception and is opted
   // into per-element (see the .ltr-run utility), never here.
   return (
-    <html lang="ar" dir="rtl" className={arabic.variable}>
+    <html
+      lang="ar"
+      dir="rtl"
+      className={arabic.variable}
+      /*
+       * The tier the server renders, and the one a visitor keeps if the script
+       * below never runs — JavaScript disabled, or React's Strict Mode remount
+       * in development, which resets every attribute on <html> that it does not
+       * own. Both land on the tier already measured as free.
+       */
+      data-motion={DEFAULT_MOTION_TIER}
+      suppressHydrationWarning
+    >
+      <head>
+        {/* Runs synchronously while the browser parses the HTML, so the tier is
+            decided before the first paint. An effect would run after paint, and
+            on a slow connection the page is painted long before React arrives —
+            which is precisely the visitor this exists for. See motion-tier.ts. */}
+        <script dangerouslySetInnerHTML={{ __html: MOTION_TIER_SCRIPT }} />
+      </head>
       <body className="min-h-dvh antialiased">
         <a
           href="#main"

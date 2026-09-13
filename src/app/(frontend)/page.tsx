@@ -17,6 +17,37 @@ import { footer, home, howItWorks, landing } from '@/lib/copy'
  * The cinematic 3D scene from the product vision is deliberately not here. See
  * "The landing page" in CLAUDE.md.
  */
+/**
+ * The headline, one span per word, for the full tier's word-by-word reveal.
+ *
+ * **Per word, never per letter.** Arabic shapes each letter according to its
+ * neighbours within a word, so wrapping letters individually breaks the joins
+ * and renders the headline as a row of disconnected forms. Words are separated
+ * by spaces and shape independently, so splitting there is safe — and it is the
+ * only split this codebase should ever do to Arabic text.
+ *
+ * The spans are inert at the other two tiers: `.word` has no rules outside
+ * `[data-motion='full']`, so this costs a few tags of HTML and nothing else.
+ * Rendered on the server, so there is no JavaScript involved in the effect at
+ * all — the browser is simply given text that is already split.
+ */
+function Words({ text, from = 0 }: { text: string; from?: number }) {
+  return (
+    <>
+      {text.split(' ').map((word, index) => (
+        <span
+          key={`${word}-${index}`}
+          className="word"
+          style={{ '--word-delay': `${(from + index) * 80 + 260}ms` } as React.CSSProperties}
+        >
+          {word}
+          {index < text.split(' ').length - 1 ? '\u00A0' : null}
+        </span>
+      ))}
+    </>
+  )
+}
+
 export default function HomePage() {
   return (
     <div className="flex min-h-dvh flex-col">
@@ -43,6 +74,16 @@ export default function HomePage() {
             rather than as movement, and `isolate` keeps it behind the text
             without a z-index on every child. */}
         <div className="hero-drift relative isolate overflow-hidden bg-gradient-to-b from-accent-muted to-background before:pointer-events-none before:absolute before:-top-1/3 before:end-[-15%] before:-z-10 before:h-[36rem] before:w-[36rem] before:rounded-full before:bg-[radial-gradient(circle,var(--color-accent)_0%,transparent_65%)] before:opacity-[0.09] before:content-['']">
+          {/* The full tier's gradient mesh. Three empty spans styled entirely
+              from motion.css, and invisible at every other tier — an element
+              with no rules costs three tags of HTML, against a second
+              stylesheet request that would cost a round trip. */}
+          <div className="mesh" aria-hidden="true">
+            <span />
+            <span />
+            <span />
+          </div>
+
           <div className="mx-auto w-full max-w-3xl px-4 pb-12 pt-10 sm:pb-16 sm:pt-14">
             {/* The entrance stagger. Each step is 70ms behind the last, which is
                 about the shortest gap that still reads as a sequence rather
@@ -55,8 +96,10 @@ export default function HomePage() {
               className="animate-rise mt-4 text-balance text-3xl font-bold leading-tight sm:text-4xl"
               style={{ '--delay': '70ms' } as React.CSSProperties}
             >
-              <span className="text-accent">{home.headlineAccent}</span>{' '}
-              {home.headlineRest}
+              <span className="text-accent">
+                <Words text={home.headlineAccent} />
+              </span>{' '}
+              <Words text={home.headlineRest} from={home.headlineAccent.split(' ').length} />
             </h1>
 
             <p
