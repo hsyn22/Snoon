@@ -832,6 +832,16 @@ Rules it follows, and which new motion must follow too:
   durations. Verified: under the preference nothing on the landing page renders
   below half opacity at first paint, while the same page without it starts with
   seventeen elements hidden and animates them in.
+- **A tier has to be visibly different or it is not a tier.** The first attempt
+  failed this, and Haider's verdict was exact: "there is not a lot of difference
+  between the normal and the strong — it's only the header." The mesh and the
+  parallax were tuned so far down that on a phone the only visible difference was
+  the headline arriving a word at a time. The fix was not more effects but
+  **sequence**: at `full` a grid reveals its cards one after another
+  (`.stagger`, driven by shifting `animation-range` per child rather than by a
+  delay, which would fight the scroll timeline and stall if somebody stopped),
+  and section headings draw their own rule (`.rule-in`, animating `clip-path` so
+  nothing reflows). Standard now runs 28 animations on the landing page, full 37.
 - **The register is calm.** This site asks people who cannot afford a dentist to
   trust it with a photograph of their mouth. Nothing bounces, nothing spins,
   nothing slides in from off-screen, and nothing loops in the reader's
@@ -884,6 +894,36 @@ Worth knowing when changing anything here:
   worse than one that is occasionally slow.
 
 ### The landing page
+
+**It was too short, and that was the real problem.** Haider compared it against
+ClinMatch and AsnanLink and said the obvious true thing: theirs are several times
+the length of ours. The gap was never polish — the page answered almost none of
+the questions a patient arrives with. Four sections were added, and each exists
+because a real question had no answer:
+
+- **What can I get?** — the treatment list, read from Payload. A patient's first
+  question is whether their problem is covered at all, and سنون never said.
+  ClinMatch puts the same chips in their hero.
+- **What happens to my number?** — the one section neither competitor can write,
+  because neither does the work behind it. Every line is something the code does:
+  one student ever sees the number, and only after claiming; GPS is stripped from
+  photographs; contact details are erased after the retention period; nothing is
+  collected that matching does not need.
+- **Does it work where I live?** — the city list, also from Payload, and with it
+  the plain admission that سنون is new and some cities will be quiet. A patient
+  who hears nothing should know why rather than assume the site is broken.
+- **An FAQ**, as native `<details>`. Both competitors script their accordion;
+  this one needs no JavaScript, works before hydration, and is already understood
+  by a screen reader.
+
+The page reads Payload now, so it carries `revalidate = 300` like `/case/new`.
+Cost of roughly tripling the content: **275 KB against 267**, first paint 2.5s
+against 2.3s.
+
+**Nothing on it overstates.** No testimonials, no user counts, no waiting time,
+and — deliberately — no claim that the treatment itself is free, only that سنون
+takes nothing. Whether the university charges for materials is not ours to state
+and is not known; see the open question below.
 
 A cinematic 3D clinic scene is described in the product vision. **It is not in the MVP.**
 It is the single most expensive, slowest, most performance-risky part of the plan, and it
@@ -1017,6 +1057,12 @@ These are genuinely unresolved. If a task depends on one, stop and ask rather th
    scale to thousands of cases and does not need to — at one or two cities it is a handful a
    week, and a wrong automatic answer costs someone their treatment or their case.
 5. **Photo requirement.** Optional at submission — but should some treatments require them?
+5b. **Does the university clinic charge the patient for materials?** The landing page
+   and the FAQ are careful to say only that *سنون* takes no money, never that the
+   treatment is free, because nobody has said which it is. If the clinic charges
+   for materials the FAQ should say so plainly — a patient who arrives expecting
+   free treatment and is asked for money is exactly the harm this whole project
+   is trying to avoid. Ask Haider.
 6. **University choice by the patient.** Raised and deliberately deferred, not rejected: after
    picking a city, should the patient narrow their case to particular universities they can
    actually reach? Transport across a city is the real obstacle in Iraq, so the information

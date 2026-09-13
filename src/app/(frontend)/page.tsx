@@ -1,7 +1,19 @@
 import Link from 'next/link'
 import { Wordmark } from '@/components/brand/wordmark'
 import { Eyebrow, Section } from '@/components/ui/section'
-import { footer, home, howItWorks, landing } from '@/lib/copy'
+import {
+  citiesSection,
+  faqSection,
+  footer,
+  home,
+  howItWorks,
+  landing,
+  safetySection,
+  treatmentsSection,
+  trustRow,
+} from '@/lib/copy'
+import { getCities, getTreatmentTypes } from '@/lib/config'
+import { CheckIcon, PinIcon } from '@/components/ui/icon'
 
 /**
  * The landing page.
@@ -48,7 +60,18 @@ function Words({ text, from = 0 }: { text: string; from?: number }) {
   )
 }
 
-export default function HomePage() {
+/**
+ * The treatment and city lists come from Payload, so this page cannot be baked
+ * once at build time — an admin adding a city would see nothing change until the
+ * next deployment. Re-generated at most every five minutes instead, the same as
+ * `/case/new`: still pre-rendered and fast for a patient on a slow connection,
+ * and a config edit appears without a deploy.
+ */
+export const revalidate = 300
+
+export default async function HomePage() {
+  const [treatments, cities] = await Promise.all([getTreatmentTypes(), getCities()])
+
   return (
     <div className="flex min-h-dvh flex-col">
       {/* Not sticky: on a 360px screen a fixed bar costs a tenth of the viewport
@@ -130,7 +153,7 @@ export default function HomePage() {
             {/* Three short promises. They answer the questions a patient asks
                 before anything else: what does it cost, what do I have to sign
                 up for, and is it safe. */}
-            <dl className="mt-10 grid gap-4 sm:grid-cols-3">
+            <dl className="stagger mt-10 grid gap-4 sm:grid-cols-3">
               {home.promises.map((promise, index) => (
                 <div
                   key={promise.title}
@@ -142,18 +165,54 @@ export default function HomePage() {
                 </div>
               ))}
             </dl>
+
+            {/* The four facts a patient checks before reading anything else.
+                A strip rather than four more cards: they are one thought. */}
+            <ul
+              className="animate-rise mt-6 flex flex-wrap gap-x-5 gap-y-2 text-sm"
+              style={{ '--delay': '500ms' } as React.CSSProperties}
+            >
+              {trustRow.map((fact) => (
+                <li key={fact} className="flex items-center gap-1.5 text-foreground-muted">
+                  <CheckIcon className="text-accent" />
+                  {fact}
+                </li>
+              ))}
+            </ul>
           </div>
         </div>
 
+        {/* What you can actually get. The biggest thing the page was missing:
+            a patient's first question is whether their problem is covered at
+            all, and سنون never answered it. */}
+        <Section>
+          <Eyebrow>{treatmentsSection.eyebrow}</Eyebrow>
+          <h2 className="reveal rule-in mt-4 text-xl font-bold sm:text-2xl">{treatmentsSection.title}</h2>
+          <p className="reveal mt-3 text-pretty text-foreground-muted">{treatmentsSection.body}</p>
+
+          <ul className="reveal mt-6 flex flex-wrap gap-2">
+            {treatments.map((treatment) => (
+              <li key={treatment.id}>
+                <span className="inline-flex items-center gap-1.5 rounded-full bg-accent-muted px-3.5 py-2 text-sm font-bold text-accent-strong">
+                  <CheckIcon className="size-3.5" />
+                  {treatment.nameAr}
+                </span>
+              </li>
+            ))}
+          </ul>
+
+          <p className="reveal mt-5 text-sm text-foreground-muted">{treatmentsSection.note}</p>
+        </Section>
+
         <Section id="how" tone="muted">
-          <h2 className="reveal text-xl font-bold sm:text-2xl">{howItWorks.title}</h2>
+          <h2 className="reveal rule-in text-xl font-bold sm:text-2xl">{howItWorks.title}</h2>
 
           {/* The one deliberately expressive thing on the page, and it earns its
               place: these four steps are a sequence, and a line that fills as
               you read down them says so more directly than the prose can.
               `end-*` rather than `left`/`right` — the line runs down the start
               edge, which in Arabic is the right. */}
-          <ol className="draw-line relative mt-6 space-y-4 after:absolute after:end-[1.0625rem] after:top-4 after:-z-10 after:h-[calc(100%-2rem)] after:w-0.5 after:origin-top after:bg-accent/25 after:content-['']">
+          <ol className="stagger draw-line relative mt-6 space-y-4 after:absolute after:end-[1.0625rem] after:top-4 after:-z-10 after:h-[calc(100%-2rem)] after:w-0.5 after:origin-top after:bg-accent/25 after:content-['']">
             {howItWorks.steps.map((step, index) => (
               <li key={step} className="reveal flex gap-4">
                 <span
@@ -168,10 +227,54 @@ export default function HomePage() {
           </ol>
         </Section>
 
+        {/* The one section neither competitor can write, because neither does
+            the work behind it. Every line here is something the code does. */}
+        <Section>
+          <Eyebrow>{safetySection.eyebrow}</Eyebrow>
+          <h2 className="reveal rule-in mt-4 text-xl font-bold sm:text-2xl">{safetySection.title}</h2>
+          <p className="reveal mt-3 text-pretty text-foreground-muted">{safetySection.body}</p>
+
+          <div className="stagger mt-6 grid gap-4 sm:grid-cols-2">
+            {safetySection.points.map((point) => (
+              <div
+                key={point.title}
+                className="reveal lift rounded-lg border border-border bg-surface p-4 shadow-sm"
+              >
+                <h3 className="flex items-start gap-2 font-bold">
+                  <CheckIcon className="mt-1 shrink-0 text-accent" />
+                  {point.title}
+                </h3>
+                <p className="mt-2 text-pretty text-sm text-foreground-muted">{point.body}</p>
+              </div>
+            ))}
+          </div>
+        </Section>
+
+        {/* Where سنون works, said plainly — including that it is new and some
+            cities will be quiet. A patient who hears nothing should know why. */}
+        <Section tone="muted">
+          <Eyebrow>{citiesSection.eyebrow}</Eyebrow>
+          <h2 className="reveal rule-in mt-4 text-xl font-bold sm:text-2xl">{citiesSection.title}</h2>
+          <p className="reveal mt-3 text-pretty text-foreground-muted">{citiesSection.body}</p>
+
+          <ul className="reveal mt-6 flex flex-wrap gap-2">
+            {cities.map((city) => (
+              <li key={city.id}>
+                <span className="inline-flex items-center gap-1.5 rounded-full border border-border bg-surface px-3 py-1.5 text-sm">
+                  <PinIcon className="text-accent" />
+                  {city.nameAr}
+                </span>
+              </li>
+            ))}
+          </ul>
+
+          <p className="reveal mt-5 text-sm text-foreground-muted">{citiesSection.note}</p>
+        </Section>
+
         {/* The student side gets its own band rather than a card in a row: it is
             one of two audiences, not one of three features. */}
         <Section>
-          <h2 className="reveal text-xl font-bold sm:text-2xl">{home.studentsTitle}</h2>
+          <h2 className="reveal rule-in text-xl font-bold sm:text-2xl">{home.studentsTitle}</h2>
           <p className="reveal mt-3 text-pretty text-foreground-muted">{home.studentsBody}</p>
           <Link
             href="/student"
@@ -179,6 +282,31 @@ export default function HomePage() {
           >
             {home.studentsAction}
           </Link>
+        </Section>
+
+        {/* Native <details>, so the accordion needs no JavaScript. Both
+            competitors script theirs; this one is free, works before hydration,
+            and is what a screen reader already understands. */}
+        <Section tone="muted">
+          <Eyebrow>{faqSection.eyebrow}</Eyebrow>
+          <h2 className="reveal rule-in mt-4 text-xl font-bold sm:text-2xl">{faqSection.title}</h2>
+
+          <div className="mt-6 divide-y divide-border overflow-hidden rounded-lg border border-border bg-surface">
+            {faqSection.items.map((item) => (
+              <details key={item.q} name="faq" className="group">
+                <summary className="flex cursor-pointer list-none items-center justify-between gap-3 p-4 font-bold marker:content-none">
+                  {item.q}
+                  {/* Rotates to a minus when open. A rule rather than an icon
+                      swap, so there is nothing to load and nothing to script. */}
+                  <span
+                    aria-hidden="true"
+                    className="relative size-5 shrink-0 rounded-full bg-accent-muted before:absolute before:inset-x-1 before:top-1/2 before:h-0.5 before:-translate-y-1/2 before:bg-accent-strong before:content-[''] after:absolute after:inset-y-1 after:inset-x-0 after:mx-auto after:w-0.5 after:bg-accent-strong after:transition-transform after:content-[''] group-open:after:scale-y-0"
+                  />
+                </summary>
+                <p className="text-pretty px-4 pb-4 text-sm text-foreground-muted">{item.a}</p>
+              </details>
+            ))}
+          </div>
         </Section>
 
         {/* The supplies store is not built. Its place in the navigation model is

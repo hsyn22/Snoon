@@ -96,6 +96,125 @@ export const home = {
   closingBody: 'قدّم حالتك بدقيقتين. ما تحتاج حساب ولا فلوس.',
 } as const
 
+/**
+ * The landing page's longer sections.
+ *
+ * Added after Haider compared سنون against ClinMatch and AsnanLink and said the
+ * obvious true thing: theirs is several times the length of ours. The gap was
+ * never polish — it was that our page answered almost none of the questions a
+ * patient actually arrives with. What can I get? Does it work in my city? What
+ * happens to my phone number? Who treats me?
+ *
+ * Every claim below is one the product can keep. Nothing here invents a price,
+ * a waiting time, a testimonial or a number of users, because we have none of
+ * those and a landing page that overstates is the fastest way to lose the trust
+ * this one exists to build.
+ */
+
+/** Four short facts under the hero, the ones a patient checks first. */
+export const trustRow = [
+  'سنون مجاني',
+  'العلاج بعيادة الجامعة',
+  'بإشراف الأساتذة',
+  'بدون حساب',
+] as const
+
+/**
+ * What you can actually get. The single biggest thing the page was missing:
+ * a patient's first question is whether their problem is even covered, and
+ * سنون never said. The list is read from Payload, so it stays true when an
+ * admin edits it.
+ */
+export const treatmentsSection = {
+  eyebrow: 'العلاجات',
+  title: 'شنو تكدر تعالج بسنون؟',
+  body: 'هذي العلاجات اللي يقدرون الطلبة يسوونها بعيادة الجامعة. اختار وحدة أو أكثر بالطلب — أغلب الناس يحتاجون أكثر من شي.',
+  note: 'مو كل علاج متوفر بكل مرحلة — بعضها للسنة الرابعة وبعضها للخامسة. سنون يوصّل حالتك للطالب اللي يقدر يسويها.',
+} as const
+
+/**
+ * The trust section, and the one part of this page سنون can say that neither
+ * competitor can. Every line is a thing the code actually does.
+ */
+export const safetySection = {
+  eyebrow: 'خصوصيتك',
+  title: 'شنو يصير بمعلوماتك؟',
+  body: 'رقم موبايلك هو أهم شي تنطينا إياه، ونتعامل وياه على هذا الأساس.',
+  points: [
+    {
+      title: 'رقمك ما يشوفه إلا طالب واحد',
+      body: 'ولا يشوفه إلا بعد ما ياخذ حالتك فعلاً. قبلها ما يشوف غير نوع العلاج والمدينة والأيام.',
+    },
+    {
+      title: 'الصور تنظّف قبل ما تنحفظ',
+      body: 'صورة الموبايل تحمل مكان التقاطها بداخلها. سنون يشيل هذي المعلومة من كل صورة قبل حفظها.',
+    },
+    {
+      title: 'معلومات التواصل تنمحي',
+      body: 'بعد ما تنتهي حالتك بمدة محددة، اسمك ورقمك وملاحظاتك تنمحي من عدنا. رمز الحالة يبقى إذا احتجت تسأل.',
+    },
+    {
+      title: 'ما نسأل عن شي ما نحتاجه',
+      body: 'ما نطلب تاريخ ميلاد ولا عنوان ولا تاريخك المرضي. بس اللي يحتاجه الطالب حتى يعرف يقدر يساعدك لو لا.',
+    },
+  ],
+} as const
+
+/** Where سنون works. Read from Payload, like the treatments. */
+export const citiesSection = {
+  eyebrow: 'المدن',
+  title: 'سنون بمدينتك؟',
+  body: 'تكدر تقدّم حالتك من أي مدينة بهذي القائمة. عدد الطلبة يختلف من مدينة لأخرى، فبعض المدن الرد بيها أسرع.',
+  /** Said plainly rather than hidden: an empty queue is not a broken site. */
+  note: 'سنون لسه جديد. إذا ما وصلك رد بسرعة، يعني ما أكو طالب متفرّغ بمدينتك هسه — حالتك تبقى بالقائمة.',
+} as const
+
+/**
+ * The questions people actually ask, with answers the product can keep.
+ *
+ * Rendered as native <details>, so the accordion works with no JavaScript at
+ * all — the same reason every other interaction on this page is a link or a
+ * form. Both competitors use a scripted accordion; this one is free.
+ */
+export const faqSection = {
+  eyebrow: 'أسئلة',
+  title: 'أسئلة تتكرر',
+  items: [
+    {
+      q: 'سنون يأخذ فلوس؟',
+      a: 'لا. سنون ما ياخذ فلوس منك ولا من الطالب، وما عدنا اشتراك ولا عمولة. العلاج نفسه يصير بعيادة الجامعة وحسب شروط الجامعة.',
+    },
+    {
+      q: 'منو راح يعالجني؟',
+      a: 'طالب طب أسنان بالسنة الرابعة أو الخامسة، داخل عيادة جامعته وتحت إشراف الأساتذة. الطلبة يحتاجون حالات حتى يكملوا متطلبات دراستهم — هذا سبب وجود سنون.',
+    },
+    {
+      q: 'أحتاج أسوي حساب؟',
+      a: 'لا. تقدّم حالتك وياخذ منك دقيقتين، وينطيك رمز ورابط تتابع بيه حالتك. الحساب اختياري إذا تحب تحتفظ بحالاتك بمكان واحد.',
+    },
+    {
+      q: 'شكد يأخذ وقت حتى يتواصل وياي أحد؟',
+      a: 'ما نكدر نوعدك بوقت. يعتمد على وجود طالب بمدينتك يحتاج نفس العلاج اللي تحتاجه وأيامه تناسب أيامك. أول ما يحجز طالب حالتك يوصلك إشعار.',
+    },
+    {
+      q: 'إذا ما تواصل وياي أحد؟',
+      a: 'إذا الطالب ما تواصل وياك خلال المدة المحددة، حالتك ترجع للقائمة تلقائياً ويقدر طالب ثاني ياخذها. وتكدر تخبرنا من رابط حالتك إنه ما وصلك اتصال.',
+    },
+    {
+      q: 'الصور ضرورية؟',
+      a: 'لا، اختيارية. بس تساعد الطالب يعرف إذا يقدر يعالج حالتك قبل ما يحجزها، فتوفر وقت عليك وعليه. لا تصوّر وجهك — صورة الأسنان بس.',
+    },
+    {
+      q: 'ضيّعت رابط حالتي',
+      a: 'تكدر تطلّع رابط جديد إذا تتذكر رمز الحالة ورقم الموبايل اللي قدّمت بيه، من صفحة «ضيّعت رابط حالتك؟».',
+    },
+    {
+      q: 'أنا طالب — شلون أسجّل؟',
+      a: 'سجّل بحسابك، حدد جامعتك وكليتك ومرحلتك وأيام دوامك، وارفع وثيقة تثبت إنك طالب. إدارة سنون تراجعها، وبعدها تشوف الحالات اللي تناسب مرحلتك.',
+    },
+  ],
+} as const
+
 export const footer = {
   /** Columns by audience — a patient and a student want different links. */
   forPatients: 'للمرضى',
