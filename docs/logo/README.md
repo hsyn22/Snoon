@@ -8,6 +8,25 @@ Three rounds so far, in `concepts-round-*.png`. Nothing is chosen yet and nothin
 wired into the product: `src/` still says `سنون / SNOON`, and it stays that way until a
 direction is picked.
 
+## Where this stands
+
+**Three rounds, twenty-eight directions, all rejected.** Round three was rejected in one
+word. Generating a fourth batch the same way is not a plan — the problem was never a
+shortage of ideas, it is that every round has been a guess at one person's taste with no
+reference to guess from.
+
+So the next round waits on Haider sending two or three logos he likes, from any field. One
+reference is worth more than another thirty guesses.
+
+Two things checked and closed off, so nobody tries them again: **Canva's design generation
+is disabled on his team**, and his **Figma seat is View-only on the starter tier**, so
+neither can be handed the job from a session like this one.
+
+The one piece of signal from three rounds is in round two: he liked **Lalezar** and
+**Aref Ruqaa** as ways of writing the name, and nothing about any mark. Start there.
+
+Nothing about the logo blocks launch. `src/` says `سنون / SNOON` and works.
+
 ## Round one — eight drawn marks. All rejected.
 
 Marks invented from nothing in particular. Verdict: none of them.
