@@ -120,7 +120,7 @@ export default async function HomePage() {
         </div>
       </header>
 
-      <main id="main" className="grow">
+      <main id="main" className="page-enter grow">
         {/* Hero. A gradient wash rather than an illustration: سنون has no
             photography yet, and a stock image of a stranger's teeth would be
             worse than none. */}
@@ -269,50 +269,56 @@ export default async function HomePage() {
         <Section id="how" tone="muted">
           <h2 className="reveal rule-in text-xl font-bold sm:text-2xl">{howItWorks.title}</h2>
 
-          {/* Four steps as cards rather than as four sentences with a 16px icon
-              beside each. The icons were the problem Haider named: at that size
-              they read as something put there to fill a gap rather than as
-              something that meant anything. An icon has to be big enough to be
-              a picture of the step — in a tile, at the size of the number
-              beside it — or it should not be there at all.
+          {/* A rail, not a stack.
+              Four cards on top of each other is four things to scroll past
+              before the page continues. Side by side with one in view and the
+              rest a swipe away, they read as what they are — a sequence you
+              move through — and the section costs one screen instead of four.
+              It is also the shape ClinMatch uses for the same content, noted in
+              docs/competitors.md.
 
-              The long drawn line that used to run behind these is gone, and
-              not by choice: an opaque card sits on top of it, so once the steps
-              became cards the line was invisible. What replaces it is a short
-              connector in each gap, aligned to the icon tiles — the four still
-              read as a chain, and each segment arrives with its own card
-              instead of one line tracking the whole scroll. */}
-          <ol className="stagger relative mt-7 space-y-6">
+              Native scroll snapping, so there is nothing to script: the rail
+              scrolls with a thumb, snaps to each card, and on a desktop the
+              four simply sit in a row with no scrolling at all. `-mx-4 px-4`
+              lets it bleed to the screen edges on a phone while the first card
+              still lines up with the text above it — a rail that stops at the
+              page margin looks like a mistake. */}
+          <ol className="steps-rail stagger mt-7 flex snap-x snap-mandatory gap-4 overflow-x-auto overflow-y-hidden pb-4 md:grid md:grid-cols-4 md:overflow-visible">
             {howItWorks.steps.map((step, index) => {
               const Icon = STEP_ICONS[index] ?? CheckIcon
               return (
                 <li
                   key={step}
-                  // `start-11` puts the connector under the middle of the icon
-                  // tile: 1rem of card padding plus half of a size-14 tile. In
-                  // RTL the tile is at the start edge, so it is `start`, never
-                  // `left`.
-                  className="reveal lift relative flex items-start gap-4 rounded-xl border border-border bg-surface p-4 shadow-sm after:absolute after:start-11 after:top-full after:h-6 after:w-0.5 after:-translate-x-1/2 after:bg-accent/30 after:content-[''] last:after:hidden"
+                  className="reveal lift flex min-h-full w-[80%] shrink-0 snap-center flex-col rounded-xl border border-border bg-surface p-4 shadow-sm sm:w-[46%] md:w-auto"
                 >
                   <span
                     aria-hidden="true"
-                    className="pop relative flex size-14 shrink-0 items-center justify-center rounded-xl bg-accent-muted text-accent-strong"
+                    className="pop relative flex size-14 items-center justify-center rounded-xl bg-accent-muted text-accent-strong"
                   >
                     <Icon className="size-7" />
-                    {/* The step number rides the corner of its own tile, so the
-                        sequence is readable without a second column taking the
+                    {/* The number rides the corner of its own tile, so the
+                        sequence is readable without a second column taking
                         width a phone does not have. */}
                     <span className="ltr-run absolute -top-2 -start-2 flex size-6 items-center justify-center rounded-full bg-accent text-xs font-bold text-accent-foreground">
                       {index + 1}
                     </span>
                   </span>
-                  <p className="flex-1 text-pretty pt-1 text-sm leading-relaxed text-foreground-muted">
+                  <p className="mt-4 text-pretty text-sm leading-relaxed text-foreground-muted">
                     {step}
                   </p>
                 </li>
               )
             })}
           </ol>
+
+          {/* How far along the rail you are. Driven by `scroll(self inline)` on
+              the rail itself — the browser reads the scroll position with no
+              listener and no JavaScript, which is the honest version of the
+              "motion follows scroll progress" idea. Hidden where the four cards
+              are all visible at once, because then it would always be full. */}
+          <div className="steps-progress md:hidden" aria-hidden="true">
+            <span />
+          </div>
         </Section>
 
         {/* The one section neither competitor can write, because neither does

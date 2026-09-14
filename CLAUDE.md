@@ -1058,7 +1058,37 @@ will come back:
   and that needs verifying rather than assuming. It also cannot be judged in the
   single-file preview, which has no navigation at all.
 
-**The steps are cards now.** Four sentences each with a 16px icon read, in Haider's words, as
+**The steps are a rail, not a stack.** Haider's note, and it is right twice over: four cards
+stacked is four screens to scroll past before the page continues, and a sequence laid out
+side by side reads as a sequence. One card in view with the next peeking, swiped through,
+snapping — native `scroll-snap`, nothing scripted — and four across with no scrolling at all
+from `md`. It is also the shape ClinMatch uses for the same content.
+
+The progress bar under it is driven by `scroll-timeline: --snoon-rail inline` on the rail and
+`timeline-scope` on the section. A **named** timeline, not `scroll(self)`: the bar is a
+sibling of the rail rather than a descendant, so it has no scrollable ancestor to read, and a
+named timeline published by the rail is the only way to drive it. Its fallback is
+`inline-size: 100%` — a progress bar stuck at zero looks broken, one stuck at full reads as
+"nothing to scroll here".
+
+**Page transitions: what is actually possible, and what is not.** Asked for after the
+four-card motion reference. Checked rather than assumed:
+
+- **React's `<ViewTransition>` is not available.** `react` 19.2.8 does not export it, and
+  Next's bundled `react-experimental` has it only as a symbol. Using it means putting the
+  whole app on React experimental, which is not a trade this product makes for an animation.
+- **The CSS-only `@view-transition { navigation: auto }` is cross-document**, so it does not
+  fire on Next's client-side navigation. Getting it would mean replacing `<Link>` with plain
+  `<a>` — losing prefetch, and making the browser hold the old page until the new one is
+  ready. On a 400kbps connection that is a frozen screen, which is non-negotiable 7 traded
+  away for a flourish.
+- **What is built instead:** `.page-enter` on every page's `<main>`, in `PageShell` and on
+  the landing page. The arriving page fades and lifts over 260ms on mount, which is when the
+  App Router swaps the segment. Not a shared-element morph, but navigation reads as a move
+  rather than a cut, and it keeps client-side routing and prefetch. Revisit when
+  `<ViewTransition>` ships in stable React.
+
+**The steps were cards before they were a rail.** Four sentences each with a 16px icon read, in Haider's words, as
 icons put there to fill a gap rather than to mean anything — which was fair. Each step is a
 card with a real icon in a tile at the size of the number beside it. The casualty is the long
 drawn line that used to run behind them: an opaque card sits on top of it, so it became

@@ -122,9 +122,16 @@ export function PageShell({
   return (
     <div className="flex min-h-dvh flex-col">
       <SiteHeader action={action} />
+      {/* `page-enter` is the whole of سنون's page transition: the arriving page
+          fades and lifts rather than snapping in. It runs on mount, which is
+          when the App Router swaps this segment, so every navigation reads as a
+          move rather than a cut — without a library and without giving up
+          client-side navigation or prefetch. A true shared-element morph would
+          need React's `<ViewTransition>`; see CLAUDE.md for why that is not
+          on the table yet. */}
       <main
         id="main"
-        className={`mx-auto w-full grow px-4 py-8 ${width === 'wide' ? 'max-w-3xl' : 'max-w-xl'}`}
+        className={`page-enter mx-auto w-full grow px-4 py-8 ${width === 'wide' ? 'max-w-3xl' : 'max-w-xl'}`}
       >
         {children}
       </main>

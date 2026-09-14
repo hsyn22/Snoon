@@ -181,12 +181,18 @@
   /* A pressed button should acknowledge the tap, which on a slow connection is
      the only feedback there is until the next page arrives. */
   @media (prefers-reduced-motion: no-preference) {
+    /* Press compresses fast and springs back slow — the asymmetry is what
+       makes it read as a physical button rather than as a flicker. The release
+       curve overshoots very slightly; on a slow connection this tap is the only
+       feedback there is until the next page arrives. */
     :root:not([data-motion='none']) .press {
-      transition: transform 0.12s ease;
+      transition: transform 0.34s cubic-bezier(0.34, 1.42, 0.64, 1);
     }
 
     :root:not([data-motion='none']) .press:active {
-      transform: scale(0.975);
+      transform: scale(0.965);
+      transition-duration: 0.09s;
+      transition-timing-function: ease-out;
     }
   }
 }
@@ -869,6 +875,122 @@
           transform: none;
         }
       }
+    }
+  }
+}
+
+/* ===========================================================================
+ * The steps rail.
+ *
+ * The "how it works" steps sit side by side and are swiped through rather than
+ * stacked. Two pieces here: hiding the scrollbar, which is layout and belongs
+ * with the rail rather than in a component; and a progress bar driven by the
+ * rail's own scroll position.
+ * ======================================================================== */
+
+@layer utilities {
+  /* Not inside the motion gate: a visible scrollbar under the cards is a layout
+     decision, and it should look the same whether or not anything animates. */
+  .steps-rail {
+    scrollbar-width: none;
+    /* The rail bleeds to the screen edge on a phone while its first card stays
+       aligned with the text above. A rail that stops at the page margin reads
+       as a container somebody forgot to fill. */
+    margin-inline: -1rem;
+    padding-inline: 1rem;
+    /* Snap to the padding edge rather than the box edge, so a snapped card is
+       not flush against the screen. */
+    scroll-padding-inline: 1rem;
+  }
+
+  .steps-rail::-webkit-scrollbar {
+    display: none;
+  }
+
+  @media (min-width: 768px) {
+    .steps-rail {
+      margin-inline: 0;
+      padding-inline: 0;
+    }
+  }
+
+  .steps-progress {
+    block-size: 0.25rem;
+    inline-size: 6rem;
+    margin-block-start: 0.25rem;
+    margin-inline: auto;
+    border-radius: 999px;
+    background: color-mix(in oklch, var(--color-accent) 18%, transparent);
+    overflow: hidden;
+  }
+
+  .steps-progress > span {
+    display: block;
+    block-size: 100%;
+    /* Without a scroll timeline — an older browser, or the `none` tier — the
+       bar sits full rather than empty. A progress bar that reads zero forever
+       looks broken; one that reads full reads as "nothing to scroll". */
+    inline-size: 100%;
+    border-radius: inherit;
+    background: var(--color-accent);
+    transform-origin: right center;
+  }
+
+  @media (prefers-reduced-motion: no-preference) {
+    @supports (animation-timeline: scroll()) {
+      :root:not([data-motion='none']) .steps-progress > span {
+        animation: snoon-rail-progress linear both;
+        /* A named timeline, not `scroll(self)`: the bar is a *sibling* of the
+           rail, not a descendant, so it has no scrollable ancestor to read.
+           The rail publishes its position as `--snoon-rail` and the section
+           makes that name reachable with `timeline-scope`. This is the only
+           way to drive an element from a scroller that is not its ancestor. */
+        animation-timeline: --snoon-rail;
+      }
+
+      .steps-rail {
+        scroll-timeline: --snoon-rail inline;
+      }
+
+      #how {
+        timeline-scope: --snoon-rail;
+      }
+
+      @keyframes snoon-rail-progress {
+        from {
+          transform: scaleX(0.18);
+        }
+        to {
+          transform: scaleX(1);
+        }
+      }
+    }
+  }
+}
+
+/* ===========================================================================
+ * Page entrance.
+ *
+ * The "transitions" card asks for navigation to feel like a move rather than a
+ * cut, and the honest version of that in this stack is an entrance on the page
+ * that arrives. A true shared-element morph needs React's `<ViewTransition>`,
+ * which is only in React experimental — see the note in CLAUDE.md.
+ *
+ * Fade and lift, on a timer, 260ms. Card 02's own words: simple, reliable,
+ * premium. It runs on mount, which is when the App Router swaps the segment.
+ * ======================================================================== */
+
+@layer utilities {
+  @media (prefers-reduced-motion: no-preference) {
+    @keyframes snoon-page-enter {
+      from {
+        opacity: 0;
+        transform: translateY(8px);
+      }
+    }
+
+    :root:not([data-motion='none']) .page-enter {
+      animation: snoon-page-enter 0.26s cubic-bezier(0.22, 1, 0.36, 1) both;
     }
   }
 }
