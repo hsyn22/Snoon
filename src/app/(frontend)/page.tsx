@@ -7,9 +7,9 @@ import {
   fees,
   home,
   howItWorks,
+  nav,
   safetySection,
   treatmentsSection,
-  trustRow,
 } from '@/lib/copy'
 import { getCities, getTreatmentTypes } from '@/lib/config'
 import {
@@ -103,7 +103,12 @@ export default async function HomePage() {
           the hero's is one screen away and at most one primary per screen. */}
       <header className="border-b border-border bg-surface">
         <div className="mx-auto flex w-full max-w-3xl items-center justify-between gap-4 px-4 py-4">
-          <Wordmark className="text-accent" />
+          {/* The lockup says which part of سنون this is. "للمراجعين" is a branch
+              of the brand, not a link and not a second name — so it sits beside
+              منصة سنون in a lighter weight and the warm colour. The student
+              route is the hero's second button and the footer column; it left
+              the header when this became the visitor's side of the product. */}
+          <Wordmark className="text-accent" branch={nav.forPatients} />
           <nav className="flex items-center gap-4 text-sm">
             <a href="#how" className="hidden text-foreground-muted hover:text-accent sm:inline">
               {home.navHow}
@@ -111,12 +116,6 @@ export default async function HomePage() {
             <a href="#faq" className="hidden text-foreground-muted hover:text-accent sm:inline">
               {home.navFaq}
             </a>
-            <Link
-              href="/student"
-              className="font-medium text-foreground-muted underline-offset-4 hover:underline"
-            >
-              {home.forStudents}
-            </Link>
           </nav>
         </div>
       </header>
@@ -230,19 +229,6 @@ export default async function HomePage() {
               {fees.long}
             </p>
 
-            {/* The four facts a visitor checks before reading anything else.
-                A strip rather than four more cards: they are one thought. */}
-            <ul
-              className="animate-rise mt-6 flex flex-wrap gap-x-5 gap-y-2 text-sm"
-              style={{ '--delay': '620ms' } as React.CSSProperties}
-            >
-              {trustRow.map((fact) => (
-                <li key={fact} className="flex items-center gap-1.5 text-foreground-muted">
-                  <CheckIcon className="text-accent" />
-                  {fact}
-                </li>
-              ))}
-            </ul>
           </div>
         </div>
 
@@ -269,35 +255,50 @@ export default async function HomePage() {
               </li>
             ))}
           </ul>
-
-          <p className="reveal mt-5 text-sm text-foreground-muted">{treatmentsSection.note}</p>
         </Section>
 
         <Section id="how" tone="muted">
           <h2 className="reveal rule-in text-xl font-bold sm:text-2xl">{howItWorks.title}</h2>
 
-          {/* The one deliberately expressive thing on the page, and it earns its
-              place: these four steps are a sequence, and a line that fills as
-              you read down them says so more directly than the prose can.
-              `end-*` rather than `left`/`right` — the line runs down the start
-              edge, which in Arabic is the right. */}
-          <ol className="stagger draw-line relative mt-6 space-y-4 after:absolute after:end-[1.0625rem] after:top-4 after:-z-10 after:h-[calc(100%-2rem)] after:w-0.5 after:origin-top after:bg-accent/25 after:content-['']">
+          {/* Four steps as cards rather than as four sentences with a 16px icon
+              beside each. The icons were the problem Haider named: at that size
+              they read as something put there to fill a gap rather than as
+              something that meant anything. An icon has to be big enough to be
+              a picture of the step — in a tile, at the size of the number
+              beside it — or it should not be there at all.
+
+              The long drawn line that used to run behind these is gone, and
+              not by choice: an opaque card sits on top of it, so once the steps
+              became cards the line was invisible. What replaces it is a short
+              connector in each gap, aligned to the icon tiles — the four still
+              read as a chain, and each segment arrives with its own card
+              instead of one line tracking the whole scroll. */}
+          <ol className="stagger relative mt-7 space-y-6">
             {howItWorks.steps.map((step, index) => {
               const Icon = STEP_ICONS[index] ?? CheckIcon
               return (
-                <li key={step} className="reveal flex gap-4">
+                <li
+                  key={step}
+                  // `start-11` puts the connector under the middle of the icon
+                  // tile: 1rem of card padding plus half of a size-14 tile. In
+                  // RTL the tile is at the start edge, so it is `start`, never
+                  // `left`.
+                  className="reveal lift relative flex items-start gap-4 rounded-xl border border-border bg-surface p-4 shadow-sm after:absolute after:start-11 after:top-full after:h-6 after:w-0.5 after:-translate-x-1/2 after:bg-accent/30 after:content-[''] last:after:hidden"
+                >
                   <span
                     aria-hidden="true"
-                    className="pop ltr-run flex size-9 shrink-0 items-center justify-center rounded-full bg-accent text-sm font-bold text-accent-foreground"
+                    className="pop relative flex size-14 shrink-0 items-center justify-center rounded-xl bg-accent-muted text-accent-strong"
                   >
-                    {index + 1}
+                    <Icon className="size-7" />
+                    {/* The step number rides the corner of its own tile, so the
+                        sequence is readable without a second column taking the
+                        width a phone does not have. */}
+                    <span className="ltr-run absolute -top-2 -start-2 flex size-6 items-center justify-center rounded-full bg-accent text-xs font-bold text-accent-foreground">
+                      {index + 1}
+                    </span>
                   </span>
-                  <p className="flex flex-1 items-start gap-2.5 text-pretty pt-1.5 text-sm text-foreground-muted">
-                    {/* The number says where you are in the sequence; the icon
-                        says what happens. Neither carries meaning alone that the
-                        sentence does not, so both are hidden from a reader. */}
-                    <Icon className="mt-0.5 shrink-0 text-accent" />
-                    <span>{step}</span>
+                  <p className="flex-1 text-pretty pt-1 text-sm leading-relaxed text-foreground-muted">
+                    {step}
                   </p>
                 </li>
               )
@@ -309,8 +310,14 @@ export default async function HomePage() {
             the work behind it. Every line here is something the code does. */}
         <Section>
           <Eyebrow>{safetySection.eyebrow}</Eyebrow>
-          <h2 className="reveal rule-in mt-4 text-xl font-bold sm:text-2xl">{safetySection.title}</h2>
-          <p className="reveal mt-3 text-pretty text-foreground-muted">{safetySection.body}</p>
+          {/* Deliberately the largest heading below the hero. The lead under it
+              used to say "your phone number is the most important thing you
+              give us", which raised a worry a reader had not arrived with —
+              the opposite of what this section is for. */}
+          <h2 className="reveal rule-in mt-4 text-2xl font-bold sm:text-3xl">
+            {safetySection.title}
+          </h2>
+          <p className="reveal mt-3 text-foreground-muted">{safetySection.subtitle}</p>
 
           <div className="stagger mt-6 grid gap-4 sm:grid-cols-2">
             {safetySection.points.map((point, index) => {

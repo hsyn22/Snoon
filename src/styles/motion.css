@@ -627,14 +627,15 @@
      * corner of SVG animation — and there is no transform that draws a line.
      */
     :root:not([data-motion='none']) .bridge-line {
-      /* Comfortably longer than the 172px path, so the dash covers it fully. */
-      stroke-dasharray: 200;
+      /* Comfortably longer than the curve — which is a good deal longer than
+         the 172px straight run it replaced — so the dash covers it fully. */
+      stroke-dasharray: 260;
       animation: snoon-bridge-line 1s cubic-bezier(0.22, 1, 0.36, 1) 0.45s backwards;
     }
 
     @keyframes snoon-bridge-line {
       from {
-        stroke-dashoffset: 200;
+        stroke-dashoffset: 260;
       }
       to {
         stroke-dashoffset: 0;
@@ -678,6 +679,170 @@
       from {
         opacity: 0;
         transform: scale(0.72);
+      }
+    }
+  }
+}
+
+
+/* ===========================================================================
+ * The full tier, second pass.
+ *
+ * Haider, after seeing the first one: "أريد يكون فعلاً قوي — أريد أنيميشنز
+ * قوية وفيجوالز رائعة." The first version's fault was the same one this file
+ * already records once: the tier was *more of the same effect*, not a
+ * different experience.
+ *
+ * So everything here is something the standard tier does not do at all, and
+ * every one of them is still transform, opacity or clip-path.
+ * ======================================================================== */
+
+@layer utilities {
+  @media (prefers-reduced-motion: no-preference) {
+    /*
+     * A mote travels the bridge, out and back, slowly and forever.
+     *
+     * This is the only looping animation in سنون and it is a deliberate
+     * exception to "nothing loops in the reader's peripheral vision". The
+     * picture's whole claim is that something passes between these two people;
+     * a still line asserts it, a moving one shows it. It is 4.5px on a 340-unit
+     * drawing, it moves at walking pace, and it is inside a figure the reader
+     * is already looking at rather than off at the edge of their vision.
+     *
+     * `offset-path` walks the curve itself, so the motion is defined by the
+     * same `d` the line is drawn from — change the curve and the mote follows
+     * with nothing to keep in sync.
+     */
+    :root[data-motion='full'] .bridge-mote {
+      offset-path: path('M84 96C118 74 132 118 170 96c38-22 52 22 86 0');
+      offset-rotate: 0deg;
+      animation: snoon-bridge-mote 7s cubic-bezier(0.45, 0, 0.55, 1) 1.9s infinite;
+    }
+
+    @keyframes snoon-bridge-mote {
+      0% {
+        offset-distance: 0%;
+        opacity: 0;
+      }
+      8%,
+      42% {
+        opacity: 1;
+      }
+      50% {
+        offset-distance: 100%;
+        opacity: 0;
+      }
+      58%,
+      92% {
+        opacity: 1;
+      }
+      100% {
+        offset-distance: 0%;
+        opacity: 0;
+      }
+    }
+
+    /* The ring behind the name breathes. Scale only, and under two per cent, so
+       it reads as the badge sitting on something alive rather than as a pulse
+       demanding attention. */
+    :root[data-motion='full'] .bridge-halo {
+      transform-box: fill-box;
+      transform-origin: center;
+      animation: snoon-bridge-halo 4.5s ease-in-out 2s infinite;
+    }
+
+    @keyframes snoon-bridge-halo {
+      50% {
+        transform: scale(1.04);
+        opacity: 0.26;
+      }
+    }
+
+    @supports (animation-timeline: view()) {
+      /*
+       * Section headings arrive from the start edge, not from below.
+       *
+       * Every reveal on the page moves up; a heading that instead slides in
+       * along the reading direction is the first thing that makes the full
+       * tier feel like a different page rather than a faster one. Range ends
+       * inside `entry`, like everything else here.
+       */
+      :root[data-motion='full'] .rule-in {
+        animation: snoon-head-in linear both;
+        animation-timeline: view();
+        animation-range: entry 2% entry 70%;
+      }
+
+      @keyframes snoon-head-in {
+        from {
+          opacity: 0;
+          /* Positive X is the start edge in RTL — the heading comes from the
+             margin the reader's eye starts at. */
+          transform: translateX(26px);
+        }
+        to {
+          opacity: 1;
+          transform: none;
+        }
+      }
+
+      /*
+       * Cards tilt up as they arrive.
+       *
+       * A few degrees of rotation around a bottom origin reads as a card being
+       * laid down rather than faded in, and it is the one thing on the page
+       * that says "this was composed". Kept small: at eight degrees it is a
+       * flourish, at two it is a surface settling.
+       *
+       * **`animation-name`, never the `animation` shorthand.** The shorthand
+       * resets every animation longhand it does not name — including
+       * `animation-range` — and the per-child ranges that drive the stagger are
+       * set by an equally specific rule earlier in this file. Using the
+       * shorthand here silently reverted every staggered child to the default
+       * `cover 0% cover 100%` range, which only completes once an element has
+       * scrolled off the top: a chip sitting in the middle of the screen was
+       * found frozen at six per cent opacity. This is the frozen-reveal bug in
+       * its least obvious form, and the sweep is what caught it.
+       */
+      :root[data-motion='full'] .stagger > .reveal {
+        animation-name: snoon-reveal-tilt;
+        transform-origin: bottom center;
+      }
+
+      @keyframes snoon-reveal-tilt {
+        from {
+          opacity: 0;
+          transform: translateY(30px) rotate(-1.6deg) scale(0.975);
+        }
+        to {
+          opacity: 1;
+          transform: none;
+        }
+      }
+
+      /*
+       * The treatment and city chips count in.
+       *
+       * Both lists are `.stagger`, so each chip already has its own range —
+       * this only changes what happens inside it. A chip is small enough that
+       * a scale from 0.8 is legible rather than jarring, and a row of them
+       * arriving one after another is the single most visible difference
+       * between the tiers on a phone.
+       */
+      :root[data-motion='full'] .stagger > li.reveal {
+        animation-name: snoon-chip-in;
+        transform-origin: center;
+      }
+
+      @keyframes snoon-chip-in {
+        from {
+          opacity: 0;
+          transform: scale(0.8);
+        }
+        to {
+          opacity: 1;
+          transform: none;
+        }
       }
     }
   }

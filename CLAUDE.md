@@ -34,8 +34,15 @@ another.
 A bare "سنون" beside a hospital's name reads as a clinic, and the one thing this must never be
 mistaken for is the place the treatment happens — سنون matches people and delivers no care.
 It also leaves room for the other things that will carry the name: `متجر سنون`, and a
-`نظام سنون للعيادات` if that ever happens. `site.name` stays the bare word, for the wordmark
-and for running text where سنون is the subject of a sentence.
+`نظام سنون للعيادات` if that ever happens. `site.name` stays the bare word, for running text
+where سنون is the subject of a sentence.
+
+**The wordmark carries a branch label.** `Wordmark` takes `branch`, and the landing page
+passes `للمراجعين`. It is styled deliberately *unlike* the name — smaller, lighter, warm —
+because it names a section of سنون rather than a second brand. `متجر سنون` and any clinic
+system would use the same slot. It replaced the header's student link, which now lives only
+in the hero's second button and the footer column: the landing page is the visitor's side of
+the product and the header should say so.
 
 **Never write `مريض` in user-facing copy. The word is `مراجع`.** Haider's instruction, and it
 is the register a person uses about themselves when they go to a clinic — "مريض" labels
@@ -901,7 +908,26 @@ Rules it follows, and which new motion must follow too:
   (`.stagger`, driven by shifting `animation-range` per child rather than by a
   delay, which would fight the scroll timeline and stall if somebody stopped),
   and section headings draw their own rule (`.rule-in`, animating `clip-path` so
-  nothing reflows). Standard now runs 28 animations on the landing page, full 37.
+  nothing reflows).
+- **The second full-tier pass**, after "أريد يكون فعلاً قوي". The rule it follows is that
+  every addition has to be something the standard tier does not do *at all*, rather than more
+  of the same effect: a mote travelling the bridge curve on an `offset-path`, the badge's ring
+  breathing, section headings arriving from the start edge instead of from below, cards
+  tilting up from a bottom origin, and chips scaling in. Peak concurrent animations on the
+  landing page: **52 at standard, 71 at full.**
+- **The mote is the only loop in سنون**, and a deliberate exception to "nothing loops in the
+  reader's peripheral vision". The picture's whole claim is that something passes between two
+  people; a still line asserts that, a moving one shows it. It is 4.5 units on a 340-unit
+  drawing, it moves at walking pace, and it is inside a figure the reader is already looking
+  at.
+- **Never use the `animation` shorthand on anything inside `.stagger`.** The shorthand resets
+  every animation longhand it does not name, `animation-range` included — and the per-child
+  ranges that drive the stagger are set by an equally specific rule earlier in the file. Doing
+  this reverted every staggered child to the default `cover 0% cover 100%` range, which only
+  completes once an element has scrolled off the *top*, so a chip sitting in the middle of the
+  screen sat frozen at six per cent opacity. It is the frozen-reveal bug in its least obvious
+  form: nothing about the CSS looks wrong. Use `animation-name`. The part-drawn sweep is what
+  caught it, and is the reason to keep running it.
 - **The register is calm.** This site asks people who cannot afford a dentist to
   trust it with a photograph of their mouth. Nothing bounces, nothing spins,
   nothing slides in from off-screen, and nothing loops in the reader's
@@ -922,7 +948,7 @@ response several times over, which is the whole question on a slow connection.
 
 | page | transferred | first paint | loaded |
 |---|---|---|---|
-| landing | 167 KB → 269 KB → **286 KB** | 1.7s → 2.1s → **2.5s** | 4.8s → 6.8s → **7.0s** |
+| landing | 167 KB → 269 KB → **287 KB** | 1.7s → 2.1s → **2.5s** | 4.8s → 6.8s → **6.9s** |
 | `/case/new` | 172 KB → 269 KB → **280 KB** | 1.7s → 2.0s → **2.5s** | 4.9s → 6.8s → **6.9s** |
 | tracking, with a photograph | 194 KB | 1.7s | 5.3s |
 | `/case/new`, second visit | 1 KB | 0.5s | 0.6s |
@@ -989,7 +1015,25 @@ The page reads Payload now, so it carries `revalidate = 300` like `/case/new`.
 Cost of roughly tripling the content and adding the artwork: **277 KB against
 267**, first paint 2.5s against 2.3s. The bridge, the footer columns and the
 extra motion rules took it to **285 KB**, first paint 2.6s — eight kilobytes for
-the picture that explains the product.
+the picture that explains the product. The copy pass, the stronger full tier and the step
+cards land it at **287 KB**, first paint 2.5s.
+
+**Three things were cut from this page, all on Haider's instruction and all worth not
+re-adding:**
+
+- **The row of four ticks under the hero.** ✓ سنون مجاني · ✓ العلاج بعيادة الجامعة · … It
+  said nothing the three promise cards above it had not, and it spent the tick — which is
+  doing real work on the treatment chips — on filler. A tick everywhere is a tick nowhere.
+- **"متجر سنون — قريباً".** A promise the site cannot keep; see the store section.
+- **The stage caveat under the treatments** ("not every treatment is available at every
+  stage…"). True, and detail nobody needs before submitting: the matching already handles it.
+
+**The steps are cards now.** Four sentences each with a 16px icon read, in Haider's words, as
+icons put there to fill a gap rather than to mean anything — which was fair. Each step is a
+card with a real icon in a tile at the size of the number beside it. The casualty is the long
+drawn line that used to run behind them: an opaque card sits on top of it, so it became
+invisible the moment they became cards. What replaces it is a short connector in each gap,
+aligned to the icon tiles, arriving with its own card.
 
 **The bridge diagram — built.** `src/components/brand/match-bridge.tsx`. Haider's idea and
 the right one: a student in a lab coat on one side, a patient on the other, a line joining

@@ -95,12 +95,20 @@ export function MatchBridge({ className }: { className?: string }) {
             and it reads as one continuous thing passing behind them. SVG has no
             z-index, only document order. */}
         <path
+          id="bridge-path"
           className="bridge-line"
-          d="M84 96h172"
+          d="M84 96C118 74 132 118 170 96c38-22 52 22 86 0"
           stroke="url(#bridge-link)"
           strokeWidth="6"
           strokeLinecap="round"
         />
+
+        {/* At the full tier a mote travels the curve, once each way, endlessly
+            and slowly. It is the only looping animation in سنون and it earns
+            the exception: the picture's whole claim is that something passes
+            between these two, and a still line asserts it where a moving one
+            shows it. `offset-path` follows the curve with no JavaScript. */}
+        <circle className="bridge-mote" r="4.5" fill="var(--color-surface)" />
         {/* Where the link meets each figure. Without these the stroke stops in
             mid-air beside a shoulder; with them it is anchored at both ends. */}
         <circle cx="84" cy="96" r="6.5" fill="var(--color-warm)" />
@@ -148,6 +156,7 @@ export function MatchBridge({ className }: { className?: string }) {
             rx="23"
             fill="var(--color-accent)"
             opacity="0.1"
+            className="bridge-halo"
           />
           <rect
             x="123"

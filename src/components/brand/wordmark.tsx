@@ -1,3 +1,5 @@
+import { site } from '@/lib/copy'
+
 /**
  * The سنون mark.
  *
@@ -10,13 +12,22 @@
  * is what the product does. It is deliberately simple. A real identity may
  * replace it, and when it does only this file changes.
  *
- * The name is written سنون — no shadda, ever. See CLAUDE.md.
+ * The name reads **منصة سنون**, not a bare سنون: beside a hospital's name a bare
+ * سنون reads as a clinic, and a clinic is the one thing this must never be
+ * mistaken for. `site.platform` carries it, so it changes in one place.
+ *
+ * `branch` is the part of the brand this page belongs to — "للمراجعين" on the
+ * patient side. It is deliberately styled *unlike* the name: lighter, smaller,
+ * and in the warm colour, because it is a section of سنون rather than a second
+ * name. `متجر سنون` and any `نظام سنون للعيادات` would use the same slot.
  */
 export function Wordmark({
   showName = true,
+  branch,
   className,
 }: {
   showName?: boolean
+  branch?: string
   className?: string
 }) {
   return (
@@ -43,7 +54,12 @@ export function Wordmark({
       </svg>
 
       {showName ? (
-        <span className="text-xl font-bold tracking-tight leading-none">سنون</span>
+        <span className="flex items-baseline gap-1.5">
+          <span className="text-xl font-bold leading-none tracking-tight">{site.platform}</span>
+          {branch ? (
+            <span className="text-sm font-medium leading-none text-warm-deep">{branch}</span>
+          ) : null}
+        </span>
       ) : null}
     </span>
   )
