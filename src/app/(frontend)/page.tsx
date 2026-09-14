@@ -140,63 +140,72 @@ export default async function HomePage() {
           </div>
 
           <div className="mx-auto w-full max-w-3xl px-4 pb-12 pt-10 sm:pb-16 sm:pt-14">
-            {/* The entrance stagger. Each step is 70ms behind the last, which is
-                about the shortest gap that still reads as a sequence rather
-                than as everything arriving at once. */}
-            <div className="animate-rise" style={{ '--delay': '0ms' } as React.CSSProperties}>
-              <Eyebrow>{home.eyebrow}</Eyebrow>
-            </div>
+            {/* Two columns from `md` up, stacked below it.
+                The picture used to sit under the buttons, four scrolls down on
+                a phone, which made it an illustration of something the page had
+                already finished saying. Beside the headline it is the first
+                thing a visitor looks at, and it explains سنون before they read
+                a word — which is what it was drawn for.
 
-            <h1
-              className="animate-rise mt-4 text-balance text-3xl font-bold leading-tight sm:text-4xl"
-              style={{ '--delay': '70ms' } as React.CSSProperties}
-            >
-              <span className="text-accent">
-                <Words text={home.headlineAccent} />
-              </span>{' '}
-              <Words text={home.headlineRest} from={home.headlineAccent.split(' ').length} />
-            </h1>
+                On a phone it comes straight after the headline and before the
+                buttons, for the same reason: the picture is the argument, the
+                buttons are what you do about it. */}
+            <div className="grid gap-x-8 md:grid-cols-[1fr_minmax(0,22rem)]">
+              <div className="md:col-start-1 md:row-start-1">
+                {/* The entrance stagger. Each step is 70ms behind the last,
+                    which is about the shortest gap that still reads as a
+                    sequence rather than as everything arriving at once. */}
+                <div className="animate-rise" style={{ '--delay': '0ms' } as React.CSSProperties}>
+                  <Eyebrow>{home.eyebrow}</Eyebrow>
+                </div>
 
-            <p
-              className="animate-rise mt-4 max-w-xl text-pretty text-foreground-muted"
-              style={{ '--delay': '140ms' } as React.CSSProperties}
-            >
-              {home.subhead}
-            </p>
+                <h1
+                  className="animate-rise mt-4 text-balance text-3xl font-bold leading-tight sm:text-4xl"
+                  style={{ '--delay': '70ms' } as React.CSSProperties}
+                >
+                  <span className="text-accent">
+                    <Words text={home.headlineAccent} />
+                  </span>{' '}
+                  <Words text={home.headlineRest} from={home.headlineAccent.split(' ').length} />
+                </h1>
 
-            <div
-              className="animate-rise mt-7 flex flex-col gap-3 sm:flex-row"
-              style={{ '--delay': '210ms' } as React.CSSProperties}
-            >
-              <Link
-                href="/case/new"
-                className="press inline-flex min-h-12 items-center justify-center rounded-full bg-accent px-6 font-bold text-accent-foreground shadow-md"
+                <p
+                  className="animate-rise mt-4 max-w-xl text-pretty text-foreground-muted"
+                  style={{ '--delay': '140ms' } as React.CSSProperties}
+                >
+                  {home.subhead}
+                </p>
+              </div>
+
+              {/* Explicit row and column rather than `order`: three children in
+                  a two-column grid would wrap, and `order` only re-sequences
+                  them into the same wrong cells. The picture spans both rows of
+                  the second column so it sits beside the text *and* the
+                  buttons. */}
+              <div
+                className="animate-rise mt-8 md:col-start-2 md:row-span-2 md:row-start-1 md:mt-0 md:self-center"
+                style={{ '--delay': '210ms' } as React.CSSProperties}
               >
-                {home.primaryAction}
-              </Link>
-              <Link
-                href="/student"
-                className="press inline-flex min-h-12 items-center justify-center rounded-full border border-border bg-surface px-6 font-medium"
+                <MatchBridge className="mx-auto w-full max-w-md md:max-w-none" />
+              </div>
+
+              <div
+                className="animate-rise mt-8 flex flex-col gap-3 sm:flex-row md:col-start-1 md:row-start-2 md:mt-7"
+                style={{ '--delay': '280ms' } as React.CSSProperties}
               >
-                {home.secondaryAction}
-              </Link>
-            </div>
-
-            {/* The hero's picture. It was `MatchMotif` — two arcs meeting —
-                which is the same idea but only legible once you already know
-                the idea. This is the literal version Haider asked for: a
-                student, a patient, and a line between them carrying the name.
-                A patient arriving cold can read it without a caption.
-
-                The two are not both here. CLAUDE.md is explicit that the
-                abstract and the literal must not share the hero, so the motif
-                moves to the closing band, where it is decoration rather than
-                explanation. */}
-            <div
-              className="animate-rise mt-9 flex justify-center"
-              style={{ '--delay': '280ms' } as React.CSSProperties}
-            >
-              <MatchBridge className="w-full max-w-md" />
+                <Link
+                  href="/case/new"
+                  className="press inline-flex min-h-12 items-center justify-center rounded-full bg-accent px-6 font-bold text-accent-foreground shadow-md"
+                >
+                  {home.primaryAction}
+                </Link>
+                <Link
+                  href="/student"
+                  className="press inline-flex min-h-12 items-center justify-center rounded-full border border-border bg-surface px-6 font-medium"
+                >
+                  {home.secondaryAction}
+                </Link>
+              </div>
             </div>
 
             {/* Three short promises. They answer the questions a patient asks

@@ -742,6 +742,31 @@
       }
     }
 
+    /*
+     * The two figures breathe.
+     *
+     * Two pixels of drift over nine seconds, the second one offset so they are
+     * never in phase. It is below the threshold where anyone would call it an
+     * animation, and above the threshold where a drawing looks like a sticker
+     * pasted onto the page — which is the whole difference between a hero that
+     * feels alive and one that feels printed.
+     */
+    :root[data-motion='full'] .bridge-figure {
+      animation:
+        snoon-bridge-figure 0.55s cubic-bezier(0.22, 1, 0.36, 1) backwards,
+        snoon-bridge-float 9s ease-in-out 1.2s infinite;
+    }
+
+    :root[data-motion='full'] .bridge-figure-2 {
+      animation-delay: 0.13s, 3.6s;
+    }
+
+    @keyframes snoon-bridge-float {
+      50% {
+        transform: translateY(-2.5px);
+      }
+    }
+
     /* The ring behind the name breathes. Scale only, and under two per cent, so
        it reads as the badge sitting on something alive rather than as a pulse
        demanding attention. */

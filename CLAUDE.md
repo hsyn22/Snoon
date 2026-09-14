@@ -1028,6 +1028,36 @@ re-adding:**
 - **The stage caveat under the treatments** ("not every treatment is available at every
   stage…"). True, and detail nobody needs before submitting: the matching already handles it.
 
+**The hero's picture is the hero.** It sat under the buttons, four scrolls down on a phone,
+which made it an illustration of something the page had already finished saying. It is now
+beside the headline from `md` up and directly under it below that — the first thing a visitor
+looks at, explaining سنون before they read a word, which is what it was drawn for. Placement
+is explicit `col-start`/`row-start`, not `order`: three children in a two-column grid wrap,
+and `order` only re-sequences them into the same wrong cells.
+
+**The three UI libraries in the reel Haider sent — Animaster Lib, Skiper UI, Vengance UI.**
+Asked whether they could make something visually astonishing. Recorded because the question
+will come back:
+
+- **They are not installable dependencies.** They are shadcn-style "copy the component into
+  your repo" collections, most of the good parts behind a PRO paywall, and what they copy in
+  is React components built on framer-motion, GSAP and — for the WebGL shader ones —
+  three.js. three.js alone is around 150KB gzipped against a 287KB page.
+- **The register is wrong, and that matters more than the weight.** Their house look is
+  dark-mode agency: neon shaders, scrambling type, cursor trails, a spinning 3D object over
+  near-black. سنون asks people who cannot afford a dentist to trust it with a photograph of
+  their mouth, and this file already records that the register is calm. A nightclub hero
+  would not read as premium here; it would read as a different company.
+- **Two of their categories are pointless for this audience** — Mouse Effects and Hover
+  Effects are pointer-only, and the median user is on a touch screen.
+- **What is worth taking is the composition, not the code**: the picture as the hero rather
+  than as a footnote (done), and **page transitions**, which is the one thing in that list
+  that would genuinely raise the product and costs nothing — the View Transitions API is
+  native. Note before starting it: `ViewTransition` is not exported by the installed
+  `react` 19.2.8, so it would come from the canary React that Next bundles for the client,
+  and that needs verifying rather than assuming. It also cannot be judged in the
+  single-file preview, which has no navigation at all.
+
 **The steps are cards now.** Four sentences each with a 16px icon read, in Haider's words, as
 icons put there to fill a gap rather than to mean anything — which was fair. Each step is a
 card with a real icon in a tile at the size of the number beside it. The casualty is the long
