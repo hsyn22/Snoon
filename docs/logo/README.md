@@ -1,14 +1,54 @@
-# Logo — round two
+# Logo
 
 Eight directions, rendered in `concepts-round-2.png`. Nothing here is chosen yet, and
 nothing here is wired into the product: `src/` still says `سنون / SNOON`, and it stays
 that way until a direction is picked.
 
-## Why round one was thrown away
+Three rounds so far, in `concepts-round-*.png`. Nothing is chosen yet and nothing is
+wired into the product: `src/` still says `سنون / SNOON`, and it stays that way until a
+direction is picked.
 
-Round one was eight marks drawn from nothing in particular. Haider's verdict was the
-short one — none of them. Round two starts from two things instead: the logo ChatGPT
-made him, which he half-liked, and the spelling decision he made at the same time.
+## Round one — eight drawn marks. All rejected.
+
+Marks invented from nothing in particular. Verdict: none of them.
+
+## Round two — eight marks again, this time with a source. All rejected.
+
+Built from the logo ChatGPT made him, which he half-liked, and from the spelling
+decision he made at the same time. Same verdict. What it did produce was the first
+piece of real signal in three rounds, and it came from a part nobody was asking about:
+
+> the only two things I kind of liked … is the type of font that was used to write the
+> word سنون in Arabic, in number two and number eight
+
+Those are **Lalezar** (heavy rounded display) and **Aref Ruqaa** (calligraphic ruqʿa).
+
+## Round three — the name is the logo
+
+The signal says he is responding to the **lettering**, not to marks standing beside it.
+So round three drops invented marks entirely: twelve wordmark-led directions, every one
+of them a treatment of the word itself, and every favicon derived from the wordmark
+rather than designed separately.
+
+- **01–05** are Lalezar, the face from round two's 02: coloured diacritics, a knockout
+  panel, a cradle, the word doubled as a pair, and the word standing on a bridge.
+- **07–09** are Aref Ruqaa, the face from round two's 08: underlined, inside an arch,
+  and inside a round stamp.
+- **06 and 10–12** are new registers for contrast — Lemonada with a gradient, Zain
+  stacked, Katibeh condensed, El Messiri formal.
+
+Two techniques worth keeping, both forced by Arabic:
+
+- **Two colours through one word is a gradient or two stacked copies, never two spans.**
+  Arabic shapes each letter by its neighbours, and a span boundary inside a word breaks
+  the join. 06 paints a gradient onto one text element; 01 stacks two full copies of the
+  string and clips the upper one to the band the fatha and shadda sit in; 04 stacks two
+  full copies offset from each other. None of them cuts the string.
+- **Three of the fifteen new faces auditioned mangle the string outright** — Qahiri,
+  Blaka and Alkalami each render `سَنّون` as something else. Audition against the real
+  string before using a face, never against sample text.
+
+## What was wrong with the ChatGPT logo
 
 ## What was wrong with the ChatGPT logo
 
@@ -45,9 +85,10 @@ that contain a letter (`seal`, `calli`) and the one that is a diacritic (`shadda
 The faces are not committed — about 1.5MB of woff2 from Google Fonts. Fetch them into
 `fonts/` beside these scripts and write a `fonts.css` pointing at the local files, then:
 
-    node sheet.mjs && node shot.mjs sheet.html concepts-round-2.png 1600 1200
+    node sheet.mjs  && node shot.mjs sheet.html  concepts-round-2.png 1600 1200
+    node sheet3.mjs && node shot.mjs sheet3.html concepts-round-3.png 2100 1200 1.6
 
-Fifteen faces were auditioned against the real string `سَنّون`; all fifteen render the
+Thirty faces have now been auditioned against the real string `سَنّون`; all fifteen render the
 fatha and shadda correctly. The ones used here are Reem Kufi, Lalezar, Marhey,
 Baloo Bhaijaan 2, Kufam, Cairo and Aref Ruqaa.
 

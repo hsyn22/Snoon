@@ -6,7 +6,7 @@ requirements. Treatment happens at the university clinic, under university super
 سنون matches people; it does not deliver care and does not employ anyone.
 
 **Brand name:** Arabic `سَنّون` — fatha on the س, shadda on the first ن — primary. Latin
-`SOON`, secondary, for the domain and nothing else.
+`SNOON`, secondary, for the domain and nothing else.
 
 **This reverses the earlier rule**, which said no diacritics and named `سَنّون` as a different
 word. It is: `سنون` is a plural of سِنّ, and `سَنّون` is Haider's childhood nickname. He chose the
@@ -20,10 +20,11 @@ Two things follow from it and are not optional:
   faces tried renders it correctly. Nothing may hand-draw these letterforms as SVG paths: that
   is exactly how the generated logo Haider was shown ended up spelling a word that does not
   exist.
-- **The Latin is not a transliteration and must not be made into one.** `SOON` does not say
-  سَنّون and is not meant to; it is short, it is available-looking, and it is for a domain. Its
-  one cost is that an English reader may read the wordmark as "coming soon" — raised with
-  Haider, still open.
+- **The Latin stays `SNOON`.** Briefly changed to `SOON` and changed straight back — Haider
+  said "S and double O N", meant S-N-double-O-N, and corrected it as soon as he saw the
+  wordmarks. Worth one line because `SOON` is the kind of thing that looks deliberate in a
+  commit and is not: in English it reads as "coming soon", which on a logo says the site is
+  a placeholder.
 
 The site's own copy is **not** changed yet. Changing it is one edit to `copy.ts` once the logo
 is chosen, and doing it before then would leave the product saying one thing and the mark
