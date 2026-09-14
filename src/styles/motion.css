@@ -470,6 +470,41 @@
       }
 
       /*
+       * The marker on a sequence arrives with its row.
+       *
+       * The numbered circle on a step and the icon tile on a safety card are
+       * the two places on the page where the thing being revealed is already a
+       * sequence, so they are where a stagger is read as deliberate rather than
+       * as decoration. Scale and opacity only.
+       *
+       * It carries its own range rather than picking up its row's: the offsets
+       * above are set on `.stagger`'s *direct children*, and `animation-range`
+       * is not an inherited property, so a marker nested inside a row gets
+       * nothing from it. Its range is deliberately a little shorter than any
+       * row's, which lands it just before the text it belongs to.
+       *
+       * Range ends inside `entry` like every other reveal. A marker frozen at
+       * 85% scale is a marker nobody notices; that is the bar these have to
+       * clear, and scale clears it where blur did not.
+       */
+      :root[data-motion='full'] .stagger .pop {
+        animation: snoon-pop linear both;
+        animation-timeline: view();
+        animation-range: entry 6% entry 76%;
+      }
+
+      @keyframes snoon-pop {
+        from {
+          opacity: 0;
+          transform: scale(0.72);
+        }
+        to {
+          opacity: 1;
+          transform: none;
+        }
+      }
+
+      /*
        * A heading's rule draws itself as the section arrives.
        *
        * Clip-path rather than width or scaleX: an inset clip animates on the
@@ -558,6 +593,91 @@
       }
       to {
         stroke-dashoffset: 0;
+      }
+    }
+  }
+}
+
+/* ===========================================================================
+ * The bridge.
+ *
+ * `MatchBridge` — a student, a patient, and a line drawn between them carrying
+ * the name. It is the one picture on the page that explains the product, so the
+ * rules here are deliberately more conservative than the rest of this file.
+ *
+ * **Everything is on a timer, nothing is on a scroll timeline.** A `view()`
+ * animation freezes wherever the reader stopped, and a half-drawn line between
+ * two people says something different from a drawn one — it would read as a
+ * broken connection rather than as a made one. This sits in the hero and is
+ * visible before any scrolling happens anyway, so a clock is both safer and
+ * more correct here.
+ * ======================================================================== */
+
+@layer utilities {
+  @media (prefers-reduced-motion: no-preference) {
+    /*
+     * The line draws itself, at every tier that animates rather than only at
+     * `full`. It is the verb in the picture: the whole point is that something
+     * is being connected, and watching it happen says that in a way the
+     * finished line does not.
+     *
+     * `stroke-dashoffset` is not a compositor property, which this file
+     * otherwise forbids. It is allowed for exactly this and for the motif arcs:
+     * one short stroke on one element, on a path with no fill, is the cheap
+     * corner of SVG animation — and there is no transform that draws a line.
+     */
+    :root:not([data-motion='none']) .bridge-line {
+      /* Comfortably longer than the 172px path, so the dash covers it fully. */
+      stroke-dasharray: 200;
+      animation: snoon-bridge-line 1s cubic-bezier(0.22, 1, 0.36, 1) 0.45s backwards;
+    }
+
+    @keyframes snoon-bridge-line {
+      from {
+        stroke-dashoffset: 200;
+      }
+      to {
+        stroke-dashoffset: 0;
+      }
+    }
+
+    /*
+     * At the full tier the picture assembles in the order it is read: the two
+     * people arrive, the line reaches across, then the name lands on it. That
+     * sequence is the tier — the same lesson as `.stagger`, which is that a
+     * strong tier is things arriving in order rather than more things moving.
+     *
+     * `transform-box: fill-box` is required on SVG: without it the transform
+     * origin is the SVG's own viewport rather than the element, so `center`
+     * scales the figure from somewhere off to one side.
+     */
+    :root[data-motion='full'] .bridge-figure {
+      transform-box: fill-box;
+      transform-origin: center bottom;
+      animation: snoon-bridge-figure 0.55s cubic-bezier(0.22, 1, 0.36, 1) backwards;
+    }
+
+    :root[data-motion='full'] .bridge-figure-2 {
+      animation-delay: 0.13s;
+    }
+
+    @keyframes snoon-bridge-figure {
+      from {
+        opacity: 0;
+        transform: translateY(12px) scale(0.96);
+      }
+    }
+
+    :root[data-motion='full'] .bridge-badge {
+      transform-box: fill-box;
+      transform-origin: center;
+      animation: snoon-bridge-badge 0.45s cubic-bezier(0.34, 1.4, 0.64, 1) 1.3s backwards;
+    }
+
+    @keyframes snoon-bridge-badge {
+      from {
+        opacity: 0;
+        transform: scale(0.72);
       }
     }
   }

@@ -94,6 +94,11 @@ export const home = {
 
   closingTitle: 'محتاج علاج أسنان؟',
   closingBody: 'قدّم حالتك بدقيقتين. ما تحتاج حساب ولا فلوس.',
+
+  /** The landing page's header menu. Two anchors, so it needs no hamburger and
+      no JavaScript — both competitors script a drawer to hold four links. */
+  navHow: 'شلون تشتغل',
+  navFaq: 'أسئلة شائعة',
 } as const
 
 /**
@@ -112,6 +117,24 @@ export const home = {
  */
 
 /** Four short facts under the hero, the ones a patient checks first. */
+/**
+ * The bridge diagram in the hero — `MatchBridge`.
+ *
+ * Two words and a sentence. They carry the whole picture: without the labels it
+ * is two coloured shapes, and with them it is what سنون does.
+ *
+ * `name` is the wordmark on the line and is deliberately the plain spelling the
+ * rest of the site uses, not the logo. When a logo exists it replaces the badge,
+ * and this string goes with it.
+ */
+export const bridge = {
+  student: 'طالب',
+  patient: 'مريض',
+  name: 'سنون',
+  caption: 'سنون يوصّل بين الاثنين. هو ما يعالج، وما يشغّل أحد.',
+  alt: 'رسم: طالب طب أسنان من جهة، ومريض من الجهة الثانية، وبينهما خط يوصلهما وعليه اسم سنون.',
+} as const
+
 export const trustRow = [
   'سنون مجاني',
   'العلاج بعيادة الجامعة',

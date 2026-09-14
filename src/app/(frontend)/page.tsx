@@ -4,7 +4,6 @@ import { Eyebrow, Section } from '@/components/ui/section'
 import {
   citiesSection,
   faqSection,
-  footer,
   home,
   howItWorks,
   landing,
@@ -25,6 +24,8 @@ import {
   SubmitIcon,
 } from '@/components/ui/icon'
 import { MatchMotif } from '@/components/brand/match-motif'
+import { MatchBridge } from '@/components/brand/match-bridge'
+import { SiteFooter } from '@/components/site-chrome'
 
 /** One icon per safety point and per step, in the order the copy lists them. */
 const SAFETY_ICONS = [ShieldPhoneIcon, ImageNoGeoIcon, ExpiryIcon, MinimalFormIcon]
@@ -90,16 +91,33 @@ export default async function HomePage() {
   return (
     <div className="flex min-h-dvh flex-col">
       {/* Not sticky: on a 360px screen a fixed bar costs a tenth of the viewport
-          for the whole scroll, and this page is short. */}
+          for the whole scroll, and this page is short.
+
+          Both competitors put a four-item menu behind a hamburger. Ours is two
+          anchors and a link, so there is nothing to script, nothing to open and
+          nothing that breaks before hydration. The two anchors drop below 640px
+          rather than collapsing into a drawer: at 360px they do not fit beside
+          the wordmark, and a page this short is scrollable to both sections
+          anyway — a menu that only exists to scroll a short page is a drawer
+          nobody needed. The primary action is deliberately not repeated here;
+          the hero's is one screen away and at most one primary per screen. */}
       <header className="border-b border-border bg-surface">
-        <div className="mx-auto flex w-full max-w-3xl items-center justify-between px-4 py-4">
+        <div className="mx-auto flex w-full max-w-3xl items-center justify-between gap-4 px-4 py-4">
           <Wordmark className="text-accent" />
-          <Link
-            href="/student"
-            className="text-sm font-medium text-foreground-muted underline-offset-4 hover:underline"
-          >
-            {home.forStudents}
-          </Link>
+          <nav className="flex items-center gap-4 text-sm">
+            <a href="#how" className="hidden text-foreground-muted hover:text-accent sm:inline">
+              {home.navHow}
+            </a>
+            <a href="#faq" className="hidden text-foreground-muted hover:text-accent sm:inline">
+              {home.navFaq}
+            </a>
+            <Link
+              href="/student"
+              className="font-medium text-foreground-muted underline-offset-4 hover:underline"
+            >
+              {home.forStudents}
+            </Link>
+          </nav>
         </div>
       </header>
 
@@ -165,15 +183,21 @@ export default async function HomePage() {
               </Link>
             </div>
 
-            {/* The hero had nothing to look at, which is most of why it read as
-                a form. Not photography — سنون has none and a stock mouth would
-                be worse than nothing — but the product's own idea as a shape:
-                two people who each need what the other has, meeting. */}
+            {/* The hero's picture. It was `MatchMotif` — two arcs meeting —
+                which is the same idea but only legible once you already know
+                the idea. This is the literal version Haider asked for: a
+                student, a patient, and a line between them carrying the name.
+                A patient arriving cold can read it without a caption.
+
+                The two are not both here. CLAUDE.md is explicit that the
+                abstract and the literal must not share the hero, so the motif
+                moves to the closing band, where it is decoration rather than
+                explanation. */}
             <div
-              className="animate-rise mt-8 flex justify-center"
+              className="animate-rise mt-9 flex justify-center"
               style={{ '--delay': '280ms' } as React.CSSProperties}
             >
-              <MatchMotif className="h-20 w-full max-w-sm text-accent sm:h-24" />
+              <MatchBridge className="w-full max-w-md" />
             </div>
 
             {/* Three short promises. They answer the questions a patient asks
@@ -216,9 +240,14 @@ export default async function HomePage() {
           <h2 className="reveal rule-in mt-4 text-xl font-bold sm:text-2xl">{treatmentsSection.title}</h2>
           <p className="reveal mt-3 text-pretty text-foreground-muted">{treatmentsSection.body}</p>
 
-          <ul className="reveal mt-6 flex flex-wrap gap-2">
+          {/* `stagger` on the list and `reveal` on each chip, so at the full
+              tier the treatments arrive one after another rather than as a
+              block. Same mechanism as the card grids: the offsets are in
+              `animation-range`, never in a delay, which would stall halfway if
+              somebody stopped scrolling. */}
+          <ul className="stagger mt-6 flex flex-wrap gap-2">
             {treatments.map((treatment) => (
-              <li key={treatment.id}>
+              <li key={treatment.id} className="reveal">
                 <span className="inline-flex items-center gap-1.5 rounded-full bg-accent-muted px-3.5 py-2 text-sm font-bold text-accent-strong">
                   <CheckIcon className="size-3.5" />
                   {treatment.nameAr}
@@ -245,7 +274,7 @@ export default async function HomePage() {
                 <li key={step} className="reveal flex gap-4">
                   <span
                     aria-hidden="true"
-                    className="ltr-run flex size-9 shrink-0 items-center justify-center rounded-full bg-accent text-sm font-bold text-accent-foreground"
+                    className="pop ltr-run flex size-9 shrink-0 items-center justify-center rounded-full bg-accent text-sm font-bold text-accent-foreground"
                   >
                     {index + 1}
                   </span>
@@ -279,7 +308,7 @@ export default async function HomePage() {
               >
                 <span
                   aria-hidden="true"
-                  className="flex size-10 items-center justify-center rounded-lg bg-accent-muted text-accent-strong"
+                  className="pop flex size-10 items-center justify-center rounded-lg bg-accent-muted text-accent-strong"
                 >
                   <Icon className="size-5" />
                 </span>
@@ -298,9 +327,9 @@ export default async function HomePage() {
           <h2 className="reveal rule-in mt-4 text-xl font-bold sm:text-2xl">{citiesSection.title}</h2>
           <p className="reveal mt-3 text-pretty text-foreground-muted">{citiesSection.body}</p>
 
-          <ul className="reveal mt-6 flex flex-wrap gap-2">
+          <ul className="stagger mt-6 flex flex-wrap gap-2">
             {cities.map((city) => (
-              <li key={city.id}>
+              <li key={city.id} className="reveal">
                 <span className="inline-flex items-center gap-1.5 rounded-full border border-border bg-surface px-3 py-1.5 text-sm">
                   <PinIcon className="text-accent" />
                   {city.nameAr}
@@ -328,7 +357,7 @@ export default async function HomePage() {
         {/* Native <details>, so the accordion needs no JavaScript. Both
             competitors script theirs; this one is free, works before hydration,
             and is what a screen reader already understands. */}
-        <Section tone="muted">
+        <Section id="faq" tone="muted">
           <Eyebrow>{faqSection.eyebrow}</Eyebrow>
           <h2 className="reveal rule-in mt-4 text-xl font-bold sm:text-2xl">{faqSection.title}</h2>
 
@@ -351,8 +380,12 @@ export default async function HomePage() {
         </Section>
 
         {/* The supplies store is not built. Its place in the navigation model is
-            kept deliberately — see "Future: the supplies store" in CLAUDE.md. */}
-        <Section tone="muted">
+            kept deliberately — see "Future: the supplies store" in CLAUDE.md.
+
+            Plain rather than muted: the FAQ above it is muted, and two muted
+            bands touching merge into one long grey stretch, which is exactly
+            the rhythm the band system exists to avoid. */}
+        <Section>
           <h2 className="text-lg font-bold">{landing.supplies.title}</h2>
           <p className="mt-2 text-sm text-foreground-muted">{landing.supplies.body}</p>
           <p className="mt-3 inline-flex rounded-full bg-surface px-3 py-1 text-xs font-bold text-foreground-muted">
@@ -369,23 +402,22 @@ export default async function HomePage() {
           >
             {home.primaryAction}
           </Link>
+
+          {/* The motif, retired from the hero to here. It takes its colour from
+              the text it sits in, so on the accent band it is white without a
+              variant — which is exactly why it was drawn with `currentColor`.
+              Decoration at this point: the page has already explained itself. */}
+          <MatchMotif className="mx-auto mt-10 h-16 w-full max-w-xs opacity-50" />
         </Section>
       </main>
 
-      <footer className="border-t border-border bg-surface">
-        <div className="mx-auto w-full max-w-3xl px-4 py-8">
-          <Wordmark className="text-accent" />
-          <p className="mt-3 text-pretty text-xs text-foreground-muted">{footer.disclaimer}</p>
-          <p className="mt-4 flex gap-5 text-xs">
-            <Link href="/privacy" className="underline underline-offset-4">
-              {footer.privacy}
-            </Link>
-            <Link href="/terms" className="underline underline-offset-4">
-              {footer.terms}
-            </Link>
-          </p>
-        </div>
-      </footer>
+      {/* The same footer every other page wears. The landing page had its own
+          one-column version, which meant the one page a stranger is most likely
+          to land on had the *least* wayfinding — no way back to a lost tracking
+          link, nothing for a student. Columns by audience, from
+          `site-chrome.tsx`. */}
+      <SiteFooter />
+
     </div>
   )
 }

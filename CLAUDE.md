@@ -870,6 +870,13 @@ Rules it follows, and which new motion must follow too:
   reader *is* the effect. `frozen.mjs`-style checking — stop at many scroll
   positions and assert nothing on screen is part-drawn — is how this was caught
   and is worth repeating after any change here.
+- **A full-page screenshot will tell you the page is broken when it is not.**
+  Playwright's `fullPage` capture does not drive a scroll timeline, so every
+  section below the fold comes back blank — the landing page photographs as a
+  headline followed by two thousand pixels of empty grey. That is the tool, not
+  the page. Verify scroll-driven work by actually scrolling: step down the page,
+  screenshot the viewport at each stop, and run the part-drawn sweep. Judging
+  this from one tall image is how somebody "fixes" an animation that was fine.
 - **A tier has to be visibly different or it is not a tier.** The first attempt
   failed this, and Haider's verdict was exact: "there is not a lot of difference
   between the normal and the strong — it's only the header." The mesh and the
@@ -900,8 +907,8 @@ response several times over, which is the whole question on a slow connection.
 
 | page | transferred | first paint | loaded |
 |---|---|---|---|
-| landing | 167 KB → **269 KB** | 1.7s → **2.1s** | 4.8s → **6.8s** |
-| `/case/new` | 172 KB → **269 KB** | 1.7s → **2.0s** | 4.9s → **6.8s** |
+| landing | 167 KB → 269 KB → **285 KB** | 1.7s → 2.1s → **2.6s** | 4.8s → 6.8s → **7.0s** |
+| `/case/new` | 172 KB → 269 KB → **279 KB** | 1.7s → 2.0s → **2.5s** | 4.9s → 6.8s → **7.0s** |
 | tracking, with a photograph | 194 KB | 1.7s | 5.3s |
 | `/case/new`, second visit | 1 KB | 0.5s | 0.6s |
 
@@ -965,18 +972,33 @@ the teal rather than warm, and now sits at 0.16.
 
 The page reads Payload now, so it carries `revalidate = 300` like `/case/new`.
 Cost of roughly tripling the content and adding the artwork: **277 KB against
-267**, first paint 2.5s against 2.3s.
+267**, first paint 2.5s against 2.3s. The bridge, the footer columns and the
+extra motion rules took it to **285 KB**, first paint 2.6s — eight kilobytes for
+the picture that explains the product.
 
-**Held for the next pass — the bridge diagram.** Haider's idea, and it is a good one: near
-the top of the page, a student in a lab coat on one side, a patient on the other, and a drawn
-line joining them with the wordmark sitting on that line. It is the one picture that explains
-what سَنّون does without a sentence, and it answers the hero's real weakness — there is nothing
-to look at, and there should never be photography of patients. Two rules it inherits from the
-rest of the file: **no faces** (figures are silhouettes or drawn shapes, never photographs, and
-never a recognisable person), and it is **inline SVG**, like `MatchMotif` and the icon set, so
-it costs bytes already being downloaded rather than a second request. `MatchMotif` is the same
-idea abstracted; this would be the literal version, and the two should not both sit in the
-hero.
+**The bridge diagram — built.** `src/components/brand/match-bridge.tsx`. Haider's idea and
+the right one: a student in a lab coat on one side, a patient on the other, a line joining
+them with the name sitting on it. It is the one picture that explains سَنّون without a
+sentence, and it replaced `MatchMotif` in the hero rather than joining it — the abstract and
+the literal must not share a hero, so the motif moved to the closing band, where being
+decoration is the whole job. Rules it inherits and which any change must keep:
+
+- **No faces.** The heads are plain circles. A figure with eyes would also make it a picture
+  of two particular people rather than of two roles.
+- **Inline SVG**, like `MatchMotif` and the icon set, and **colour from tokens** rather than
+  literals so `tokens.css` still re-themes everything.
+- **The two figures are different colours on purpose** — accent and warm. They are not the
+  same person, and what each has that the other needs is the entire product.
+- **It sits on light surfaces only.** The accent-coloured student would disappear on the
+  accent band; moving it there needs a variant, not a copy.
+- **The line animates on a clock, not on a scroll timeline**, at every tier that animates.
+  A `view()` timeline freezes where the reader stopped, and a half-drawn line between two
+  people reads as a broken connection rather than a made one. It is also the one place other
+  than the motif arcs where `stroke-dashoffset` is allowed against the transform-and-opacity
+  rule: there is no transform that draws a line.
+
+The line is deliberately plain. What belongs on it is open, and the badge holds the place
+with the wordmark until there is a logo.
 
 **Nothing on it overstates.** No testimonials, no user counts, no waiting time,
 and — deliberately — no claim that the treatment itself is free, only that سنون

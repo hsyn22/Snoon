@@ -1,6 +1,6 @@
 import fs from 'node:fs'
 
-const T = '#13585c', TD = '#0d4144', W = '#e0a668', WL = '#f3e2cd'
+const T = '#13585c', TD = '#0d4144', W = '#e0a668'
 const AR = '&#x633;&#x64E;&#x646;&#x651;&#x648;&#x646;'   // سَنّون
 const NN = '&#x646;'                                      // ن
 const SH = '&#x651;'                                      // ّ
@@ -26,7 +26,7 @@ const C = [
     why: 'الفتحة والشدّة بلون دافئ — الحركات هي العلامة، مو شكل مضاف جنب الاسم',
     note: 'The two marks you chose become the brand device. Nothing is added beside the name; the name carries it.',
     big: (c) => diacritics('Lalezar', 92, 62, c ? '#fff' : TD, W),
-    fav: (c) => `<span style="font-family:'Lalezar';font-size:26px;color:${W}">${SH}</span>`,
+    fav: () => `<span style="font-family:'Lalezar';font-size:26px;color:${W}">${SH}</span>`,
     favBg: T },
 
   { n: 'اللوح', en: 'The panel',
