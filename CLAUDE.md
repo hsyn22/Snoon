@@ -5,8 +5,29 @@ Arabic-first platform connecting Iraqi dental patients who need accessible treat
 requirements. Treatment happens at the university clinic, under university supervision.
 سنون matches people; it does not deliver care and does not employ anyone.
 
-**Brand name:** Arabic `سنون` (primary, no diacritics — no shadda), Latin `SNOON`
-(secondary). Never write `سَنّون`; that is a different word.
+**Brand name:** Arabic `سَنّون` — fatha on the س, shadda on the first ن — primary. Latin
+`SOON`, secondary, for the domain and nothing else.
+
+**This reverses the earlier rule**, which said no diacritics and named `سَنّون` as a different
+word. It is: `سنون` is a plural of سِنّ, and `سَنّون` is Haider's childhood nickname. He chose the
+nickname, and it is his name to choose. Recorded here rather than quietly changed because the
+old rule was stated as a non-negotiable and someone will otherwise "correct" it back.
+
+Two things follow from it and are not optional:
+
+- **The diacritics are part of the name, so they have to be typed, not drawn.** The string is
+  six code points — `س` `U+064E` `ن` `U+0651` `و` `ن` — and every one of the fifteen Arabic
+  faces tried renders it correctly. Nothing may hand-draw these letterforms as SVG paths: that
+  is exactly how the generated logo Haider was shown ended up spelling a word that does not
+  exist.
+- **The Latin is not a transliteration and must not be made into one.** `SOON` does not say
+  سَنّون and is not meant to; it is short, it is available-looking, and it is for a domain. Its
+  one cost is that an English reader may read the wordmark as "coming soon" — raised with
+  Haider, still open.
+
+The site's own copy is **not** changed yet. Changing it is one edit to `copy.ts` once the logo
+is chosen, and doing it before then would leave the product saying one thing and the mark
+another.
 
 ---
 
@@ -944,6 +965,17 @@ the teal rather than warm, and now sits at 0.16.
 The page reads Payload now, so it carries `revalidate = 300` like `/case/new`.
 Cost of roughly tripling the content and adding the artwork: **277 KB against
 267**, first paint 2.5s against 2.3s.
+
+**Held for the next pass — the bridge diagram.** Haider's idea, and it is a good one: near
+the top of the page, a student in a lab coat on one side, a patient on the other, and a drawn
+line joining them with the wordmark sitting on that line. It is the one picture that explains
+what سَنّون does without a sentence, and it answers the hero's real weakness — there is nothing
+to look at, and there should never be photography of patients. Two rules it inherits from the
+rest of the file: **no faces** (figures are silhouettes or drawn shapes, never photographs, and
+never a recognisable person), and it is **inline SVG**, like `MatchMotif` and the icon set, so
+it costs bytes already being downloaded rather than a second request. `MatchMotif` is the same
+idea abstracted; this would be the literal version, and the two should not both sit in the
+hero.
 
 **Nothing on it overstates.** No testimonials, no user counts, no waiting time,
 and — deliberately — no claim that the treatment itself is free, only that سنون
