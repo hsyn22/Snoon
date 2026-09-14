@@ -30,6 +30,21 @@ The site's own copy is **not** changed yet. Changing it is one edit to `copy.ts`
 is chosen, and doing it before then would leave the product saying one thing and the mark
 another.
 
+**Say `منصة سنون`, not `سنون`, where the name names the thing.** `site.platform` carries it.
+A bare "سنون" beside a hospital's name reads as a clinic, and the one thing this must never be
+mistaken for is the place the treatment happens — سنون matches people and delivers no care.
+It also leaves room for the other things that will carry the name: `متجر سنون`, and a
+`نظام سنون للعيادات` if that ever happens. `site.name` stays the bare word, for the wordmark
+and for running text where سنون is the subject of a sentence.
+
+**Never write `مريض` in user-facing copy. The word is `مراجع`.** Haider's instruction, and it
+is the register a person uses about themselves when they go to a clinic — "مريض" labels
+somebody as ill, which is not what a person filling in a form is there to be told. Applies to
+`copy.ts`, `legal.ts` and every component. **`src/lib/cases/reasons.ts` is deliberately
+excluded**: those strings are written into the case event log and are effectively an API, so
+changing them splits the audit trail in two and leaves half of an admin's history in the old
+wording. They are admin-facing and nobody outside the admin ever reads them.
+
 ---
 
 ## Non-negotiables
@@ -907,8 +922,8 @@ response several times over, which is the whole question on a slow connection.
 
 | page | transferred | first paint | loaded |
 |---|---|---|---|
-| landing | 167 KB → 269 KB → **285 KB** | 1.7s → 2.1s → **2.6s** | 4.8s → 6.8s → **7.0s** |
-| `/case/new` | 172 KB → 269 KB → **279 KB** | 1.7s → 2.0s → **2.5s** | 4.9s → 6.8s → **7.0s** |
+| landing | 167 KB → 269 KB → **286 KB** | 1.7s → 2.1s → **2.5s** | 4.8s → 6.8s → **7.0s** |
+| `/case/new` | 172 KB → 269 KB → **280 KB** | 1.7s → 2.0s → **2.5s** | 4.9s → 6.8s → **6.9s** |
 | tracking, with a photograph | 194 KB | 1.7s | 5.3s |
 | `/case/new`, second visit | 1 KB | 0.5s | 0.6s |
 
@@ -1074,6 +1089,17 @@ A dental products marketplace is planned for later — oral hygiene products for
 instruments and materials for students and dentists. The intended model is commission-based:
 supplier lists, customer orders, supplier fulfils, سنون takes a cut. **No owned inventory.**
 
+**It is no longer advertised on the site.** The "متجر سنون — قريباً" band is removed on
+Haider's instruction, and the reasoning is worth keeping: a "coming soon" panel is a promise
+the site cannot keep, and it was the only thing on the page pointing at something that does
+not exist. Its place in the navigation model is still held in `copy.ts` (`landing.supplies`)
+so nothing has to be retrofitted. When the store is built it gets its own site, and this one
+is updated to match it and link across as advertising — Haider's plan, not a default.
+
+Haider also raised, as an idea only: a **نظام سنون للعيادات**, a clinic-records system that
+would hold a clinic's own data. Recorded so it is not lost. **Do not design for it** — it is
+not a decision, and the one thing it must not do yet is shape the case or auth model.
+
 For now:
 
 - Do not build it.
@@ -1137,12 +1163,18 @@ These are genuinely unresolved. If a task depends on one, stop and ask rather th
    scale to thousands of cases and does not need to — at one or two cities it is a handful a
    week, and a wrong automatic answer costs someone their treatment or their case.
 5. **Photo requirement.** Optional at submission — but should some treatments require them?
-5b. **Does the university clinic charge the patient for materials?** The landing page
-   and the FAQ are careful to say only that *سنون* takes no money, never that the
-   treatment is free, because nobody has said which it is. If the clinic charges
-   for materials the FAQ should say so plainly — a patient who arrives expecting
-   free treatment and is asked for money is exactly the harm this whole project
-   is trying to avoid. Ask Haider.
+5b. ~~**Does the university clinic charge for materials?**~~ **Answered by Haider.** Some
+   universities charge a **symbolic fee** for services their own students provide, usually no
+   more than **5,000 د.ع**, and the **student** states the exact price — and the cost of
+   better materials where a choice exists — before treatment starts. `fees.long` in `copy.ts`
+   says exactly that, in one shared string used in three places: the landing hero, the FAQ,
+   and above the case form. Three wordings would drift and the one that drifts is the one
+   somebody reads.
+   Two consequences already applied: the promise card no longer says **مجاناً** (a reader
+   takes that as "the treatment is free", which is the claim this answer forbids) and the
+   closing band no longer says "ما تحتاج حساب ولا فلوس". What is still not known is *which*
+   universities charge and how much; when that is known it belongs in Payload beside the
+   college, not in `copy.ts`.
 6. **University choice by the patient.** Raised and deliberately deferred, not rejected: after
    picking a city, should the patient narrow their case to particular universities they can
    actually reach? Transport across a city is the real obstacle in Iraq, so the information

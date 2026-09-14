@@ -6,17 +6,27 @@
  * only. No interpolation of patient names or phone numbers into copy, ever.
  */
 
+/**
+ * `name` is the bare word for the wordmark and for running text where "سنون"
+ * is the subject of a sentence. `platform` is what سنون is *called* — Haider's
+ * instruction, and it earns its place: a bare "سنون" beside a hospital's name
+ * reads as a clinic, and the one thing this must never be mistaken for is the
+ * place the treatment happens. It also leaves room for the other things that
+ * will carry the name later — متجر سنون, and a نظام سنون للعيادات if that
+ * happens — so "منصة سنون" is the one that means this product specifically.
+ */
 export const site = {
   name: 'سنون',
+  platform: 'منصة سنون',
   nameLatin: 'SNOON',
-  tagline: 'نربط المرضى بطلبة طب الأسنان',
+  tagline: 'نوصّل بين المراجع وطالب طب الأسنان',
   description:
-    'العلاج يكون في عيادة الجامعة وتحت إشراف الأساتذة. سنون يوصّل بس — ما يقدّم علاج وما يوظّف أحد.',
+    'العلاج يكون في عيادة الجامعة وتحت إشراف الأساتذة. منصة سنون توصّل بس — ما تقدّم علاج وما توظّف أحد.',
 } as const
 
 export const nav = {
   home: 'الرئيسية',
-  forPatients: 'للمرضى',
+  forPatients: 'للمراجعين',
   forStudents: 'للطلبة',
   supplies: 'المستلزمات',
   skipToContent: 'انتقل إلى المحتوى',
@@ -42,18 +52,44 @@ export const landing = {
   },
   supplies: {
     title: 'مستلزمات طب الأسنان',
-    body: 'مواد وأدوات للطلبة والأطباء، ومنتجات العناية بالفم للمرضى.',
+    body: 'مواد وأدوات للطلبة والأطباء، ومنتجات العناية بالفم للمراجعين.',
     action: 'قريباً',
     note: 'لسه ما متوفر.',
   },
 } as const
 
+/**
+ * What it costs. This is the answer to the question the FAQ used to dodge.
+ *
+ * Haider: some universities charge a symbolic fee for services their own
+ * students provide, usually no more than 5,000 د.ع, and the student explains
+ * the exact price — and the cost of better materials where a choice exists —
+ * before anything starts.
+ *
+ * Why it is one shared string used in three places rather than three
+ * sentences: a patient who arrives expecting free treatment and is asked for
+ * money is precisely the harm this project exists to prevent, so the same
+ * words have to appear on the landing page, in the FAQ, and on the form
+ * *before* they submit. Three wordings would drift, and the one that drifts is
+ * the one somebody reads.
+ *
+ * It says "some universities" because it is not known which. When that is
+ * known per college it belongs in Payload beside the college, not here.
+ */
+export const fees = {
+  short: 'منصة سنون ما تاخذ فلوس منك ولا من الطالب.',
+  long:
+    'منصة سنون ما تاخذ فلوس منك ولا من الطالب. بس بعض الجامعات تاخذ أجور رمزية ' +
+    'على الخدمات اللي يقدمها طلابها، وغالباً ما تتجاوز 5,000 د.ع. الطالب راح ' +
+    'يوضّحلك السعر المضبوط قبل ما تبدون، وإذا اكو خيار مواد أحسن يخبرك بكلفته.',
+} as const
+
 export const howItWorks = {
   title: 'شلون يشتغل',
   steps: [
-    'المريض يقدّم حالته: المدينة، نوع العلاج المطلوب، والأوقات اللي يكدر يجي بيها.',
+    'المراجع يقدّم حالته: المدينة، نوع العلاج المطلوب، والأوقات اللي يكدر يجي بيها.',
     'الطالب الموثّق يشوف الحالات اللي تناسب مرحلته وعيادته، ويحجز وحدة منها.',
-    'بعد الحجز بس، تظهر للطالب معلومات التواصل، ويتواصل وية المريض ويحدد الموعد.',
+    'بعد الحجز بس، تظهر للطالب معلومات التواصل، ويتواصل وية المراجع ويحدد الموعد.',
     'العلاج يصير بعيادة الجامعة وتحت إشراف الأساتذة.',
   ],
 } as const
@@ -68,23 +104,26 @@ export const home = {
   backToHome: 'الرئيسية',
   eyebrow: 'علاج أسنان بإشراف جامعي',
 
-  /** Two-tone: the first half takes the accent, the second stays dark. */
-  headlineAccent: 'علاج أسنان',
-  headlineRest: 'تكدر توصله',
+  /** Two-tone: the first half takes the accent, the second stays dark.
+      "علاج أسنان تكدر توصله" is gone — Haider's call, and he is right that it
+      reads as a slogan about reach rather than as what سنون does. The platform
+      connects two people; the headline now says that and nothing else. */
+  headlineAccent: 'نوصّل بينك',
+  headlineRest: 'وبين طالب طب الأسنان',
   subhead:
-    'طلبة طب الأسنان بالسنة الرابعة والخامسة يحتاجون حالات لدراستهم. انت تحتاج علاج. سنون يوصّل بينكم، والعلاج يصير بعيادة الجامعة تحت إشراف الأساتذة.',
+    'طلبة طب الأسنان بالسنة الرابعة والخامسة يحتاجون حالات لدراستهم. انت تحتاج علاج. منصة سنون توصّل بينكم، والعلاج يصير بعيادة الجامعة تحت إشراف الأساتذة.',
 
   primaryAction: 'قدّم حالتك',
   secondaryAction: 'أنا طالب',
 
   /** Three short promises, under the fold on a phone but above it on a laptop. */
   promises: [
-    { title: 'مجاناً', body: 'سنون ما ياخذ فلوس منك ولا من الطالب.' },
+    { title: 'بدون عمولة', body: 'منصة سنون ما تاخذ فلوس منك ولا من الطالب.' },
     { title: 'بدون حساب', body: 'قدّم حالتك برابط واحد. ما تحتاج تسجّل.' },
     { title: 'تحت إشراف', body: 'العلاج بعيادة الجامعة ويشرف عليه الأساتذة.' },
   ],
 
-  forPatients: 'للمرضى',
+  forPatients: 'للمراجعين',
   forStudents: 'للطلبة',
 
   studentsTitle: 'طالب طب أسنان؟',
@@ -93,7 +132,7 @@ export const home = {
   studentsAction: 'دخول الطلبة',
 
   closingTitle: 'محتاج علاج أسنان؟',
-  closingBody: 'قدّم حالتك بدقيقتين. ما تحتاج حساب ولا فلوس.',
+  closingBody: 'قدّم حالتك بدقيقتين. ما تحتاج حساب، ومنصة سنون ما تاخذ منك فلوس.',
 
   /** The landing page's header menu. Two anchors, so it needs no hamburger and
       no JavaScript — both competitors script a drawer to hold four links. */
@@ -129,14 +168,14 @@ export const home = {
  */
 export const bridge = {
   student: 'طالب',
-  patient: 'مريض',
+  patient: 'مراجع',
   name: 'سنون',
   caption: 'سنون يوصّل بين الاثنين. هو ما يعالج، وما يشغّل أحد.',
-  alt: 'رسم: طالب طب أسنان من جهة، ومريض من الجهة الثانية، وبينهما خط يوصلهما وعليه اسم سنون.',
+  alt: 'رسم: طالب طب أسنان من جهة، ومراجع من الجهة الثانية، وبينهما خط يوصلهما وعليه اسم سنون.',
 } as const
 
 export const trustRow = [
-  'سنون مجاني',
+  'منصة سنون بدون عمولة',
   'العلاج بعيادة الجامعة',
   'بإشراف الأساتذة',
   'بدون حساب',
@@ -204,8 +243,8 @@ export const faqSection = {
   title: 'أسئلة تتكرر',
   items: [
     {
-      q: 'سنون يأخذ فلوس؟',
-      a: 'لا. سنون ما ياخذ فلوس منك ولا من الطالب، وما عدنا اشتراك ولا عمولة. العلاج نفسه يصير بعيادة الجامعة وحسب شروط الجامعة.',
+      q: 'شكد راح يكلفني؟',
+      a: 'منصة سنون ما تاخذ فلوس منك ولا من الطالب، وما عدنا اشتراك ولا عمولة. بس بعض الجامعات تاخذ أجور رمزية على الخدمات اللي يقدمها طلابها، وغالباً ما تتجاوز 5,000 د.ع. الطالب راح يوضّحلك السعر المضبوط قبل ما تبدون، وإذا اكو خيار مواد أحسن يخبرك بكلفته.',
     },
     {
       q: 'منو راح يعالجني؟',
@@ -240,7 +279,7 @@ export const faqSection = {
 
 export const footer = {
   /** Columns by audience — a patient and a student want different links. */
-  forPatients: 'للمرضى',
+  forPatients: 'للمراجعين',
   forStudents: 'للطلبة',
   submitCase: 'قدّم حالة',
   howItWorks: 'شلون تشتغل',
@@ -250,7 +289,7 @@ export const footer = {
   studentDashboard: 'حسابي',
 
   disclaimer:
-    'سنون منصة توصيل بين المرضى وطلبة طب الأسنان. العلاج يقدّمه الطالب داخل عيادة الجامعة وتحت إشراف جامعي. سنون ما يقدّم خدمة طبية وما يتحمل مسؤولية العلاج.',
+    'سنون منصة توصيل بين المراجعين وطلبة طب الأسنان. العلاج يقدّمه الطالب داخل عيادة الجامعة وتحت إشراف جامعي. سنون ما يقدّم خدمة طبية وما يتحمل مسؤولية العلاج.',
   privacy: 'الخصوصية',
   terms: 'الشروط',
 } as const
@@ -618,7 +657,7 @@ export const studentProfile = {
 
   clinicDaysLabel: 'أيام دوامك بالعيادة',
   clinicDaysHint:
-    'اختر الأيام اللي تكون بيها بالعيادة. نعرضلك الحالات اللي تناسب أيامك، وإذا حالة أيامها ما تناسبك تكدر تسأل المريض إذا يكدر يجي بيوم من أيامك.',
+    'اختر الأيام اللي تكون بيها بالعيادة. نعرضلك الحالات اللي تناسب أيامك، وإذا حالة أيامها ما تناسبك تكدر تسأل المراجع إذا يكدر يجي بيوم من أيامك.',
 
   stageLabel: 'المرحلة',
   stagePlaceholder: 'اختر مرحلتك',
@@ -688,7 +727,7 @@ export const studentQueue = {
   otherStageHint:
     'العلاجات المعلّمة بـ «مرحلة ثانية» مو من مرحلتك. تكدر تاخذ الحالة وتسوي اللي يخصك، وبعدين ترجّع الباقي للقائمة لطالب من المرحلة الثانية.',
   caseDays: 'الأيام المتاحة',
-  caseNotes: 'ملاحظات المريض',
+  caseNotes: 'ملاحظات المراجع',
   caseSubmitted: 'قُدّمت',
 
   claim: 'احجز الحالة',
@@ -699,13 +738,13 @@ export const studentQueue = {
    */
   dayMismatchTag: 'أيامك ما تناسب',
   dayMismatchBody:
-    'المريض ما اختار أي يوم من أيام دوامك. تكدر تسأله إذا يكدر يجي بيوم من أيامك، وإذا وافق تنحجز الحالة إلك تلقائياً.',
+    'المراجع ما اختار أي يوم من أيام دوامك. تكدر تسأله إذا يكدر يجي بيوم من أيامك، وإذا وافق تنحجز الحالة إلك تلقائياً.',
   dayMismatchOffer: 'راح نسأله عن',
-  askDays: 'اسأل المريض عن أيامك',
+  askDays: 'اسأل المراجع عن أيامك',
   asking: 'قيد الإرسال…',
-  askedAlready: 'سألنا المريض. ننتظر جوابه.',
+  askedAlready: 'سألنا المراجع. ننتظر جوابه.',
   askFailedUnavailable: 'هاي الحالة ما عادت متاحة.',
-  askFailedNoDays: 'كل أيام دوامك موجودة أصلاً بأيام المريض — تكدر تحجزها مباشرة.',
+  askFailedNoDays: 'كل أيام دوامك موجودة أصلاً بأيام المراجع — تكدر تحجزها مباشرة.',
   askFailedGeneric: 'ما كدرنا ندز السؤال. جرّب مرة لخ.',
 
   noClinicDaysTitle: 'ما محددة أيام دوامك',
@@ -757,20 +796,20 @@ export const studentHistory = {
 
 export const studentClaim = {
   title: 'الحالة اللي حاجزها',
-  intro: 'تواصل وية المريض واتفق وياه على الموعد.',
+  intro: 'تواصل وية المراجع واتفق وياه على الموعد.',
 
   deadlineLabel: 'لازم تتواصل قبل',
   deadlinePassed: 'انتهت المهلة.',
   deadlineHint: 'إذا ما تواصلت بالوقت، الحالة ترجع للقائمة لطالب ثاني.',
 
-  nameLabel: 'اسم المريض',
+  nameLabel: 'اسم المراجع',
   phoneLabel: 'رقم الموبايل',
   callAction: 'اتصل',
   phonePrivacy: 'هذا الرقم ظهرلك لأنك حاجز الحالة. لا تشاركه مع أي أحد.',
 
   treatmentsLabel: 'العلاج المطلوب',
   daysLabel: 'الأيام المتاحة',
-  notesLabel: 'ملاحظات المريض',
+  notesLabel: 'ملاحظات المراجع',
 
   backToQueue: 'رجوع للحالات',
   notFoundTitle: 'ما لكينا الحالة',
@@ -868,14 +907,14 @@ export const telegramCopy = {
   /** Sent to the student when the patient agrees to their day. */
   dayRequestAccepted: (referenceCode: string, day: string) =>
     [
-      `المريض وافق يجي يوم ${day}.`,
+      `المراجع وافق يجي يوم ${day}.`,
       '',
       `حالة ${referenceCode} صارت إلك. افتح الموقع حتى تشوف معلومات التواصل وتتصل بيه.`,
     ].join('\n'),
 
   /** Sent to the student when the patient says no, or somebody else got it. */
   dayRequestDeclined: (referenceCode: string) =>
-    `ما وافق المريض على أيامك بحالة ${referenceCode}. تكدر تشوف باقي الحالات بالموقع.`,
+    `ما وافق المراجع على أيامك بحالة ${referenceCode}. تكدر تشوف باقي الحالات بالموقع.`,
 
   /** Sent to the student when the patient's tracking link is how they answered. */
   claimExpired: 'انتهت مهلة التواصل وراحت الحالة لطالب ثاني. تكدر تحجز حالة جديدة من الموقع.',
@@ -921,18 +960,18 @@ export const patientConfirm = {
 
 /** What the student sees on the case they are holding. */
 export const studentContact = {
-  assertTitle: 'تواصلت وية المريض؟',
-  assertBody: 'إذا اتصلت بيه، خبّرنا وراح نسأل المريض يأكد.',
+  assertTitle: 'تواصلت وية المراجع؟',
+  assertBody: 'إذا اتصلت بيه، خبّرنا وراح نسأل المراجع يأكد.',
   assertAction: 'تواصلت وياه',
-  assertPending: 'دزّينا للمريض يأكد. ننتظر جوابه.',
-  assertConfirmed: 'المريض أكّد التواصل.',
+  assertPending: 'دزّينا للمراجع يأكد. ننتظر جوابه.',
+  assertConfirmed: 'المراجع أكّد التواصل.',
   assertFailed: 'ما كدرنا نسجّل. جرّب مرة لخ.',
 } as const
 
 /** The steps a student works through after contact is confirmed. */
 export const studentLifecycle = {
   appointmentTitle: 'حدد الموعد',
-  appointmentBody: 'بعد ما تتفق وية المريض، حدد الموعد هنا.',
+  appointmentBody: 'بعد ما تتفق وية المراجع، حدد الموعد هنا.',
   appointmentLabel: 'تاريخ ووقت الموعد',
   appointmentHint: 'بتوقيت بغداد.',
   appointmentAction: 'ثبّت الموعد',
@@ -958,7 +997,7 @@ export const studentLifecycle = {
   outcomeTitle: 'شنو صار بالموعد؟',
   outcomeBody: 'سجّل النتيجة حتى تنغلق الحالة.',
   completed: 'تم العلاج',
-  noShow: 'المريض ما حضر',
+  noShow: 'المراجع ما حضر',
   cancelled: 'انلغى الموعد',
   outcomeSaving: 'قيد التسجيل…',
 
@@ -967,7 +1006,7 @@ export const studentLifecycle = {
   closedCompleted: 'تم العلاج. شكراً.',
   /** Shown to the student who did their half of a shared case. */
   closedHandedOn: 'خلصت اللي يخص مرحلتك. باقي العلاج رجع للقائمة لطالب من مرحلة ثانية.',
-  closedNoShow: 'المريض ما حضر الموعد.',
+  closedNoShow: 'المراجع ما حضر الموعد.',
   closedCancelled: 'انلغى الموعد.',
 
   errors: {
@@ -1003,7 +1042,7 @@ export const telegramStudentDoc = {
   tooLarge: 'الملف كبير كلش. لازم أقل من 5 ميغا.',
   wrongType: 'نوع الملف مو مقبول. دزّ صورة أو PDF.',
   failed: 'ما كدرنا نستلم الوثيقة. جرّب مرة لخ.',
-  notAStudent: 'هذا الحساب مربوط بحالة مريض، مو بحساب طالب.',
+  notAStudent: 'هذا الحساب مربوط بحالة مراجع، مو بحساب طالب.',
 
   /** Sent when an admin decides. */
   verified: 'انقبل توثيقك. تكدر هسه تشوف الحالات المتاحة بالموقع.',

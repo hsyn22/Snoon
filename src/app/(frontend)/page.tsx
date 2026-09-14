@@ -4,9 +4,9 @@ import { Eyebrow, Section } from '@/components/ui/section'
 import {
   citiesSection,
   faqSection,
+  fees,
   home,
   howItWorks,
-  landing,
   safetySection,
   treatmentsSection,
   trustRow,
@@ -216,11 +216,25 @@ export default async function HomePage() {
               ))}
             </dl>
 
-            {/* The four facts a patient checks before reading anything else.
+            {/* What it costs, before anything else on the page can imply
+                otherwise. Haider's answer to the open question: سنون takes
+                nothing, but some universities charge a symbolic fee for their
+                own students' services and the student states it up front.
+                Saying only the first half is how somebody arrives expecting
+                free treatment and is asked for money — the exact harm this
+                project exists to prevent. */}
+            <p
+              className="animate-rise mt-6 text-pretty rounded-lg border border-warm/40 bg-warm-muted px-4 py-3 text-sm"
+              style={{ '--delay': '540ms' } as React.CSSProperties}
+            >
+              {fees.long}
+            </p>
+
+            {/* The four facts a visitor checks before reading anything else.
                 A strip rather than four more cards: they are one thought. */}
             <ul
               className="animate-rise mt-6 flex flex-wrap gap-x-5 gap-y-2 text-sm"
-              style={{ '--delay': '580ms' } as React.CSSProperties}
+              style={{ '--delay': '620ms' } as React.CSSProperties}
             >
               {trustRow.map((fact) => (
                 <li key={fact} className="flex items-center gap-1.5 text-foreground-muted">
@@ -379,19 +393,13 @@ export default async function HomePage() {
           </div>
         </Section>
 
-        {/* The supplies store is not built. Its place in the navigation model is
-            kept deliberately — see "Future: the supplies store" in CLAUDE.md.
-
-            Plain rather than muted: the FAQ above it is muted, and two muted
-            bands touching merge into one long grey stretch, which is exactly
-            the rhythm the band system exists to avoid. */}
-        <Section>
-          <h2 className="text-lg font-bold">{landing.supplies.title}</h2>
-          <p className="mt-2 text-sm text-foreground-muted">{landing.supplies.body}</p>
-          <p className="mt-3 inline-flex rounded-full bg-surface px-3 py-1 text-xs font-bold text-foreground-muted">
-            {landing.supplies.action}
-          </p>
-        </Section>
+        {/* The "متجر سنون — قريباً" band used to sit here and is gone on
+            Haider's instruction. A "coming soon" panel is a promise the site
+            cannot keep, and it is the only thing on the page that advertises
+            something that does not exist. The store is still planned; its place
+            in the navigation model is still kept in `copy.ts` and CLAUDE.md, so
+            nothing has to be retrofitted — but it is not shown until it is
+            real, and when it is it gets its own site. */}
 
         <Section tone="accent">
           <h2 className="reveal text-2xl font-bold sm:text-3xl">{home.closingTitle}</h2>

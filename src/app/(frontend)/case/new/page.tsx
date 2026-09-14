@@ -3,7 +3,7 @@ import { getCities, getTreatmentTypes } from '@/lib/config'
 import { PageShell } from '@/components/site-chrome'
 import { PageHeader } from '@/components/ui/section'
 import { ButtonLink } from '@/components/ui/button'
-import { caseForm, common } from '@/lib/copy'
+import { caseForm, common, fees } from '@/lib/copy'
 import { CaseForm } from './case-form'
 
 export const metadata: Metadata = { title: caseForm.title }
@@ -30,6 +30,16 @@ export default async function NewCasePage() {
             the lead underneath answers what a patient is actually worried about,
             which is who ends up with their phone number. */}
         <PageHeader eyebrow={caseForm.eyebrow} title={caseForm.title} lead={caseForm.intro} />
+
+        {/* What it costs, above the form rather than after it. Somebody filling
+            this in is deciding whether to go; finding out about a fee on the
+            other side of a submit button is how a person arrives at a clinic
+            expecting free treatment and is asked for money. Same string as the
+            landing page and the FAQ — three wordings would drift, and the one
+            that drifts is the one somebody reads. */}
+        <p className="mb-6 text-pretty rounded-lg border border-warm/40 bg-warm-muted px-4 py-3 text-sm">
+          {fees.long}
+        </p>
 
         <CaseForm cities={cities} treatmentTypes={treatmentTypes} />
 

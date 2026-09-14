@@ -42,11 +42,23 @@
   --color-accent-foreground: oklch(99% 0 0);
   --color-accent-muted: oklch(95% 0.025 195);
   --color-accent-strong: oklch(38% 0.075 198);
+  /* The lit side of a round shape in the accent colour. Without it the only
+     lighter accent is `-muted`, which is nearly white — a gradient from that to
+     `-strong` reads as a spotlight rather than as a form. */
+  --color-accent-light: oklch(60% 0.09 192);
 
   /* Warm counterweight: eyebrow pills, highlights, the second half of a
-     two-tone heading. Never used for a call to action — one primary only. */
-  --color-warm: oklch(72% 0.12 65);
-  --color-warm-muted: oklch(96% 0.03 75);
+     two-tone heading. Never used for a call to action — one primary only.
+
+     Moved from 65° to 52° and from 0.12 chroma to 0.165 — Haider's note that
+     the old value read yellow rather than orange and was not lively enough.
+     It is the same move the mesh needed earlier for the same reason: against a
+     deep teal, a yellow-leaning warm goes muddy-green where the two meet, and
+     orange stays warm. `-deep` is for the shaded side of a round shape, so the
+     shading is the brand colour darkened rather than grey laid over it. */
+  --color-warm: oklch(70% 0.165 52);
+  --color-warm-deep: oklch(56% 0.16 45);
+  --color-warm-muted: oklch(96% 0.04 62);
 
   /* Case status needs to read at a glance on a small screen. */
   --color-positive: oklch(52% 0.11 155);
