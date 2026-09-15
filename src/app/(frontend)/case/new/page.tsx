@@ -29,7 +29,13 @@ export default async function NewCasePage() {
             single cheapest thing that stops the page reading as paperwork — and
             the lead underneath answers what a patient is actually worried about,
             which is who ends up with their phone number. */}
-        <PageHeader eyebrow={caseForm.eyebrow} title={caseForm.title} lead={caseForm.intro} />
+        {/* The other half of the shared-element transition. The landing page's
+            primary button carries the same `data-flip-id`, so on a capable
+            phone the button grows into this block rather than the page cutting
+            to it. Inert everywhere else — it is one attribute. */}
+        <div data-flip-id="case-entry">
+          <PageHeader eyebrow={caseForm.eyebrow} title={caseForm.title} lead={caseForm.intro} />
+        </div>
 
         {/* What it costs, above the form rather than after it. Somebody filling
             this in is deciding whether to go; finding out about a fee on the

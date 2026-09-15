@@ -994,3 +994,23 @@
     }
   }
 }
+
+/* ===========================================================================
+ * While a shared-element transition is in flight.
+ *
+ * `PageTransitions` stamps `data-flipping` on <html> the instant a marked link
+ * is tapped, and clears it when the morph finishes or fails. The page's own
+ * fade has to stand down for that one navigation: run both and the page reads
+ * as arriving twice — once by fading in, once by being flown in.
+ *
+ * Deliberately outside the motion gate. If the attribute is somehow set on a
+ * device that is not animating, the correct result is still "no fade", and a
+ * missing animation never hides anything: `.page-enter` has no starting state
+ * of its own outside the gate.
+ * ======================================================================== */
+
+@layer utilities {
+  :root[data-flipping] .page-enter {
+    animation: none;
+  }
+}

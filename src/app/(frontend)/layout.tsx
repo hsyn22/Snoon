@@ -2,6 +2,7 @@ import type { Metadata, Viewport } from 'next'
 import { IBM_Plex_Sans_Arabic } from 'next/font/google'
 import { site, nav } from '@/lib/copy'
 import { DEFAULT_MOTION_TIER, MOTION_TIER_SCRIPT } from '@/lib/motion-tier'
+import { PageTransitions } from '@/components/page-transitions'
 import './globals.css'
 
 /**
@@ -77,6 +78,10 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           {nav.skipToContent}
         </a>
         {children}
+        {/* Renders nothing. It decides whether this device gets the shared-
+            element transition, and on a device that does not — which is every
+            phone below the `full` tier — it never loads a byte of GSAP. */}
+        <PageTransitions />
       </body>
     </html>
   )

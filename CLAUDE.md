@@ -827,12 +827,13 @@ go backwards.
 **And one plugin is actively unsafe here:** SplitText splits text per character, which breaks
 Arabic letter joining — the rule this file states twice. Never point it at Arabic.
 
-**Where GSAP would genuinely earn its place**, if it is ever wanted: `Flip`, for the
+**Where GSAP genuinely earns its place — and it is the only place:** `Flip`, for the
 shared-element page transition that React's `<ViewTransition>` cannot give us yet. That is a
-real capability CSS has no answer for. The way to buy it without charging the median user is
-the tier gate — `data-motion` is decided before first paint, so the script can be loaded
-**only at `full`, and only after the page is interactive**. A weak phone downloads nothing.
-That is the one proposal worth putting up, and it has not been built.
+real capability CSS has no answer for. What buys it without charging the median user is the
+tier gate — `data-motion` is decided before first paint, so the script loads **only at
+`full`, and only once the browser is idle**. A weak phone downloads nothing, measured.
+**Built** — see "the shared-element morph" below. Nothing else here uses GSAP, and the
+argument above is why: every scroll effect stays in CSS.
 
 ### Three tiers, chosen before the first paint
 
@@ -1085,8 +1086,10 @@ will come back:
   that would genuinely raise the product and costs nothing — the View Transitions API is
   native. Note before starting it: `ViewTransition` is not exported by the installed
   `react` 19.2.8, so it would come from the canary React that Next bundles for the client,
-  and that needs verifying rather than assuming. It also cannot be judged in the
-  single-file preview, which has no navigation at all.
+  and that needs verifying rather than assuming. It also could not be judged in the
+  single-file preview, which had no navigation at all — **the preview now carries both the
+  landing page and the case form and swaps between them**, precisely so the morph can be felt
+  on a phone before there is a deployment. See below.
 
 **The steps are a rail, not a stack.** Haider's note, and it is right twice over: four cards
 stacked is four screens to scroll past before the page continues, and a sequence laid out
@@ -1117,6 +1120,57 @@ four-card motion reference. Checked rather than assumed:
   App Router swaps the segment. Not a shared-element morph, but navigation reads as a move
   rather than a cut, and it keeps client-side routing and prefetch. Revisit when
   `<ViewTransition>` ships in stable React.
+
+**And then the shared-element morph, with GSAP Flip.** Asked for directly — "نكدر نستعمل
+GSAP؟", then "سويه". `src/components/page-transitions.tsx`. Tapping the landing page's primary
+button makes it *become* the case form's heading: it travels up the screen and grows into it,
+rather than one page cutting to another. It is the one effect in that whole reference
+catalogue that CSS here has no answer to, and it is the case this file already named as where
+GSAP would genuinely earn its place.
+
+The reason it is affordable is the tier gate, and the gate is the point rather than a detail:
+
+- **Three gates, in order, before a byte of GSAP is fetched.** `data-motion === 'full'`; no
+  `prefers-reduced-motion`; and the import runs inside `requestIdleCallback`, so it never
+  competes with anything on the critical path. The `import()` is dynamic so it becomes its own
+  chunk, and a chunk is only fetched when the import runs.
+- **Measured, same build, same 360px viewport:** `none` **283 KB / 18 requests**, `standard`
+  **283 KB / 18 requests**, `full` **322 KB / 21 requests**. The two cheap tiers are
+  byte-identical — the median phone this project exists to serve downloads nothing for this.
+  Slow 3G on the landing page is unchanged at **284 KB, first paint 2.6s**.
+- **Everything degrades to the `.page-enter` fade.** GSAP not loaded yet, the destination
+  missing its half of the pair, anything thrown — the navigation is an ordinary one. A
+  transition is the last thing that may ever break a link.
+
+Two findings worth not rediscovering:
+
+- **`absolute: true` is the obvious setting in `Flip.from` and it was wrong here.** Lifting the
+  heading out of flow for the flight let the rest of the arriving page collapse upwards by its
+  height and then drop back when it landed — a jolt through the whole form, on the one page a
+  patient must never find unsettling. In flow, the destination is laid out correctly from the
+  first frame and only the heading moves. Keep `scale: true` (size by transform, so the flight
+  stays on the compositor) and leave `absolute` off.
+- **Capture on `click`, in the capture phase — not on `pointerdown`.** `pointerdown` fires for
+  taps that never become navigations: a drag away, a modified click that opens a new tab. Each
+  one left `data-flipping` set on `<html>`, which suppresses the CSS fade for *every later
+  navigation*, and left stale bounds in `pending` so the next flight would start from somewhere
+  the reader never tapped. Capture-phase `click` runs before Next's own handler while the old
+  page is still on screen, and modified clicks are skipped. A 1200ms expiry then clears any
+  capture whose navigation never arrived, because a click can still be cancelled downstream or
+  a route can fail. Verified by blocking the navigation in a capture listener and watching
+  `<html>` come back clean.
+
+**The preview artifact carries two pages now**, built by `snapshot.mjs` in the scratchpad.
+Three things about it that are easy to get wrong a second time:
+
+- **It loads GSAP from cdnjs, behind the same gate as the real site** — `full` tier only, and
+  only once the browser is idle. A preview that always loaded it would misreport what a given
+  phone actually gets, which is the one question the preview exists to answer.
+- **The second page rides in a `<script type="text/html">` block**, with `</script>` escaped
+  inside it. Anything else and the case form's own markup closes the tag early.
+- **Nothing in a preview may submit**, so `submit` is cancelled globally. There is no server
+  behind it, and a form that appears to send a patient's details and does not is worse than
+  one that plainly cannot.
 
 **The steps were cards before they were a rail.** Four sentences each with a 16px icon read, in Haider's words, as
 icons put there to fill a gap rather than to mean anything — which was fair. Each step is a

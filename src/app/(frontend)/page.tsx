@@ -193,8 +193,15 @@ export default async function HomePage() {
                 className="animate-rise mt-8 flex flex-col gap-3 sm:flex-row md:col-start-1 md:row-start-2 md:mt-7"
                 style={{ '--delay': '280ms' } as React.CSSProperties}
               >
+                {/* One half of the shared-element transition. The other half
+                    carries the same `data-flip-id` on `/case/new`, and that
+                    pairing is the whole mechanism: on a capable phone this
+                    button travels across and grows into the form's heading
+                    instead of the page cutting. On every other device the
+                    attribute is inert. */}
                 <Link
                   href="/case/new"
+                  data-flip-id="case-entry"
                   className="press inline-flex min-h-12 items-center justify-center rounded-full bg-accent px-6 font-bold text-accent-foreground shadow-md"
                 >
                   {home.primaryAction}
