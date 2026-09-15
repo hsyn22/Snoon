@@ -1014,3 +1014,147 @@
     animation: none;
   }
 }
+
+/* ===========================================================================
+ * The moment something worked, and the moment it is still working.
+ *
+ * Both taken from the free half of transitions.dev ("success check", "spinner
+ * to check morph", "error state shake") and rewritten to this project's rules
+ * rather than copied: their originals animate `filter: blur()` and `height`,
+ * which are the two things a cheap Android cannot composite.
+ *
+ * The safety property is the same one that governs every reveal here, stated
+ * the other way round: **the finished state is the one in the markup, and the
+ * unfinished state only exists inside the gate.** A browser with no animation
+ * support, a device at the `none` tier, or an attribute momentarily cleared all
+ * show a drawn tick. Nothing here can leave a success looking like a failure.
+ * ======================================================================== */
+
+/* ---- The drawn tick ----------------------------------------------------- */
+
+.success-check {
+  inline-size: 2.75rem;
+  block-size: 2.75rem;
+  flex: none;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  :root:not([data-motion='none']) .success-check-tick {
+    /* 34 is a little over the path's own length, so the dash clears it. */
+    stroke-dasharray: 34;
+    animation: snoon-tick-draw 520ms cubic-bezier(0.22, 1, 0.36, 1) 120ms both;
+  }
+
+  :root:not([data-motion='none']) .success-check-ring {
+    /* Scales from the centre of the 52-unit box. `transform-box: fill-box`
+       makes a percentage origin mean the shape rather than the whole SVG
+       viewport, which is what makes this land centred instead of drifting. */
+    transform-box: fill-box;
+    transform-origin: 50% 50%;
+    animation: snoon-ring-in 420ms cubic-bezier(0.22, 1, 0.36, 1) both;
+  }
+}
+
+@keyframes snoon-tick-draw {
+  from {
+    stroke-dashoffset: 34;
+  }
+  to {
+    stroke-dashoffset: 0;
+  }
+}
+
+@keyframes snoon-ring-in {
+  from {
+    transform: scale(0.72);
+    opacity: 0;
+  }
+  to {
+    transform: scale(1);
+    opacity: 0.35;
+  }
+}
+
+/* At the full tier the ring answers the tick: one outward pulse as the tick
+   finishes, and then it stops. Deliberately not a loop — a success that keeps
+   pulsing reads as a notification demanding something, and the patient has just
+   finished doing the only thing سنون asks of them. */
+@media (prefers-reduced-motion: no-preference) {
+  :root[data-motion='full'] .success-check-ring {
+    animation:
+      snoon-ring-in 420ms cubic-bezier(0.22, 1, 0.36, 1) both,
+      snoon-ring-pulse 700ms cubic-bezier(0.22, 1, 0.36, 1) 560ms both;
+  }
+}
+
+@keyframes snoon-ring-pulse {
+  0% {
+    transform: scale(1);
+    opacity: 0.35;
+  }
+  45% {
+    transform: scale(1.14);
+    opacity: 0.18;
+  }
+  100% {
+    transform: scale(1);
+    opacity: 0.35;
+  }
+}
+
+/* ---- The spinner in a submitting button --------------------------------- */
+
+.btn-spinner {
+  inline-size: 1.125rem;
+  block-size: 1.125rem;
+  flex: none;
+}
+
+/* The one loop in سنون other than the bridge's mote, and the exception is
+   argued in success-check.tsx: this is not in anybody's peripheral vision, it
+   is the thing they are watching while a photograph goes up a slow link. Under
+   reduced motion and at the `none` tier it simply sits still — the button's own
+   قيد الإرسال… is what carries the meaning, and the ring stays as a mark that
+   something is in hand. */
+@media (prefers-reduced-motion: no-preference) {
+  :root:not([data-motion='none']) .btn-spinner {
+    animation: snoon-spin 760ms linear infinite;
+  }
+}
+
+@keyframes snoon-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* ---- A form that refused ------------------------------------------------ */
+
+/* transitions.dev's "error state shake", cut down. Theirs travels about 10px
+   and runs four times; this moves 4px and settles, because the element it is
+   attached to is an error message on a medical form rather than a wrong
+   password on a login box. The point is to catch the eye of somebody who has
+   just scrolled past it, not to tell them off.
+   Colour still carries the meaning on its own — this only decides whether the
+   message is noticed. */
+@media (prefers-reduced-motion: no-preference) {
+  :root:not([data-motion='none']) .shake-in {
+    animation: snoon-shake 420ms cubic-bezier(0.36, 0.07, 0.19, 0.97) both;
+  }
+}
+
+@keyframes snoon-shake {
+  0%,
+  100% {
+    transform: translateX(0);
+  }
+  20% {
+    transform: translateX(-4px);
+  }
+  45% {
+    transform: translateX(4px);
+  }
+  70% {
+    transform: translateX(-2px);
+  }
+}

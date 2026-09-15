@@ -1168,9 +1168,71 @@ Three things about it that are easy to get wrong a second time:
   phone actually gets, which is the one question the preview exists to answer.
 - **The second page rides in a `<script type="text/html">` block**, with `</script>` escaped
   inside it. Anything else and the case form's own markup closes the tag early.
-- **Nothing in a preview may submit**, so `submit` is cancelled globally. There is no server
-  behind it, and a form that appears to send a patient's details and does not is worse than
-  one that plainly cannot.
+- **Nothing in a preview may submit**, so `submit` is cancelled globally — and the send is
+  then *played*: the spinner runs, and after a beat the real success card appears. Only that
+  one card is lifted from a real submission, never the page around it, because that page
+  carries a name, a number and a live tracking token. `successcard.mjs` refuses to write the
+  file if anything matching a phone number or a token is inside it, and `previewsend.mjs`
+  checks the built preview again.
+- **The pending label is read from the button's `data-submitting`**, not copied into the
+  preview script. One string in `copy.ts`, so the preview cannot drift from the product.
+
+### The five tool cards, and what was taken from them
+
+Haider sent five: backgrounds.supply, transitions.dev, deck.gallery, godly.design,
+animos.app — asking which could be used, and for "something premium for the strong version".
+Fetched rather than judged from the cards. **One of the five has anything that goes into this
+codebase.**
+
+- **transitions.dev — yes, and free.** 37 transitions outside the paywall, as CSS and React
+  snippets. Most are wrong here for reasons this file already states: pointer-only ones
+  (3D tilt with cursor glare, avatar-group hover, card-stack hover) miss a touch-screen
+  median user; the accordion animates `height`; confetti on a medical form is grotesque; and
+  the loops (shimmer text, organic shimmer) are what "nothing loops in the reader's
+  peripheral vision" exists to exclude. **Three were taken** — success check, spinner-to-check
+  and error-state shake — and all three were rewritten rather than copied, because theirs
+  animate `filter: blur()` and `height`.
+- **godly.design — yes, but not as code.** A free gallery, the same use as ClinMatch and
+  AsnanLink in `docs/competitors.md`: reference, screenshotted, never pointed at this repo.
+- **backgrounds.supply — no.** $49 one-off for 1,273 background *image files*. A single one
+  is a multiple of what this whole page weighs, and their house look is dark neon, which is
+  the register argued against twice above. Genuinely useful for Instagram and launch
+  graphics, which is a different problem.
+- **deck.gallery — not for the site.** Presentation decks. Worth keeping for the day a dental
+  college has to be pitched.
+- **animos.app — not for the site.** It exports MP4s of a design. A marketing tool.
+
+**What was built, and why these three.** All from the free tier, all in CSS, no library, and
+each one attached to a moment that had nothing:
+
+1. **The spinner in the submit button.** `useFormStatus` already swapped the label; on a
+   400kbps link with a photograph attached, nothing else on screen moved for several seconds.
+   The ring is the only loop in سنون besides the bridge's mote, and the exception is the
+   opposite of the mote's: this is not peripheral, it is the thing somebody is staring at
+   while they wonder whether the site has died. Under `prefers-reduced-motion` and at `none`
+   it sits still and the words carry it.
+2. **The tick that draws itself on `?new=1`.** The single most important screen in the
+   product — a patient has just handed over a phone number and a photograph of their mouth —
+   and it opened with a paragraph. It draws on a clock, never a scroll timeline, for the same
+   reason the bridge's line does: a half-drawn tick reads as a failure. At `full` the ring
+   answers with one outward pulse and then stops; a success that keeps pulsing reads as a
+   notification demanding something.
+3. **The shake on a form-level refusal.** 4px and settles, against their 10px four times —
+   this is a medical form, not a wrong password. Deliberately **not** on field errors: those
+   sit under the field somebody is already looking at, while a form-level error appears at
+   the bottom with nothing else changing, which is the one that gets missed.
+
+**The safety property is the reveal rule stated backwards, and it is what to check after any
+change here:** the finished state is what the markup renders, and the unfinished state exists
+only inside the motion gate. Verified by driving a real submission at all three tiers and
+under `prefers-reduced-motion`: the tick ends at `stroke-dashoffset: 0` every time, with
+nothing left running. Nothing here can leave a success looking like a failure.
+
+**A landing-page measurement includes prefetch.** The wire figure moved 283 KB → 292 KB
+between two clean builds with no landing-page change, which is Next prefetching `/case/new`
+and `/student` from the hero buttons — so making the case form bigger shows up on the landing
+page's number. It is paid once and is why a second visit to `/case/new` measures 1 KB. Worth
+knowing before hunting a regression that is not there.
 
 **The steps were cards before they were a rail.** Four sentences each with a 16px icon read, in Haider's words, as
 icons put there to fill a gap rather than to mean anything — which was fair. Each step is a

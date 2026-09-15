@@ -15,6 +15,7 @@ import {
 } from '@/components/ui/icon'
 import { PageShell } from '@/components/site-chrome'
 import { ButtonLink } from '@/components/ui/button'
+import { SuccessCheck } from '@/components/ui/success-check'
 import { getAllTreatmentTypes, getCityById } from '@/lib/config'
 import {
   caseForm,
@@ -160,9 +161,17 @@ export default async function TrackCasePage({
       <>
         {isNew ? (
           <Card tone="accent" className="mb-4">
-            <CardBody>
-              <h1 className="text-xl font-bold">{caseTracking.successTitle}</h1>
-              <p className="mt-2 text-sm">{caseTracking.successBody}</p>
+            {/* The tick draws itself beside the heading rather than above it:
+                somebody arriving here has just spent real effort and a slow
+                upload, and the first thing on the page should answer "did it
+                work?" before they read anything. It is the only new-case
+                screen in سنون, so it is the one place this belongs. */}
+            <CardBody className="flex items-start gap-3">
+              <SuccessCheck className="mt-0.5" />
+              <div>
+                <h1 className="text-xl font-bold">{caseTracking.successTitle}</h1>
+                <p className="mt-2 text-sm">{caseTracking.successBody}</p>
+              </div>
             </CardBody>
           </Card>
         ) : null}

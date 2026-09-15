@@ -15,6 +15,7 @@ import {
   labelClass,
   optionClass,
 } from '@/components/ui/field'
+import { ButtonSpinner } from '@/components/ui/success-check'
 import { submitCaseAction, type CaseFormState } from './actions'
 
 const INITIAL: CaseFormState = {}
@@ -36,8 +37,19 @@ function SubmitButton() {
     <button
       type="submit"
       disabled={pending}
-      className="min-h-12 w-full rounded-full bg-accent px-4 font-bold text-accent-foreground shadow-md disabled:opacity-60"
+      /* The pending label, declared on the element rather than only rendered
+         when pending. The single-file preview plays this sequence without a
+         server, and reading the word from here is what stops the preview and
+         copy.ts drifting apart. */
+      data-submitting={caseForm.submitting}
+      className="flex min-h-12 w-full items-center justify-center gap-2 rounded-full bg-accent px-4 font-bold text-accent-foreground shadow-md disabled:opacity-60"
     >
+      {/* The spinner is the addition, and it is not decoration: on the
+          connection this form is designed for, sending a case with photographs
+          takes seconds with nothing on screen changing. The words say the same
+          thing and are what a reader gets under reduced motion — the ring is
+          for the person who has stopped reading and is just watching. */}
+      {pending ? <ButtonSpinner /> : null}
       {pending ? caseForm.submitting : caseForm.submit}
     </button>
   )
@@ -271,7 +283,7 @@ export function CaseForm({
       </div>
 
       {state.formError ? (
-        <p role="alert" className="rounded-md bg-surface-muted p-3 text-sm text-danger">
+        <p role="alert" className="shake-in rounded-md bg-surface-muted p-3 text-sm text-danger">
           {state.formError}
         </p>
       ) : null}
