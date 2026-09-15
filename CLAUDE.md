@@ -1473,10 +1473,12 @@ everything; that reasoning does not hold for a child, whose whole case belongs t
 department. Recorded here rather than changed quietly, because "visibility is overlap, not
 containment" is written down two sections above.
 
-**Still open, and his call:** the tooth-type answer currently goes nowhere. All three routes
-reach the same outcomes, so the question is asked and discarded. Carrying it to the student
-needs a new field on the case — a real reason exists (a paedodontics student wants to know
-before claiming) but it is a schema change, so it waits for him.
+**Still open, and it hangs on one clinical fact Haider is checking:** can a fourth year treat
+a *permanent* tooth in a patient under fifteen? If they can, the milk/permanent answer is
+load-bearing — it decides whether the case may be offered to fourth years at all, and needs a
+field on the case to carry it. **If they cannot, the question has no job and comes out.** It
+is asked and discarded today; all three routes reach the same outcomes. Nothing should be
+built on it until that answer arrives.
 
 **Under fifteen is a flat line, deliberately.** Haider raised the real nuance himself — a
 thirteen-year-old wanting a composite on a permanent tooth does not *have* to go to
@@ -1488,10 +1490,21 @@ pick what they need, that is one change and his call.**
 
 **"دلّني على أقرب مستشفى" is taken from AsnanLink and is the one genuinely practical thing on
 their emergency screen.** Telling somebody to go to a hospital is advice; handing them the
-map is help. A plain maps search, so it opens the app the phone already has and costs سنون
-nothing. What was *not* taken is their "Continue anyway" button underneath it — a route to
-the queue under "go to a hospital now" reads as permission to wait, which is the same reason
-rule 5 below exists. "ابدأ من الأول" is the escape hatch instead.
+map is help. It is a maps **search**, not a pin: `/maps/search/?api=1&query=مستشفى طوارئ`
+runs against the device's own location, so it lists the emergency departments actually near
+whoever tapped it — and سنون never learns where they are. A `@lat,lng` URL would need a
+location this flow does not collect, and a plain `/maps` link opens the map showing nothing
+in particular, which is the version that is no help at all.
+
+**And there is a way past a referral now — reversing an earlier decision, on Haider's
+instruction.** سنون deliberately had none, and the reason still stands: a route to the queue
+sitting under "go to a hospital now" reads as permission to wait. His counter is stronger:
+somebody who has already been to hospital, or who mis-tapped, or whose tooth came out last
+week rather than today, was left on a dead end with nothing but "start over". Both readings
+are right, so the resolution is in the *hierarchy*, not in the choice — it is a quiet link
+below a divider, never a second button competing with the hospital, and it is worded as a
+claim the person makes about themselves ("شفت طبيب أصلاً، أو أشّرت غلط؟") rather than as a
+dismissal of the warning.
 
 **The emergency card's text is written general.** It used to sit at the end of one branch and
 describe swelling, because swelling was the only way to reach it. Six different things send
@@ -1533,6 +1546,22 @@ tooth reads as a page that has not understood them.
    "go to a hospital now" would read as permission to wait. (The site footer still carries
    its ordinary nav link, below the disclaimer — stripping a site's footer on one page reads
    as broken rather than careful.)
+
+**Only the card moves between questions, not the screen.** Haider's note, and it is the one
+piece of motion this flow needed. Every answer is still a real navigation — that is what
+keeps the whole thing working with no JavaScript — so the *outgoing* card is gone before
+anything could animate it. What can be animated is the arrival: the new card enters from the
+end edge as though the old one had slid off the other way, and on a real navigation the eye
+supplies the rest. The page-level `.page-enter` fade stands down for this route via
+`:has(.guide-flow)`, so the two do not run at once and read as the page arriving twice; a
+browser without `:has()` gets both, which is a softer arrival rather than a broken one.
+
+**The step rail is three fixed layers, not a bar filled by depth.** The paths are not the same
+length — somebody two questions from the end and somebody four would see the same fraction —
+so a proportional bar would promise a distance no route guarantees. The three layers are the
+real structure and they are the same for everybody. An outcome belongs to no layer, so every
+step reads as done. The rail deliberately does *not* travel with the card: it is the one thing
+on screen that should feel fixed while the questions move past it.
 
 **Every answer is a real `<a href>`, and that is the whole design.** A tree needs state and
 the obvious way to hold it is a Client Component — which leaves a patient on a slow

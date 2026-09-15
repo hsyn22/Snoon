@@ -354,6 +354,23 @@ export const guide = {
   /** On an urgent referral only. Opens the phone's own maps app. */
   findHospital: 'دلّني على أقرب مستشفى',
 
+  /** The three fixed layers, shown as a rail above the card. */
+  steps: ['الطوارئ', 'العمر', 'شنو تحتاج'] as const,
+
+  /**
+   * The way past a referral, on Haider's instruction.
+   *
+   * سنون deliberately had none: a route to the queue under "go to a hospital
+   * now" reads as permission to wait. His point is the stronger one — somebody
+   * who already went to the hospital, or who mis-tapped, or whose tooth came
+   * out last week rather than today, is stuck on a dead end with nothing but
+   * "start over". So it exists, and it is written to be *chosen* rather than
+   * tapped past: a quiet link, not a button competing with the hospital, and
+   * the words say what the person is claiming about themselves.
+   */
+  overrideLead: 'شفت طبيب أصلاً، أو أشّرت غلط؟',
+  overrideAction: 'كمّل وقدّم حالتك على أي حال',
+
   back: 'رجوع',
   restart: 'ابدأ من الأول',
   /** Shown on a result: carry the ticks into the form. */

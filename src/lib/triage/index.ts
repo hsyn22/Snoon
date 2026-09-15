@@ -106,3 +106,23 @@ export function reachableIds(): Set<string> {
   }
   return seen
 }
+
+/**
+ * Which of the three layers a node belongs to, for the step rail.
+ *
+ * Three fixed layers rather than a bar filled by depth: the tree's paths are
+ * not the same length, so a proportional bar would promise a distance no route
+ * guarantees — somebody two questions from the end and somebody four would see
+ * the same fraction. The layers are the real structure and they are the same
+ * for everybody: screen for emergencies, then age, then what is needed.
+ *
+ * An outcome belongs to no layer. It is the end, so every step reads as done.
+ */
+export function triageLayer(id: string): 1 | 2 | 3 | 'done' {
+  const node = BY_ID.get(id)
+  if (!node) return 1
+  if (node.kind === 'result' || node.kind === 'referral') return 'done'
+  if (node.id === TRIAGE_ROOT) return 1
+  if (node.id === 'age') return 2
+  return 3
+}

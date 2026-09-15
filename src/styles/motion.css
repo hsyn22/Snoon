@@ -1301,3 +1301,90 @@
   0%, 100% { transform: scale(1); }
   50% { transform: scale(1.022); }
 }
+
+/* ===========================================================================
+ * The guided questions move on their own.
+ *
+ * Haider: "I don't want the whole screen to change. I want only the questions
+ * to move to the side, and get replaced by other questions."
+ *
+ * Every answer is still a real navigation — that is what keeps the whole thing
+ * working with no JavaScript — so the *outgoing* card is gone before anything
+ * could animate it. What can be animated is the arrival, and that is what sells
+ * the effect: the new card enters from the end edge as though the old one had
+ * slid off the other way. On a real navigation the eye supplies the rest.
+ *
+ * The page-level fade stands down for this route, via `:has()`, so the two do
+ * not run at once and read as the page arriving twice. A browser without
+ * `:has()` support simply gets both, which is a slightly softer arrival rather
+ * than a broken one.
+ *
+ * `translateX` in a logical direction: the page is RTL, so a positive X is
+ * towards the start edge. The card comes from the *end* — where the next thing
+ * lives when you are reading right to left.
+ * ======================================================================== */
+
+@layer utilities {
+  :root .page-enter:has(.guide-flow) {
+    animation: none;
+  }
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  :root:not([data-motion='none']) .guide-card {
+    animation: snoon-guide-in 0.3s cubic-bezier(0.22, 1, 0.36, 1) both;
+  }
+  /* The step rail does not travel with the card — it is the one thing on the
+     screen that should feel fixed while the questions move past it. */
+  :root:not([data-motion='none']) .guide-steps {
+    animation: snoon-guide-rail 0.3s ease-out both;
+  }
+}
+
+@keyframes snoon-guide-in {
+  from {
+    opacity: 0;
+    transform: translateX(-18px);
+  }
+}
+
+@keyframes snoon-guide-rail {
+  from {
+    opacity: 0.4;
+  }
+}
+
+/* The rail itself: three fixed layers, because the tree really does have three
+   and a bar filling by tree depth would promise a length no path guarantees. */
+.guide-steps {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-block-end: 18px;
+}
+
+.guide-step {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  font-size: 0.75rem;
+  color: var(--color-foreground-muted);
+}
+
+.guide-step span {
+  display: block;
+  block-size: 4px;
+  border-radius: 999px;
+  background: var(--color-border);
+}
+
+.guide-step[data-state='done'] span,
+.guide-step[data-state='current'] span {
+  background: var(--color-accent);
+}
+
+.guide-step[data-state='current'] {
+  color: var(--color-accent-strong);
+  font-weight: 700;
+}

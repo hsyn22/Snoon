@@ -98,8 +98,10 @@ student half of the site cannot be tested.
       only somebody who picked the right branch ever saw them.
 - [x] **Children pick what they need, and which tooth.** Milk / permanent / not sure, then
       six needs including fluoride. Every outcome carries `paediatric` plus the need.
-- [ ] **Decide where the tooth type goes.** It is asked and then discarded — all three routes
-      reach the same outcomes. Carrying it to the student needs a new field on the case.
+- [ ] **Blocked on a clinical fact Haider is checking: may a fourth year treat a permanent
+      tooth in a patient under fifteen?** If yes, the milk/permanent answer decides whether
+      the case can be offered to fourth years, and needs a field on the case. If no, the
+      question has no job and should be removed. It is asked and discarded today.
 - [ ] **The rest of the triage tree needs Haider's clinical review**, referrals first. The
       molar correction is the proof that the draft content has real errors in it.
 

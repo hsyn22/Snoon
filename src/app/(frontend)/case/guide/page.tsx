@@ -7,9 +7,32 @@ import { optionClass } from '@/components/ui/field'
 import { buttonClass, ButtonLink } from '@/components/ui/button'
 import { getTreatmentTypes } from '@/lib/config'
 import { guide } from '@/lib/copy'
-import { TRIAGE_ROOT, screenOutcome, triageHandoff, triageNode, triageParent } from '@/lib/triage'
+import {
+  TRIAGE_ROOT,
+  screenOutcome,
+  triageHandoff,
+  triageLayer,
+  triageNode,
+  triageParent,
+} from '@/lib/triage'
 
 export const metadata: Metadata = { title: guide.title }
+
+/**
+ * A maps **search**, not a pin.
+ *
+ * `/maps/search/?api=1&query=…` runs the query against the device's own
+ * location, so it lists the emergency departments actually near whoever tapped
+ * it — سنون never learns where they are and does not have to. A `@lat,lng` URL
+ * would need a location سنون does not have at this point in the flow, and a
+ * plain `/maps` link opens the map showing nothing in particular, which is the
+ * version that is no help at all.
+ *
+ * The query is the Arabic for "emergency hospital", which is what the signs and
+ * the listings here actually say.
+ */
+const HOSPITAL_SEARCH =
+  'https://www.google.com/maps/search/?api=1&query=' + encodeURIComponent('مستشفى طوارئ')
 
 /** Treatment names come from Payload, so this cannot be baked once. */
 export const revalidate = 300
@@ -59,9 +82,29 @@ export default async function GuidePage({
 
   const nameFor = (slug: string) => treatments.find((t) => t.id === slug)?.nameAr ?? slug
 
+  const layer = triageLayer(node.id)
+
   return (
     <PageShell>
-      <>
+      {/* `guide-flow` is what tells the page-level fade to stand down, so only
+          the card moves between questions rather than the whole screen. */}
+      <div className="guide-flow">
+        {/* Three fixed layers, not a bar filled by depth — the paths are not
+            the same length, so a proportion would promise a distance no route
+            guarantees. */}
+        <ol className="guide-steps" aria-label={guide.eyebrow}>
+          {guide.steps.map((step, index) => {
+            const n = index + 1
+            const state = layer === 'done' ? 'done' : n < layer ? 'done' : n === layer ? 'current' : 'todo'
+            return (
+              <li key={step} className="guide-step" data-state={state}>
+                <span aria-hidden="true" />
+                {step}
+              </li>
+            )
+          })}
+        </ol>
+
         <PageHeader
           eyebrow={guide.eyebrow}
           title={node.kind === 'question' || node.kind === 'screen' ? guide.title : node.title}
@@ -82,7 +125,7 @@ export default async function GuidePage({
            */
           <form method="get" action="/case/guide">
             <input type="hidden" name="q" value={node.pass} />
-            <Card>
+            <Card className="guide-card">
               <CardBody>
                 <fieldset>
                   <legend className="text-lg font-bold">{node.text}</legend>
@@ -109,7 +152,7 @@ export default async function GuidePage({
         ) : null}
 
         {node.kind === 'question' ? (
-          <Card>
+          <Card className="guide-card">
             <CardBody>
               <h2 className="text-lg font-bold">{node.text}</h2>
               {node.hint ? (
@@ -138,7 +181,7 @@ export default async function GuidePage({
         ) : null}
 
         {node.kind === 'result' ? (
-          <Card tone="accent">
+          <Card tone="accent" className="guide-card">
             <CardBody>
               <p className="text-sm">{node.body}</p>
 
@@ -166,7 +209,7 @@ export default async function GuidePage({
           /* Deliberately offers no route to the case form. Somebody who needs a
              hospital today must not be handed a queue — and a button saying
              "قدّم حالتك" underneath would read as permission to wait. */
-          <Card>
+          <Card className="guide-card">
             <CardBody>
               {/* Only a real red flag is red. `scope` means "students may not do
                   this one", which is information rather than a warning — the
@@ -193,7 +236,7 @@ export default async function GuidePage({
                    costs سنون nothing. `noreferrer` because the tracking token
                    lives in URLs on neighbouring pages and this is a link out. */
                 <a
-                  href="https://www.google.com/maps/search/?api=1&query=%D9%85%D8%B3%D8%AA%D8%B4%D9%81%D9%89+%D8%B7%D9%88%D8%A7%D8%B1%D8%A6+%D8%A3%D8%B3%D9%86%D8%A7%D9%86"
+                  href={HOSPITAL_SEARCH}
                   target="_blank"
                   rel="noopener noreferrer"
                   className={buttonClass('primary', 'mt-4 w-full')}
@@ -201,6 +244,31 @@ export default async function GuidePage({
                   {guide.findHospital}
                 </a>
               ) : null}
+
+              {/*
+                * The way past, on Haider's instruction.
+                *
+                * سنون deliberately had none, and the reason still stands: a
+                * route to the queue sitting under "go to a hospital now" reads
+                * as permission to wait. His counter is the stronger one —
+                * somebody who has already been to hospital, or mis-tapped, or
+                * whose tooth came out last week rather than today, was left on
+                * a dead end with nothing but "start over".
+                *
+                * So it is built to be *chosen* rather than tapped past: a quiet
+                * link well below the hospital button, never a second button
+                * competing with it, and worded as a claim the person makes
+                * about themselves rather than as a dismissal of the warning.
+                */}
+              <p className="mt-5 border-t border-border pt-4 text-xs text-foreground-muted">
+                {guide.overrideLead}
+              </p>
+              <Link
+                href="/case/new"
+                className="mt-1 inline-block text-sm font-bold text-accent underline-offset-4 hover:underline"
+              >
+                {guide.overrideAction}
+              </Link>
             </CardBody>
           </Card>
         ) : null}
@@ -228,7 +296,7 @@ export default async function GuidePage({
             {guide.homeLink}
           </Link>
         </div>
-      </>
+      </div>
     </PageShell>
   )
 }
