@@ -241,6 +241,28 @@ export const citiesSection = {
 export const faqSection = {
   eyebrow: 'أسئلة',
   title: 'أسئلة تتكرر',
+
+  /**
+   * Two groups, because there are two audiences and only one of them was being
+   * answered.
+   *
+   * The FAQ had a single student question at the bottom of eight patient ones,
+   * which is the same failure the landing page's copy had before it was
+   * rewritten in the third person: a student reading it learns that سنون is a
+   * site for patients that will also, if pressed, take their registration.
+   * Haider asked for questions for students, and the honest version of that is
+   * a section of their own rather than two more entries in somebody else's.
+   *
+   * Every student answer below is something the code actually does. That is the
+   * whole point of them: the things a student is deciding — whether their phone
+   * number is safe to hand over, whether a case will be taken from them, whether
+   * سنون is going to charge them — are answered by the access-control table, the
+   * contact window and the fact that there is no payment code anywhere. عالجني
+   * sells patients to students; the last answer is the one they cannot write.
+   */
+  patientsHeading: 'إذا تدور علاج',
+  studentsHeading: 'إذا انت طالب',
+
   items: [
     {
       q: 'شكد راح يكلفني؟',
@@ -270,9 +292,40 @@ export const faqSection = {
       q: 'ضيّعت رابط حالتي',
       a: 'تكدر تطلّع رابط جديد إذا تتذكر رمز الحالة ورقم الموبايل اللي قدّمت بيه، من صفحة «ضيّعت رابط حالتك؟».',
     },
+  ],
+
+  studentItems: [
     {
-      q: 'أنا طالب — شلون أسجّل؟',
-      a: 'سجّل بحسابك، حدد جامعتك وكليتك ومرحلتك وأيام دوامك، وارفع وثيقة تثبت إنك طالب. إدارة سنون تراجعها، وبعدها تشوف الحالات اللي تناسب مرحلتك.',
+      q: 'شلون أبدي؟',
+      a: 'سوّي حساب، بعدين حدد جامعتك وكليتك ومرحلتك وأيام دوامك بالعيادة، وارفع وثيقة تثبت إنك طالب. بعد ما تنوافق الوثيقة تبدي تشوف الحالات.',
+    },
+    {
+      q: 'ليش أكو مراجعة يدوية للوثيقة؟',
+      a: 'لأن إيميل الجامعة مو متوفر لكل الطلبة بالعراق، فما نكدر نعتمد عليه. الوثيقة هي الشي الوحيد اللي يضمن إن أرقام المراجعين ما تروح لغير الطلبة، وهذا الشي اللي يخلي المراجع يثق ويكتب رقمه.',
+    },
+    {
+      q: 'أكدر أدز الوثيقة بالتلغرام؟',
+      a: 'إي. تكدر ترفعها بالموقع أو تصوّرها وتدزها لبوت سنون — نفس الشي. الإدارة هي اللي تراجع بالحالتين.',
+    },
+    {
+      q: 'أي حالات تظهرلي؟',
+      a: 'الحالات اللي بمدينة عيادتك، واللي تتقاطع وية العلاجات اللي مرحلتك تكدر تسويها. إذا الحالة تحتاج شي برة مرحلتك، تظل تشوفها ومكتوب عليها بوضوح شنو الجزء اللي مو إلك — ما نخفيها، لأن ممكن تسوي الباقي وطالب من مرحلة ثانية يكمل.',
+    },
+    {
+      q: 'متى أشوف رقم المراجع؟',
+      a: 'بعد ما تحجز الحالة بس، وتظل تشوفه ما دام الحجز فعّال. قبل الحجز ما يظهر لأي أحد — لا إلك ولا لغيرك. هذا محسوب بقاعدة البيانات مو بالواجهة.',
+    },
+    {
+      q: 'إذا حجزت حالة وما كدرت أتواصل؟',
+      a: 'عندك مدة محددة تتصل بيها. إذا خلصت المدة وما صار تواصل، الحالة ترجع للقائمة ويقدر طالب ثاني ياخذها. وإذا اتصلت وما رد عليك، سجّل إنك اتصلت وتنزاد إلك مدة.',
+    },
+    {
+      q: 'أيام دوامي ما تناسب المراجع؟',
+      a: 'تكدر تسأله إذا يكدر يجي بيوم من أيامك. السؤال ما يحجزلك الحالة ولا يوريك رقمه — بس إذا وافق المراجع، الحالة تصير إلك.',
+    },
+    {
+      q: 'سنون تاخذ مني فلوس؟',
+      a: 'لا. ما عدنا اشتراك ولا عمولة، وما تشتري حالات ولا تزايد على أحد. الحالات تنعرض على كل طالب تناسبه، واللي يحجزها أول يأخذها.',
     },
   ],
 } as const

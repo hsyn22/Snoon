@@ -404,22 +404,57 @@ export default async function HomePage() {
           <Eyebrow>{faqSection.eyebrow}</Eyebrow>
           <h2 className="reveal rule-in mt-4 text-xl font-bold sm:text-2xl">{faqSection.title}</h2>
 
-          <div className="mt-6 divide-y divide-border overflow-hidden rounded-lg border border-border bg-surface">
-            {faqSection.items.map((item) => (
-              <details key={item.q} name="faq" className="group">
-                <summary className="flex cursor-pointer list-none items-center justify-between gap-3 p-4 font-bold marker:content-none">
-                  {item.q}
-                  {/* Rotates to a minus when open. A rule rather than an icon
-                      swap, so there is nothing to load and nothing to script. */}
-                  <span
-                    aria-hidden="true"
-                    className="relative size-5 shrink-0 rounded-full bg-accent-muted before:absolute before:inset-x-1 before:top-1/2 before:h-0.5 before:-translate-y-1/2 before:bg-accent-strong before:content-[''] after:absolute after:inset-y-1 after:inset-x-0 after:mx-auto after:w-0.5 after:bg-accent-strong after:transition-transform after:content-[''] group-open:after:scale-y-0"
-                  />
-                </summary>
-                <p className="text-pretty px-4 pb-4 text-sm text-foreground-muted">{item.a}</p>
-              </details>
-            ))}
-          </div>
+          {/*
+            * Two groups, and the students' one is the point.
+            *
+            * The FAQ was eight patient questions with a single student one at
+            * the bottom, which tells a student exactly what the landing page's
+            * copy used to: that سنون is a site for patients which will also take
+            * their registration if pressed. A heading of their own costs one row
+            * and changes what the section is.
+            *
+            * `name="faq"` stays the same across both, so opening one closes the
+            * other — two panels open at opposite ends of a long list is worse
+            * than exclusive, and it is one attribute rather than any script.
+            */}
+          {[
+            { heading: faqSection.patientsHeading, items: faqSection.items, forStudents: false },
+            {
+              heading: faqSection.studentsHeading,
+              items: faqSection.studentItems,
+              forStudents: true,
+            },
+          ].map((group) => (
+            <div key={group.heading}>
+              {/* The students' heading carries their colour. It is the second
+                  place orange appears on an otherwise green page, and for the
+                  same reason as the first: this is a section students own, not
+                  decoration. */}
+              <h3
+                className={`reveal mt-8 text-sm font-bold ${
+                  group.forStudents ? 'text-student-strong' : 'text-accent'
+                }`}
+              >
+                {group.heading}
+              </h3>
+              <div className="mt-2 divide-y divide-border overflow-hidden rounded-lg border border-border bg-surface">
+                {group.items.map((item) => (
+                  <details key={item.q} name="faq" className="group">
+                    <summary className="flex cursor-pointer list-none items-center justify-between gap-3 p-4 font-bold marker:content-none">
+                      {item.q}
+                      {/* Rotates to a minus when open. A rule rather than an icon
+                          swap, so there is nothing to load and nothing to script. */}
+                      <span
+                        aria-hidden="true"
+                        className="relative size-5 shrink-0 rounded-full bg-accent-muted before:absolute before:inset-x-1 before:top-1/2 before:h-0.5 before:-translate-y-1/2 before:bg-accent-strong before:content-[''] after:absolute after:inset-y-1 after:inset-x-0 after:mx-auto after:w-0.5 after:bg-accent-strong after:transition-transform after:content-[''] group-open:after:scale-y-0"
+                      />
+                    </summary>
+                    <p className="text-pretty px-4 pb-4 text-sm text-foreground-muted">{item.a}</p>
+                  </details>
+                ))}
+              </div>
+            </div>
+          ))}
         </Section>
 
         {/* The "متجر سنون — قريباً" band used to sit here and is gone on

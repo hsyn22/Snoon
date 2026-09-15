@@ -1090,7 +1090,17 @@ because a real question had no answer:
   who hears nothing should know why rather than assume the site is broken.
 - **An FAQ**, as native `<details>`. Both competitors script their accordion;
   this one needs no JavaScript, works before hydration, and is already understood
-  by a screen reader.
+  by a screen reader. **It is in two groups now**, one per audience: it was eight
+  patient questions with a single student one at the bottom, which tells a student
+  exactly what the old copy did — that سنون is a site for patients that will also
+  take their registration if pressed. The students' heading carries their orange,
+  the second and last place that colour appears on an otherwise green page, and
+  for the same reason as the first: it names a section students own rather than
+  decorating one. Every student answer is something the code actually does, which
+  is the point of them — whether their number is safe, whether a case can be taken
+  back, and whether سنون charges are all answered by the access-control table, the
+  contact window, and the fact that there is no payment code anywhere. That last
+  one is the answer عالجني cannot write.
 
 Then a second pass, after Haider looked at it on a phone: **visual elements**,
 because the page was still text in boxes. The hero gained `MatchMotif` — two arcs
