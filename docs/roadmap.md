@@ -84,6 +84,12 @@ student half of the site cannot be tested.
       students' one beside it — "شنو أحتاج حتى أسجل؟", "شلون أعرف الحالة تناسب مرحلتي؟",
       "شنو يصير إذا ما كدرت أكمل الحالة؟". This is the clearest remaining place a student
       finds nothing addressed to them.
+- [x] **Step scenes instead of step icons**, taken from ClinMatch — the one thing in their
+      two recordings that is genuinely better than what سنون had.
+- [ ] **A colour per audience.** Both competitors run one colour for patients and another for
+      students throughout. سنون already has accent and warm doing this inside the bridge
+      diagram; extending it across the student pages would answer "nothing talks to students"
+      more thoroughly than copy changes alone.
 - [ ] **A real student surface.** Right now the student side is one block on the landing page
       and a login. It needs its own page explaining verification, what a case looks like, and
       what the stages may treat — the thing that actually recruits students.

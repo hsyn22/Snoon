@@ -1158,3 +1158,146 @@
     transform: translateX(-2px);
   }
 }
+
+/* ===========================================================================
+ * The step scenes.
+ *
+ * Taken from ClinMatch, whose step cards carry a small picture of the step
+ * happening rather than an icon labelling it — see `step-scenes.tsx` for why
+ * that is worth having and for the one rule that governs all four:
+ *
+ *   **The finished picture is what the markup renders. Motion is only ever
+ *   added on top of it.**
+ *
+ * Nothing here starts hidden, empty or undrawn, so there is no scroll position,
+ * no tier and no unsupported browser in which one of these is part-drawn. That
+ * is a stronger guarantee than the `@supports` gating used elsewhere on this
+ * page, and it is why these can loop on a clock without risking the frozen-
+ * reveal bug that the rest of the file is written around.
+ *
+ * They do loop, which is the second deliberate exception to "nothing loops in
+ * the reader's peripheral vision" — the first being the bridge's mote, and the
+ * argument is the same one: these are inside cards somebody swipes to and looks
+ * at, and the claim each makes is that something *happens* at this step. Every
+ * cycle is slow, small, and separated by a long pause, so the rail settles
+ * rather than performs.
+ * ======================================================================== */
+
+/* A definite size, not a percentage. The wrapper shrinks to the scene so the
+   step number can ride its corner the way it rode the old icon tile's; a
+   percentage width inside a shrink-to-fit parent collapses to nothing. The
+   viewBox is 96x72, so this is 1:1 at 6rem and the block size follows. */
+.step-scene {
+  display: block;
+  inline-size: 6rem;
+  block-size: 4.5rem;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  /* ---- 1. The case being submitted ------------------------------------- */
+
+  /* The filled fields brighten in sequence, then hold. They are already at
+     full width — only their opacity moves, so a paused frame is a filled form
+     either way. */
+  :root:not([data-motion='none']) .scene-line {
+    animation: snoon-scene-fill 5s ease-in-out infinite;
+  }
+  :root:not([data-motion='none']) .scene-line-2 {
+    animation-delay: 0.18s;
+  }
+  :root:not([data-motion='none']) .scene-line-3 {
+    animation-delay: 0.36s;
+  }
+
+  /* The tick lands. It scales from slightly small, never from nothing. */
+  :root:not([data-motion='none']) .scene-stamp {
+    transform-box: fill-box;
+    transform-origin: 50% 50%;
+    animation: snoon-scene-stamp 5s cubic-bezier(0.22, 1, 0.36, 1) infinite;
+  }
+
+  /* ---- 2. The queue ----------------------------------------------------- */
+
+  /* The taken case lifts slightly. The sweeping band this used to have was cut
+     with the scene it belonged to — see step-scenes.tsx. */
+  :root:not([data-motion='none']) .scene-row {
+    transform-box: fill-box;
+    transform-origin: 50% 50%;
+    animation: snoon-scene-row 5s ease-in-out infinite;
+  }
+
+  /* ---- 3. Contact ------------------------------------------------------- */
+
+  /* The dash pattern travels along a line that is already drawn. This is the
+     difference between "something is passing between them" and "the link is
+     still being built", and only the first is true once a student has called. */
+  :root:not([data-motion='none']) .scene-link {
+    animation: snoon-scene-travel 2.2s linear infinite;
+  }
+  :root:not([data-motion='none']) .scene-ping {
+    transform-box: fill-box;
+    transform-origin: 50% 50%;
+    animation: snoon-scene-ping 5s ease-out infinite;
+  }
+
+  /* ---- 4. The appointment ----------------------------------------------- */
+
+  :root:not([data-motion='none']) .scene-day {
+    transform-box: fill-box;
+    transform-origin: 50% 50%;
+    animation: snoon-scene-day 5s cubic-bezier(0.22, 1, 0.36, 1) infinite;
+  }
+}
+
+/* Each cycle spends most of its length at rest. The movement is the short part;
+   the pause is what keeps four of these on one screen from reading as clutter. */
+@keyframes snoon-scene-fill {
+  0%, 8% { opacity: 0.35; }
+  18%, 78% { opacity: 1; }
+  92%, 100% { opacity: 0.35; }
+}
+
+@keyframes snoon-scene-stamp {
+  0%, 22% { transform: scale(0.82); opacity: 0.55; }
+  34%, 80% { transform: scale(1); opacity: 1; }
+  94%, 100% { transform: scale(0.82); opacity: 0.55; }
+}
+
+@keyframes snoon-scene-row {
+  0%, 46% { transform: scale(1); }
+  58%, 82% { transform: scale(1.045); }
+  94%, 100% { transform: scale(1); }
+}
+
+@keyframes snoon-scene-travel {
+  to { stroke-dashoffset: -8; }
+}
+
+@keyframes snoon-scene-ping {
+  0%, 30% { transform: scale(0.7); opacity: 0; }
+  46% { opacity: 0.22; }
+  70%, 100% { transform: scale(1.5); opacity: 0; }
+}
+
+@keyframes snoon-scene-day {
+  0%, 40% { transform: translateY(0) scale(1); }
+  54%, 84% { transform: translateY(-2px) scale(1.08); }
+  96%, 100% { transform: translateY(0) scale(1); }
+}
+
+/* At the full tier the whole scene breathes very slightly as well, which is the
+   kind of thing that reads as depth on a capable screen and as nothing at all
+   on a cheap one. Transform only. */
+@media (prefers-reduced-motion: no-preference) {
+  :root[data-motion='full'] .step-scene {
+    animation: snoon-scene-breathe 7s ease-in-out infinite;
+  }
+  :root[data-motion='full'] .steps-rail > li:nth-child(2) .step-scene { animation-delay: 0.9s; }
+  :root[data-motion='full'] .steps-rail > li:nth-child(3) .step-scene { animation-delay: 1.8s; }
+  :root[data-motion='full'] .steps-rail > li:nth-child(4) .step-scene { animation-delay: 2.7s; }
+}
+
+@keyframes snoon-scene-breathe {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.022); }
+}

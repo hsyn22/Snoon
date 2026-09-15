@@ -1260,6 +1260,68 @@ and `/student` from the hero buttons — so making the case form bigger shows up
 page's number. It is paid once and is why a second visit to `/case/new` measures 1 KB. Worth
 knowing before hunting a regression that is not there.
 
+### What ClinMatch and AsnanLink actually do better, and the one thing taken
+
+Haider sent screen recordings of both and said their animation is better, ClinMatch
+especially. Watched frame by frame rather than judged from a description — `ffmpeg` into
+contact sheets, then a dense burst across one carousel advance.
+
+**The finding that mattered is not what it looked like from a distance.** ClinMatch's step
+carousel appears to slide; it does not. The card sits still and **the illustration inside it
+animates** — a profile card whose fields fill in and gain a tick, a listing being picked out,
+a calendar confirming a day. Their step cards carry a small picture of the step *happening*
+rather than a symbol labelling it, and on a page explaining an unfamiliar process to somebody
+who has never used one, that is most of the difference between the two pages.
+
+**So that is what was taken.** `src/components/brand/step-scenes.tsx` — four scenes replacing
+the four icon tiles in the steps rail. One rule governs all of them and it is the point:
+
+- **Every scene is drawn complete in the markup; animation only ever adds motion on top.**
+  No line starts empty, no tick starts undrawn, nothing starts at `opacity: 0`.
+
+That is deliberately *not* how ClinMatch do it. Theirs assemble from nothing, which is
+prettier and which this codebase cannot safely copy: a reveal that plays from empty has to be
+triggered, and CSS offers only a clock (which fires while the card is still far below the
+fold, so it is over before anybody looks) or a scroll timeline (which freezes where the reader
+stopped — the bug that once left a third of this page blurred, and which here would leave a
+half-drawn tick reading as a failure). Starting complete removes the entire class of problem:
+there is no tier, browser or scroll position at which one of these is part-drawn. Verified by
+sampling every animated element's opacity twelve times across the cycle at all three tiers —
+**nothing ever drops below 0.35**, and `none` and `prefers-reduced-motion` run zero
+animations.
+
+This is the second deliberate exception to "nothing loops in the reader's peripheral vision",
+after the bridge's mote, and the argument is the same: these sit inside cards somebody swipes
+to and looks at, and each one's claim is that something *happens* at that step. Every cycle is
+slow, small, and mostly pause.
+
+**A scene has to be judged at its real size, not in the editor.** The queue scene was built
+as white rows on a pale ground with a translucent band sweeping across them; at 96 pixels the
+rows did not separate and the band read as a smear. It was rebuilt as solid bars with real
+gaps and the taken case as the only coloured thing in the picture. Contrast between
+neighbouring shapes is the whole job at this size.
+
+Cost: **286 KB, first paint 2.7s** — unchanged, because four inline SVGs and a block of
+keyframes are noise against the typeface.
+
+**What was deliberately not taken:**
+
+- **ClinMatch's auto-advancing carousel.** It is motion, and it is the wrong kind: it takes
+  control from the reader, fights a slow phone, and is an accessibility problem. Our rail
+  snaps and reports its position with a scroll-driven progress bar, which is the honest
+  version of the same idea.
+- **AsnanLink's hero.** A tilted device mockup with floating chips — "New Cairo", "Patient A
+  Needs A Crown Fix", "It's A Match!" — staggering in on load. Well made, and it is a
+  screenshot of an app سنون does not have. The bridge diagram already does that job without
+  inventing a product.
+- **AsnanLink's flip countdown to launch.** سنون has no launch date and must not invent one.
+
+**Worth revisiting, and not built:** both competitors give each audience its own colour —
+ClinMatch runs patients green and students amber throughout. سنون already has accent and warm
+doing exactly that inside the bridge diagram, and extending it across the student pages would
+answer Haider's "nothing talks to students" more thoroughly than copy changes alone. It is on
+`docs/roadmap.md`.
+
 **The steps were cards before they were a rail.** Four sentences each with a 16px icon read, in Haider's words, as
 icons put there to fill a gap rather than to mean anything — which was fair. Each step is a
 card with a real icon in a tile at the size of the number beside it. The casualty is the long

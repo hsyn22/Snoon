@@ -13,23 +13,21 @@ import {
 } from '@/lib/copy'
 import { getCities, getTreatmentTypes } from '@/lib/config'
 import {
-  CallAgreedIcon,
   CheckIcon,
-  ClinicIcon,
   ExpiryIcon,
   ImageNoGeoIcon,
   MinimalFormIcon,
   PinIcon,
   ShieldPhoneIcon,
-  SubmitIcon,
 } from '@/components/ui/icon'
 import { MatchMotif } from '@/components/brand/match-motif'
 import { MatchBridge } from '@/components/brand/match-bridge'
+import { STEP_SCENES } from '@/components/brand/step-scenes'
 import { SiteFooter } from '@/components/site-chrome'
 
-/** One icon per safety point and per step, in the order the copy lists them. */
+/** One icon per safety point, in the order the copy lists them. The steps used
+ *  to have a matching list; they carry scenes now — see step-scenes.tsx. */
 const SAFETY_ICONS = [ShieldPhoneIcon, ImageNoGeoIcon, ExpiryIcon, MinimalFormIcon]
-const STEP_ICONS = [SubmitIcon, CheckIcon, CallAgreedIcon, ClinicIcon]
 
 /**
  * The landing page.
@@ -292,21 +290,23 @@ export default async function HomePage() {
               page margin looks like a mistake. */}
           <ol className="steps-rail stagger mt-7 flex snap-x snap-mandatory gap-4 overflow-x-auto overflow-y-hidden pb-4 md:grid md:grid-cols-4 md:overflow-visible">
             {howItWorks.steps.map((step, index) => {
-              const Icon = STEP_ICONS[index] ?? CheckIcon
+              const Scene = STEP_SCENES[index] ?? STEP_SCENES[0]
               return (
                 <li
                   key={step}
                   className="reveal lift flex min-h-full w-[80%] shrink-0 snap-center flex-col rounded-xl border border-border bg-surface p-4 shadow-sm sm:w-[46%] md:w-auto"
                 >
-                  <span
-                    aria-hidden="true"
-                    className="pop relative flex size-14 items-center justify-center rounded-xl bg-accent-muted text-accent-strong"
-                  >
-                    <Icon className="size-7" />
-                    {/* The number rides the corner of its own tile, so the
+                  {/* A scene, not an icon. ClinMatch's step cards carry a
+                      small picture of the step happening rather than a symbol
+                      labelling it, and on a page explaining an unfamiliar
+                      process to somebody who has never used one, that is most
+                      of the difference. See step-scenes.tsx. */}
+                  <span aria-hidden="true" className="pop relative inline-block">
+                    <Scene />
+                    {/* The number rides the corner of the scene, so the
                         sequence is readable without a second column taking
                         width a phone does not have. */}
-                    <span className="ltr-run absolute -top-2 -start-2 flex size-6 items-center justify-center rounded-full bg-accent text-xs font-bold text-accent-foreground">
+                    <span className="ltr-run absolute -top-1 -start-1 flex size-6 items-center justify-center rounded-full bg-accent text-xs font-bold text-accent-foreground">
                       {index + 1}
                     </span>
                   </span>
