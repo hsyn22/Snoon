@@ -64,8 +64,12 @@ student half of the site cannot be tested.
 - **The rate limiter is in memory.** On serverless each instance keeps its own counter, so
   the effective limit is looser than intended. It still caps a single abuser on a single
   instance. Worth moving to a shared store the day سنون matters; not worth blocking on.
-- **`vercel.json` already schedules `/api/cron` hourly.** It needs `CRON_SECRET` set or it
-  fails closed, which is the correct behaviour.
+- **`vercel.json` schedules `/api/cron` once a day**, because a Hobby account refuses
+  anything more frequent — it rejects the deployment rather than running it less often. So a
+  48-hour contact window expires between 48 and 72 hours. It needs `CRON_SECRET` set or it
+  fails closed, which is the correct behaviour. An external scheduler (cron-job.org and
+  friends are free) can hit the same URL hourly with the same secret if the wait ever starts
+  costing a student their case.
 
 ---
 

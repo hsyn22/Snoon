@@ -341,8 +341,18 @@ Expiry runs as a scheduled job, not a cron of one-off timers. Compute from
 **Both timed jobs run from one endpoint:** `GET|POST /api/cron`, which releases claims whose
 contact window ran out and expires cases nobody ever claimed. It is a plain HTTP route on
 purpose — a Vercel cron, a Dokploy cron running curl, or a systemd timer all drive the same
-code, and where سنون ends up hosted is still open. `vercel.json` schedules it hourly if
-deployed there.
+code, and where سنون ends up hosted is still open. `vercel.json` schedules it there.
+
+**Once a day, not hourly, and that is a Vercel Hobby limit rather than a preference.** A
+Hobby account refuses any cron expression that would fire more than once a day — the import
+screen rejects `0 * * * *` outright with "Upgrade to the Pro plan", so an hourly schedule is
+not a thing that quietly runs less often, it is a deployment that does not happen. The cost
+is latency, not correctness: a contact window set to 48 hours expires somewhere between 48
+and 72 hours, and a stale `REQUESTED` case sits at most a day past its date. Both jobs are
+conditional updates guarded by the status they may come from, so running them once a day is
+exactly as safe as running them hourly. If that latency ever matters more than the money,
+the answer is not Pro — it is any external scheduler hitting the same URL with `CRON_SECRET`
+as often as it likes, which is what the endpoint was built as a plain HTTP route for.
 
 It changes case state, so it is not public: `CRON_SECRET` must match, compared in constant
 time, accepted either as `Authorization: Bearer` or `x-cron-secret`. It **fails closed** — an
