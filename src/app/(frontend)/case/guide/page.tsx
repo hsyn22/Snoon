@@ -115,8 +115,20 @@ export default async function GuidePage({
              "قدّم حالتك" underneath would read as permission to wait. */
           <Card>
             <CardBody>
-              <p className="text-sm font-bold text-danger">
-                {node.urgency === 'now' ? guide.referralNow : guide.referralSoon}
+              {/* Only a real red flag is red. `scope` means "students may not do
+                  this one", which is information rather than a warning — the
+                  same styling would tell somebody with an aching molar they are
+                  in danger when they are not. */}
+              <p
+                className={`text-sm font-bold ${
+                  node.urgency === 'scope' ? 'text-foreground-muted' : 'text-danger'
+                }`}
+              >
+                {node.urgency === 'now'
+                  ? guide.referralNow
+                  : node.urgency === 'soon'
+                    ? guide.referralSoon
+                    : guide.referralScope}
               </p>
               <p className="mt-2 text-sm">{node.body}</p>
             </CardBody>

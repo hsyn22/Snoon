@@ -52,6 +52,19 @@ excluded**: those strings are written into the case event log and are effectivel
 changing them splits the audit trail in two and leaves half of an admin's history in the old
 wording. They are admin-facing and nobody outside the admin ever reads them.
 
+**The shared pages address neither side directly.** Haider's instruction, and the reason is
+that سنون had almost nothing on it aimed at students: the landing page said "الطالب راح
+يتصل بيك", which silently tells every student reading it that the site is not for them. On
+any surface both audiences see — the landing page, the fee sentence, the FAQ, the privacy
+section — write the two roles in the third person: **"الطالب يتواصل وية المراجع"**, never
+"يتواصل وياك".
+
+This does **not** apply inside the patient-only pages. `/case/new`, the tracking page and
+link recovery are read by one person whose role is not in doubt, and third person there would
+be stiff and strange — "the student will contact the patient" on a form the patient is filling
+in reads like a policy document. The rule is about the shared front door, not about every
+sentence in the product.
+
 ---
 
 ## Non-negotiables
@@ -478,6 +491,19 @@ anything.
 **Contact data.** Phone numbers are the most sensitive field in the system. They exist to be
 shown to exactly one student. Do not log them, do not put them in error messages, do not
 include them in any list endpoint.
+
+**Three legal shapes, and Arabic digits are one of them.** From Haider: 11 digits starting
+`07`, or 10 starting `7`, or the international form — `+964`/`00964` then the 10 digits
+without the leading zero. `normalisePhone` accepts all three plus spaces, dashes, and both
+Arabic-Indic (`٠١٢٣`) and Extended Arabic-Indic (`۰۱۲۳`) numerals.
+
+That last part is not a nicety. **عالجني rejects a number typed in Arabic digits** and tells
+the patient their Iraqi number is invalid — Haider hit it himself, and it only worked once he
+retyped in Western numerals. It is the purest example of a bug that is invisible to whoever
+built it and blocks exactly the user this product is for: somebody on an Arabic keyboard.
+Verified here by submitting a whole case typed in Arabic numerals, not by reading the parser.
+**Never put a `pattern` on the phone input** — it would reintroduce the bug in the browser,
+where the server's parser never gets a chance to be right.
 
 ---
 
@@ -1341,7 +1367,20 @@ instead, each narrowing to the next, and ends either in a set of treatments to t
    سنون already needs. Only the current node id is in the query string — a full path would
    follow them into their history, into the `Referer` header on the way out, and into any
    screenshot they send. "رجوع" is computed from the tree instead.
-4. **Some answers must not end in a treatment at all.** A swollen face with a fever, a tooth
+4. **A student may not root-fill a molar**, and the tree has to know it. Haider's
+   correction, and the proof that the draft content had real errors in it: molars carry
+   several roots and several canals, and a university clinic does not let a fourth or fifth
+   year attempt them. So "pain that sounds like a root canal" now asks *which tooth* before
+   it concludes anything — anterior and premolar go through as student cases, a back molar
+   is sent to a dentist, and "I am not sure" becomes an examination. A premolar with two
+   roots is the genuine grey case and the patient is deliberately **not** told so: "it might
+   work and it might not" helps nobody standing in front of a form, and the student decides
+   at the chair.
+   This also added a third kind of exit. A referral now carries `now`, `soon` or **`scope`** —
+   and `scope` is styled in plain grey rather than in the danger colour, because "students
+   may not do this one" is information, and dressing it like a spreading infection tells
+   somebody with an aching molar they are in danger when they are not.
+5. **Some answers must not end in a treatment at all.** A swollen face with a fever, a tooth
    knocked out in an accident, an ulcer that has lasted weeks — those belong in a hospital
    today, not in a queue for an appointment that may be a week away. A triage tree with no
    exits is worse than no tree, because it routes everything into the one place it knows.
@@ -1473,6 +1512,17 @@ Do not build these unless explicitly asked:
 - a mobile app
 - multi-language switching (Arabic only for now)
 - push notifications
+
+---
+
+## The outstanding work
+
+`docs/roadmap.md` holds it, in order, with the deployment blockers first — Haider asked for
+the remaining work written down and committed one item at a time rather than in one
+unreviewable change. **The two real blockers on deploying to Vercel are a hosted Postgres and
+somewhere to put uploaded files**; the rest is accounts he has to create. Uploads are the one
+that would fail silently: `staticDir` writes to a local disk that Vercel destroys minutes
+later, so photographs and enrolment documents would appear to save and then vanish.
 
 ---
 

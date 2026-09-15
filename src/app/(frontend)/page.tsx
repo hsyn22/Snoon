@@ -433,12 +433,24 @@ export default async function HomePage() {
         <Section tone="accent">
           <h2 className="reveal text-2xl font-bold sm:text-3xl">{home.closingTitle}</h2>
           <p className="reveal mt-3 text-pretty opacity-90">{home.closingBody}</p>
-          <Link
-            href="/case/new"
-            className="press reveal mt-6 inline-flex min-h-12 items-center justify-center rounded-full bg-surface px-6 font-bold text-accent shadow-md"
-          >
-            {home.primaryAction}
-          </Link>
+          {/* Both doors, side by side. The patient's stays primary — it is the
+              side that arrives cold and the side سنون exists to serve — but a
+              student reaching the bottom of the page now has somewhere to go
+              instead of a band addressed to somebody else. */}
+          <div className="reveal mt-6 flex flex-col items-center justify-center gap-3 sm:flex-row">
+            <Link
+              href="/case/new"
+              className="press inline-flex min-h-12 items-center justify-center rounded-full bg-surface px-6 font-bold text-accent shadow-md"
+            >
+              {home.primaryAction}
+            </Link>
+            <Link
+              href="/student"
+              className="press inline-flex min-h-12 items-center justify-center rounded-full border border-current px-6 font-bold"
+            >
+              {home.closingStudentAction}
+            </Link>
+          </div>
 
           {/* The motif, retired from the hero to here. It takes its colour from
               the text it sits in, so on the accent band it is white without a

@@ -80,8 +80,18 @@ export type TriageNode =
       id: string
       title: string
       body: string
-      /** `now` is today; `soon` is "do not wait for a student appointment". */
-      urgency: 'now' | 'soon'
+      /**
+       * Why this ends outside سنون. Three different things, and conflating them
+       * would be a real harm in both directions:
+       *
+       * - `now`   — a hospital today. Time matters.
+       * - `soon`  — a dentist, not a student, and do not put it off.
+       * - `scope` — nothing is wrong medically; this treatment is simply not
+       *             one a student at a university clinic may perform. Somebody
+       *             reading this must not think they are in danger, and must
+       *             not be left thinking سنون could have helped.
+       */
+      urgency: 'now' | 'soon' | 'scope'
     }
 
 export const TRIAGE_ROOT = 'start'
@@ -110,9 +120,37 @@ export const TRIAGE_TREE: readonly TriageNode[] = [
     text: 'شلون الألم؟',
     answers: [
       { label: 'يجي لمن آكل حلو أو بارد، ويروح بسرعة', next: 'result-filling' },
-      { label: 'ألم قوي يستمر، وأشدّ بالليل', next: 'result-rootcanal' },
+      { label: 'ألم قوي يستمر، وأشدّ بالليل', next: 'rootcanal-which' },
       { label: 'يوجعني بس لمن أعضّ عليه', next: 'result-exam-pain' },
       { label: 'ألم وية انتفاخ بالوجه أو حرارة', next: 'urgent-swelling' },
+    ],
+  },
+
+  /*
+   * Which tooth, and this question exists for a clinical reason Haider gave:
+   * **a student may not root-fill a back molar.** Molars carry several roots and
+   * several canals, and a university clinic does not let a fourth or fifth year
+   * attempt them. Premolars and anterior teeth are mostly single-rooted and are
+   * ordinary student work.
+   *
+   * A premolar with two roots sits in between, and the patient is deliberately
+   * **not** told that: "قد ينفع وقد ما ينفع" is a sentence that helps nobody
+   * standing in front of a form. It goes through as a student case and the
+   * student decides at the chair, which is where that call belongs.
+   *
+   * The answers are written so somebody can actually pick one about their own
+   * mouth — by position and by what they chew with — rather than by name.
+   */
+  {
+    kind: 'question',
+    id: 'rootcanal-which',
+    text: 'أي سن اللي يوجع؟',
+    hint: 'حدد مكانه بفمك — هذا يقرر إذا الطالب يكدر يعالجه بعيادة الجامعة.',
+    answers: [
+      { label: 'سن من قدام — من اللي يبين لمن أضحك', next: 'result-rootcanal' },
+      { label: 'ضرس صغير بالنص، بين الأمامية والطواحين', next: 'result-rootcanal' },
+      { label: 'ضرس كبير من الآخر (طاحونة)', next: 'scope-molar-rct' },
+      { label: 'ما أدري بالضبط', next: 'result-exam-rct' },
     ],
   },
 
@@ -182,6 +220,13 @@ export const TRIAGE_TREE: readonly TriageNode[] = [
   },
   {
     kind: 'result',
+    id: 'result-exam-rct',
+    title: 'تبدأ بفحص',
+    body: 'ما دام مو متأكد أي سن، الطالب راح يفحصك ويحدد. إذا طلع ضرس كبير من الآخر، راح يدلّك على طبيب لأن هذا النوع ما ينعالج بعيادة الجامعة.',
+    treatments: ['examination'],
+  },
+  {
+    kind: 'result',
     id: 'result-extraction',
     title: 'يشبه حالة تحتاج قلع',
     body: 'سن مكسور للجذر أو متحرك هواي غالباً ما ينفع يتحشّى. الطالب راح يشوف إذا أكو مجال ينقذه.',
@@ -240,6 +285,14 @@ export const TRIAGE_TREE: readonly TriageNode[] = [
     title: 'هذا ما ينطر موعد',
     body: 'إذا انكسر أو انقلع سن بضربة أو حادث، الوقت مهم هواي — أحياناً يمكن إنقاذ السن إذا وصلت بسرعة. روح لأقرب مستشفى أو طوارئ أسنان هسه.',
   },
+  {
+    kind: 'referral',
+    id: 'scope-molar-rct',
+    urgency: 'scope',
+    title: 'هذا ما ينعالج بعيادة الجامعة',
+    body: 'علاج عصب الطواحين (الأضراس الكبيرة من الآخر) ما يسوونه الطلبة بعيادة الجامعة، لأن الطاحونة عدها أكثر من جذر وأكثر من قناة. راجع طبيب أسنان — مو حالة مستعجلة، بس لا تأجّلها لأن الألم راح يزيد.',
+  },
+
   {
     kind: 'referral',
     id: 'urgent-lesion',

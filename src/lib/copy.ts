@@ -81,7 +81,7 @@ export const fees = {
   long:
     'منصة سنون ما تاخذ فلوس لا من المراجع ولا من الطالب. بس بعض الجامعات تاخذ ' +
     'أجور رمزية على الخدمات اللي يقدمها الطلاب، وغالباً ما تتجاوز 5,000 د.ع. ' +
-    'الطالب راح يوضّحلك التفاصيل بعد ما يتواصل وياك.',
+    'الطالب راح يوضّح التفاصيل للمراجع بعد ما يتواصل وياه.',
 } as const
 
 export const howItWorks = {
@@ -131,8 +131,14 @@ export const home = {
     'شوف الحالات اللي تناسب مرحلتك وأيام دوامك بعيادتك، واحجز اللي تحتاجه لمتطلباتك. التسجيل يحتاج وثيقة تثبت إنك طالب.',
   studentsAction: 'دخول الطلبة',
 
-  closingTitle: 'محتاج علاج أسنان؟',
-  closingBody: 'قدّم حالتك بدقيقتين. ما تحتاج حساب، ومنصة سنون ما تاخذ منك فلوس.',
+  /* The closing band used to be a patient CTA on a page that already read as
+     patient-only — which is Haider's objection in its clearest form: a student
+     scrolling to the bottom of سنون found nothing addressed to them at all. It
+     names both sides now and offers both doors. */
+  closingTitle: 'طرفين، ومنصة وحدة توصّل بيناتهم',
+  closingBody:
+    'المراجع يقدّم حالته بدقيقتين وبدون حساب، والطالب يلكَى حالات تناسب مرحلته ومتطلباته. ومنصة سنون ما تاخذ فلوس من أي طرف.',
+  closingStudentAction: 'أنا طالب',
 
   /** The landing page's header menu. Two anchors, so it needs no hamburger and
       no JavaScript — both competitors script a drawer to hold four links. */
@@ -199,15 +205,15 @@ export const safetySection = {
   points: [
     {
       title: 'رقمك بأمان',
-      body: 'رقمك ما يشوفه غير طالب واحد، بعد ما يحجز حالتك، وبس حتى يتواصل وياك. وما ينستعمل لأي غرض ثاني.',
+      body: 'رقم المراجع ما يشوفه غير طالب واحد، بعد ما يحجز الحالة، وبس حتى يتواصل وياه. وما ينستعمل لأي غرض ثاني.',
     },
     {
       title: 'الصور اختيارية',
-      body: 'الصور اختيارية تماماً. تساعد الطالب على التشخيص وتختصر الوقت عليك وعليه.',
+      body: 'الصور اختيارية تماماً. تساعد الطالب على التشخيص وتختصر الوقت على الطرفين.',
     },
     {
       title: 'معلومات التواصل تنمحي',
-      body: 'بعد ما تنتهي حالتك بمدة محددة، اسمك ورقمك وملاحظاتك تنمحي من عدنا. رمز الحالة يبقى إذا احتجت تسأل.',
+      body: 'بعد ما تنتهي الحالة بمدة محددة، اسم المراجع ورقمه وملاحظاته تنمحي من عدنا. رمز الحالة يبقى إذا احتاج يسأل.',
     },
     {
       title: 'ما نسأل عن شي ما نحتاجه',
@@ -220,9 +226,9 @@ export const safetySection = {
 export const citiesSection = {
   eyebrow: 'المدن',
   title: 'سنون بمدينتك؟',
-  body: 'تكدر تقدّم حالتك من أي مدينة بهذي القائمة. عدد الطلبة يختلف من مدينة لأخرى، فبعض المدن الرد بيها أسرع.',
+  body: 'الحالات تنقبل من أي مدينة بهذي القائمة. عدد الطلبة يختلف من مدينة لأخرى، فبعض المدن الرد بيها أسرع.',
   /** Said plainly rather than hidden: an empty queue is not a broken site. */
-  note: 'سنون لسه جديد. إذا ما وصلك رد بسرعة، يعني ما أكو طالب متفرّغ بمدينتك هسه — حالتك تبقى بالقائمة.',
+  note: 'منصة سنون لسه جديدة. إذا ما وصل رد بسرعة، يعني ما أكو طالب متفرّغ بهذيك المدينة هسه — والحالة تبقى بالقائمة.',
 } as const
 
 /**
@@ -348,9 +354,13 @@ export const guide = {
   continueToForm: 'كمّل وقدّم حالتك',
   /** Shown on a result: the boxes that will arrive already ticked. */
   willTick: 'راح نأشّر إلك:',
-  /** Shown on a referral. Never offers the form. */
+  /** Shown on a referral. Never offers the form. Three, not two: a molar root
+      canal is nothing to be frightened of, it is simply not student work, and
+      dressing it in the same red as a spreading infection would scare somebody
+      who is in no danger. */
   referralNow: 'هذا مستعجل',
   referralSoon: 'لا تأجّلها',
+  referralScope: 'خارج نطاق عيادة الجامعة',
   homeLink: 'رجوع للرئيسية',
 
   /** The link from the case form, for somebody who opened it and stalled. */
