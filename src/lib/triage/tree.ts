@@ -61,6 +61,30 @@ export type TriageAnswer = {
 
 export type TriageNode =
   | {
+      /**
+       * A whole screen of yes/no items answered at once, not one at a time.
+       *
+       * AsnanLink ask their six emergency questions as six separate Yes/No
+       * rows on one page with one Submit, and Haider pointed at that structure
+       * directly. It is the right shape: six sequential screens would be six
+       * round trips before a patient reaches the first real question, on the
+       * connection this product is built for, and the case form is already the
+       * thing that must never grow a step.
+       *
+       * It is a plain GET form, so it still needs no JavaScript — the browser
+       * puts the ticked boxes in the query string itself.
+       */
+      kind: 'screen'
+      id: string
+      text: string
+      hint?: string
+      items: readonly string[]
+      /** Where to go when nothing is ticked. */
+      pass: string
+      /** Where to go when anything at all is ticked. */
+      fail: string
+    }
+  | {
       kind: 'question'
       id: string
       text: string
@@ -94,9 +118,67 @@ export type TriageNode =
       urgency: 'now' | 'soon' | 'scope'
     }
 
-export const TRIAGE_ROOT = 'start'
+export const TRIAGE_ROOT = 'red-flags'
 
 export const TRIAGE_TREE: readonly TriageNode[] = [
+  /*
+   * LAYER 1 — the emergency screen, and it comes first for everybody.
+   *
+   * Haider's instruction after walking AsnanLink's flow, and the correction is
+   * structural rather than cosmetic. This tree used to carry its red flags as
+   * *answers inside branches* — swelling was an option under "pain", trauma
+   * under "broken tooth" — which means they were only ever found by somebody
+   * who happened to pick the right branch first. A person with a spreading
+   * facial infection who taps "عندي سن مفقود" never saw the question at all.
+   *
+   * Asking up front catches everyone, and costs one screen.
+   *
+   * The six items are AsnanLink's own, which is better provenance than
+   * anything invented here — but they are still clinical content and still
+   * need Haider's sign-off before a real patient sees them.
+   */
+  {
+    kind: 'screen',
+    id: 'red-flags',
+    text: 'قبل كل شي — أكو وحدة من هذي عندك؟',
+    hint: 'أشّر أي وحدة تنطبق عليك. إذا ماكو ولا وحدة، كمّل بدون ما تأشّر شي.',
+    items: [
+      'صعوبة بالتنفس أو البلع',
+      'انتفاخ ينتشر للعين أو الرقبة أو الفك',
+      'انتفاخ بالوجه وية حرارة',
+      'نزف من الفم ما يوقف',
+      'ضربة قوية بالوجه اليوم',
+      'سن انقلع كامل اليوم',
+    ],
+    pass: 'age',
+    fail: 'urgent-swelling',
+  },
+
+  /*
+   * LAYER 2 — age, and it is a single question on purpose.
+   *
+   * From Haider: Iraqi dental colleges treat **under fifteen** as a paediatric
+   * patient, and AsnanLink ask it in exactly those words. He raised the real
+   * nuance himself — a thirteen-year-old wanting a composite on a permanent
+   * tooth does not *have* to go to paediatrics, and could be seen in operative
+   * — and then ruled on it: **"this is a bit tricky and misleading, keep it as
+   * fifteen"**. So the line is flat, and that is a deliberate simplification
+   * rather than an oversight. A patient standing in front of a form cannot be
+   * asked to judge which department suits their child's tooth.
+   */
+  {
+    kind: 'question',
+    id: 'age',
+    text: 'عمر المراجع أقل من ١٥ سنة؟',
+    hint: 'كليات طب الأسنان تحسب اللي عمره أقل من ١٥ حالة أسنان أطفال.',
+    answers: [
+      { label: 'إي، أقل من ١٥ سنة', next: 'result-paediatric' },
+      { label: 'لا، ١٥ سنة أو أكبر', next: 'start' },
+    ],
+  },
+
+  /* LAYER 3 — what they actually need. Everything below here is the tree that
+     already existed; the two layers above are the new front of it. */
   {
     kind: 'question',
     id: 'start',
@@ -110,7 +192,6 @@ export const TRIAGE_TREE: readonly TriageNode[] = [
       { label: 'أسناني مو منتظمة وأريد تقويم', next: 'result-ortho' },
       { label: 'حالة طفل أقل من ١٢ سنة', next: 'result-paediatric' },
       { label: 'ما أدري — أريد بس فحص', next: 'result-exam' },
-      { label: 'وجهي منتفخ أو عندي حرارة', next: 'urgent-swelling' },
     ],
   },
 
@@ -264,7 +345,9 @@ export const TRIAGE_TREE: readonly TriageNode[] = [
     kind: 'result',
     id: 'result-paediatric',
     title: 'أسنان الأطفال',
-    body: 'حالات الأطفال إلها طلبة مختصين بيها. لازم يكون ولي الأمر ويّا الطفل بالموعد.',
+    body:
+      'اللي عمره أقل من ١٥ سنة يروح لقسم أسنان الأطفال، وهناك الطالب يفحص ويحدد شنو يحتاج. ' +
+      'لازم يكون ولي الأمر ويّا الطفل بالموعد.',
     treatments: ['paediatric'],
   },
 
@@ -276,7 +359,15 @@ export const TRIAGE_TREE: readonly TriageNode[] = [
     id: 'urgent-swelling',
     urgency: 'now',
     title: 'هذا ما ينطر موعد',
-    body: 'انتفاخ بالوجه أو حرارة ويّا ألم سن ممكن يكون التهاب ينتشر، وهذا شي يحتاج علاج بنفس اليوم. روح لأقرب مستشفى أو طوارئ أسنان هسه، ولا تنطر موعد من سنون.',
+    /* Written general on purpose. This node used to sit at the end of one
+       branch and its text described swelling, because swelling was the only
+       way to reach it. The screen now sends six different things here — a
+       knocked-out tooth, bleeding that will not stop, trouble breathing — and
+       a card that talks about swelling to somebody holding their own tooth
+       reads as a page that has not understood them. */
+    body:
+      'اللي أشّرته يحتاج علاج بنفس اليوم، مو موعد بعيادة جامعة. روح لأقرب مستشفى أو طوارئ ' +
+      'أسنان هسه. هذي الحالات تسوء بسرعة، والانتظار بيها يكلّف أكثر من السن.',
   },
   {
     kind: 'referral',

@@ -8,6 +8,8 @@ import {
   triageHandoff,
   triageNode,
   triageParent,
+  childrenOf,
+  screenOutcome,
 } from '@/lib/triage'
 
 /**
@@ -48,11 +50,52 @@ describe('the triage tree', () => {
   it('never points an answer at a node that does not exist', () => {
     const ids = new Set(TRIAGE_TREE.map((n) => n.id))
     for (const node of TRIAGE_TREE) {
-      if (node.kind !== 'question') continue
-      for (const answer of node.answers) {
-        expect(ids, `${node.id} → ${answer.next}`).toContain(answer.next)
+      for (const child of childrenOf(node)) {
+        expect(ids, `${node.id} → ${child}`).toContain(child)
       }
     }
+  })
+
+  /*
+   * The structural reason the emergency screen exists. Before Haider's
+   * correction the red flags were answers inside branches, so they were only
+   * ever found by somebody who happened to pick the right branch first —
+   * a person with a spreading facial infection who tapped "I have a missing
+   * tooth" never saw the question at all.
+   */
+  it('screens for emergencies before it asks anything else', () => {
+    const root = TRIAGE_TREE.find((n) => n.id === TRIAGE_ROOT)!
+    expect(root.kind).toBe('screen')
+    if (root.kind !== 'screen') return
+    expect(root.items.length).toBeGreaterThan(0)
+    // Ticking anything must land on a referral, never on a treatment.
+    const failed = TRIAGE_TREE.find((n) => n.id === root.fail)!
+    expect(failed.kind).toBe('referral')
+  })
+
+  it('asks the age question before it asks what is needed', () => {
+    const root = TRIAGE_TREE.find((n) => n.id === TRIAGE_ROOT)!
+    if (root.kind !== 'screen') throw new Error('root is not a screen')
+    const age = TRIAGE_TREE.find((n) => n.id === root.pass)!
+    expect(age.kind).toBe('question')
+    if (age.kind !== 'question') return
+    // Under fifteen is a paediatric case — Haider's flat line, deliberately
+    // not nuanced by what the child needs. See tree.ts.
+    const under = age.answers[0]!
+    const paed = TRIAGE_TREE.find((n) => n.id === under.next)!
+    expect(paed.kind).toBe('result')
+    if (paed.kind !== 'result') return
+    expect(paed.treatments).toEqual(['paediatric'])
+  })
+
+  it('fails the screen on any tick at all, and reads no value', () => {
+    const root = TRIAGE_TREE.find((n) => n.id === TRIAGE_ROOT)!
+    if (root.kind !== 'screen') throw new Error('root is not a screen')
+    expect(screenOutcome(root, undefined)).toBe(root.pass)
+    expect(screenOutcome(root, [])).toBe(root.pass)
+    expect(screenOutcome(root, '1')).toBe(root.fail)
+    expect(screenOutcome(root, ['1'])).toBe(root.fail)
+    expect(screenOutcome(root, ['1', '1', '1'])).toBe(root.fail)
   })
 
   it('leaves nothing unreachable', () => {
@@ -70,8 +113,8 @@ describe('the triage tree', () => {
     const walk = (id: string, seen: readonly string[]) => {
       expect(seen, `cycle through ${id}`).not.toContain(id)
       const node = byId.get(id)
-      if (!node || node.kind !== 'question') return
-      for (const answer of node.answers) walk(answer.next, [...seen, id])
+      if (!node) return
+      for (const child of childrenOf(node)) walk(child, [...seen, id])
     }
     walk(TRIAGE_ROOT, [])
   })
@@ -112,7 +155,7 @@ describe('the triage tree', () => {
     // Rule 1. "عندك" addressed to the reader states a finding about them; the
     // tree may only say what something resembles.
     for (const node of TRIAGE_TREE) {
-      const text = node.kind === 'question' ? node.text : node.body
+      const text = node.kind === 'result' || node.kind === 'referral' ? node.body : node.text
       expect(text, node.id).not.toMatch(/\bعندك (التهاب|تسوس|تسوّس|خراج)/)
     }
   })

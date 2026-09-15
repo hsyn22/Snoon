@@ -93,6 +93,12 @@ student half of the site cannot be tested.
 - [ ] **A real student surface.** Right now the student side is one block on the landing page
       and a login. It needs its own page explaining verification, what a case looks like, and
       what the stages may treat — the thing that actually recruits students.
+- [x] **The triage tree became three layers** — emergency screen, age, then needs — after
+      Haider walked AsnanLink's flow. The red flags used to be answers inside branches, so
+      only somebody who picked the right branch ever saw them.
+- [ ] **Decide whether children also pick what they need.** Under fifteen currently ticks
+      `paediatric` and stops, which matches "label it as a PEDO patient". If the case should
+      also carry what the child needs, it is one change.
 - [ ] **The rest of the triage tree needs Haider's clinical review**, referrals first. The
       molar correction is the proof that the draft content has real errors in it.
 

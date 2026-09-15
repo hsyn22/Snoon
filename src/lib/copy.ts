@@ -348,6 +348,12 @@ export const guide = {
   disclaimer:
     'هذي مو تشخيص. سنون ما تعالج وما تفحص — الطالب هو اللي يشخّص بعد ما يشوفك بالعيادة.',
 
+  /** The emergency screen's submit. Neutral on purpose — "التالي" would be
+      wrong on a screen where ticking nothing is the common answer. */
+  screenContinue: 'كمّل',
+  /** On an urgent referral only. Opens the phone's own maps app. */
+  findHospital: 'دلّني على أقرب مستشفى',
+
   back: 'رجوع',
   restart: 'ابدأ من الأول',
   /** Shown on a result: carry the ticks into the form. */

@@ -32,10 +32,40 @@ export function triageNode(q: string | undefined): TriageNode {
  */
 export function triageParent(id: string): string | null {
   for (const node of TRIAGE_TREE) {
-    if (node.kind !== 'question') continue
-    if (node.answers.some((answer) => answer.next === id)) return node.id
+    if (node.kind === 'question' && node.answers.some((a) => a.next === id)) return node.id
+    if (node.kind === 'screen' && (node.pass === id || node.fail === id)) return node.id
   }
   return null
+}
+
+/** Where a node's own children live, whatever kind it is. */
+export function childrenOf(node: TriageNode): readonly string[] {
+  if (node.kind === 'question') return node.answers.map((a) => a.next)
+  if (node.kind === 'screen') return [node.pass, node.fail]
+  return []
+}
+
+/**
+ * Which node an emergency screen's submission leads to.
+ *
+ * The screen is a plain GET form, so what comes back is whatever the browser
+ * put in the query string: nothing at all, one value, or a list. **Any tick at
+ * all fails the screen** — the items are not weighed against each other and
+ * there is no threshold, because every one of them is on its own a reason to
+ * be in a hospital rather than in a queue.
+ *
+ * The values themselves are never read. Only whether there are any. Which
+ * symptoms somebody ticked is health information about them, and the tree's
+ * third rule is that none of it is stored or carried anywhere — so the form
+ * submits the *count*, not the answers, and even that is discarded the moment
+ * the next node is chosen.
+ */
+export function screenOutcome(
+  node: Extract<TriageNode, { kind: 'screen' }>,
+  ticked: string | string[] | undefined,
+): string {
+  const any = Array.isArray(ticked) ? ticked.length > 0 : Boolean(ticked)
+  return any ? node.fail : node.pass
 }
 
 /**
@@ -72,7 +102,7 @@ export function reachableIds(): Set<string> {
     if (seen.has(id)) continue
     seen.add(id)
     const node = BY_ID.get(id)
-    if (node?.kind === 'question') for (const a of node.answers) queue.push(a.next)
+    if (node) for (const child of childrenOf(node)) queue.push(child)
   }
   return seen
 }

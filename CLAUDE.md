@@ -1415,7 +1415,55 @@ patient whose tooth simply hurts does not, and the form's own hint — "إذا �
 instead, each narrowing to the next, and ends either in a set of treatments to tick or in
 "this is not something a student clinic should handle".
 
-`src/lib/triage/`. Four rules, none of them cosmetic:
+**Three layers, and the order is the whole point.** Haider's correction after walking
+AsnanLink's own flow, and it is structural rather than cosmetic:
+
+1. **The emergency screen, for everybody, before anything else.** Six yes/no items on one
+   page. Any tick at all ends in a hospital referral.
+2. **Age.** "عمر المراجع أقل من ١٥ سنة؟" — under fifteen is a paediatric case.
+3. **What they need** — the tree that already existed.
+
+The reason layer 1 moved to the front is the bug it fixes. This tree used to carry its red
+flags as *answers inside branches*: swelling was an option under "pain", trauma under "broken
+tooth". So they were only ever found by somebody who happened to pick the right branch first
+— a person with a spreading facial infection who tapped "عندي سن مفقود" never saw the
+question at all. Asking up front catches everyone and costs one screen.
+
+The six items are AsnanLink's own, which is better provenance than anything invented here.
+They are still clinical content and still need Haider's sign-off.
+
+**The screen is one page, not six.** AsnanLink ask six separate Yes/No rows with one submit,
+and that is right: six sequential screens would be six round trips before a patient reaches
+the first real question. It is a plain **GET form**, so it still needs no JavaScript — the
+browser builds the query string and navigates, exactly as the answer links do. Verified by
+ticking a box and submitting with `javaScriptEnabled: false`.
+
+**Every checkbox carries the same name and the same value, and the server only counts them.**
+Which symptoms somebody ticked is health information about them; a distinct value per box
+would put a list of a stranger's symptoms into their browser history and into the `Referer`
+header on the way out. `screenOutcome` reads whether there were any, never which.
+
+**Under fifteen is a flat line, deliberately.** Haider raised the real nuance himself — a
+thirteen-year-old wanting a composite on a permanent tooth does not *have* to go to
+paediatrics and could be seen in operative — and then ruled on it: *"this is a bit tricky and
+misleading, keep it as fifteen"*. A patient standing in front of a form cannot be asked to
+judge which department suits their child's tooth. Under fifteen ticks `paediatric` and
+nothing else, so the case routes to the students who do that work; **if children should also
+pick what they need, that is one change and his call.**
+
+**"دلّني على أقرب مستشفى" is taken from AsnanLink and is the one genuinely practical thing on
+their emergency screen.** Telling somebody to go to a hospital is advice; handing them the
+map is help. A plain maps search, so it opens the app the phone already has and costs سنون
+nothing. What was *not* taken is their "Continue anyway" button underneath it — a route to
+the queue under "go to a hospital now" reads as permission to wait, which is the same reason
+rule 5 below exists. "ابدأ من الأول" is the escape hatch instead.
+
+**The emergency card's text is written general.** It used to sit at the end of one branch and
+describe swelling, because swelling was the only way to reach it. Six different things send
+somebody there now, and a card talking about swelling to a person holding their own knocked-out
+tooth reads as a page that has not understood them.
+
+`src/lib/triage/`. Five rules, none of them cosmetic:
 
 1. **It never diagnoses, and the copy must never read as one.** Every leaf says what the
    description *resembles* and that the student will decide — `يشبه`, `الطالب راح يشخّص` —
