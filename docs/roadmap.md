@@ -96,9 +96,10 @@ student half of the site cannot be tested.
 - [x] **The triage tree became three layers** — emergency screen, age, then needs — after
       Haider walked AsnanLink's flow. The red flags used to be answers inside branches, so
       only somebody who picked the right branch ever saw them.
-- [ ] **Decide whether children also pick what they need.** Under fifteen currently ticks
-      `paediatric` and stops, which matches "label it as a PEDO patient". If the case should
-      also carry what the child needs, it is one change.
+- [x] **Children pick what they need, and which tooth.** Milk / permanent / not sure, then
+      six needs including fluoride. Every outcome carries `paediatric` plus the need.
+- [ ] **Decide where the tooth type goes.** It is asked and then discarded — all three routes
+      reach the same outcomes. Carrying it to the student needs a new field on the case.
 - [ ] **The rest of the triage tree needs Haider's clinical review**, referrals first. The
       molar correction is the proof that the draft content has real errors in it.
 

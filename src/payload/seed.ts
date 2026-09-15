@@ -47,6 +47,7 @@ const TREATMENT_TYPES = [
   { slug: 'complete-denture', nameAr: 'طقم كامل' },
   { slug: 'orthodontics', nameAr: 'تقويم أسنان' },
   { slug: 'paediatric', nameAr: 'أسنان الأطفال' },
+  { slug: 'fluoride', nameAr: 'فلورايد' },
 ]
 
 /**
@@ -85,6 +86,10 @@ const STAGES = [
       'complete-denture',
       'orthodontics',
       'paediatric',
+      // Fluoride, on Haider's instruction, as a paediatric preventive. Placed
+      // with the fifth year because that is where paediatrics sits; if fourth
+      // years apply it too, it moves to SHARED_TREATMENTS and that is his call.
+      'fluoride',
     ],
   },
 ]
@@ -113,11 +118,24 @@ export async function seed(): Promise<{ created: number; existing: number }> {
   }
 
   /**
-   * Fill in a stage's default treatments, but only if nobody has set them.
+   * Fill in a stage's default treatments — **additively**.
    *
-   * Re-seeding must not overwrite an administrator's decision — the whole point
-   * of this config living in Payload is that it can be corrected without a
-   * deployment, and a seed that stomps corrections makes that a lie.
+   * This used to return early whenever the stage already had any defaults at
+   * all, so that re-seeding could not overwrite an administrator's decision.
+   * The intention was right and the effect was a trap: adding a treatment to
+   * the defaults in this file did **nothing** to a database that already had
+   * the stage. `fluoride` was created as a treatment type, stage 5 never
+   * gained it, and every case asking for it would have been invisible to
+   * everyone — which is the failure mode CLAUDE.md singles out as the
+   * dangerous one, because an empty queue reads as "no patients" rather than
+   * as a missing row.
+   *
+   * So it now adds what is missing and removes nothing. An administrator's
+   * additions survive; what does not survive is a deliberate *removal* of a
+   * default, which comes back on the next seed. That is the right way round:
+   * `defaultTreatmentTypes` is what a stage can do anywhere, and a clinic that
+   * genuinely differs is expressed by its own `stage-capabilities` row — which
+   * this never touches.
    */
   async function ensureStageDefaults(stageSlug: string, treatmentSlugs: string[]) {
     const found = await payload.find({
@@ -130,9 +148,6 @@ export async function seed(): Promise<{ created: number; existing: number }> {
     const stage = found.docs[0]
     if (!stage) return
 
-    const current = stage.defaultTreatmentTypes
-    if (Array.isArray(current) && current.length > 0) return
-
     const treatments = await payload.find({
       collection: 'treatment-types',
       where: { slug: { in: treatmentSlugs } },
@@ -142,10 +157,22 @@ export async function seed(): Promise<{ created: number; existing: number }> {
 
     if (treatments.docs.length === 0) return
 
+    // A relationship field comes back either as ids or as populated documents,
+    // depending on depth. Both shapes have to reduce to the same id list, or
+    // the comparison below decides everything is missing and duplicates it all.
+    const currentIds = (Array.isArray(stage.defaultTreatmentTypes)
+      ? stage.defaultTreatmentTypes
+      : []
+    ).map((entry) => (typeof entry === 'object' && entry !== null ? entry.id : entry))
+
+    const wanted = treatments.docs.map((doc) => doc.id)
+    const missing = wanted.filter((id) => !currentIds.includes(id))
+    if (missing.length === 0) return
+
     await payload.update({
       collection: 'stages',
       id: stage.id,
-      data: { defaultTreatmentTypes: treatments.docs.map((doc) => doc.id) },
+      data: { defaultTreatmentTypes: [...currentIds, ...missing] },
     })
   }
 

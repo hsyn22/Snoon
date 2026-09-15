@@ -172,8 +172,83 @@ export const TRIAGE_TREE: readonly TriageNode[] = [
     text: 'عمر المراجع أقل من ١٥ سنة؟',
     hint: 'كليات طب الأسنان تحسب اللي عمره أقل من ١٥ حالة أسنان أطفال.',
     answers: [
-      { label: 'إي، أقل من ١٥ سنة', next: 'result-paediatric' },
+      { label: 'إي، أقل من ١٥ سنة', next: 'child-tooth' },
       { label: 'لا، ١٥ سنة أو أكبر', next: 'start' },
+    ],
+  },
+
+  /*
+   * The child's own branch. Haider's follow-up: a child should say what they
+   * need too, not just be labelled — and should say whether the tooth is a
+   * milk tooth or a permanent one.
+   *
+   * **Why the tooth matters and why the patient is still asked it.** A milk
+   * tooth and a permanent tooth in the same mouth are different work: what is
+   * routine on one is not on the other, and a paedodontics student wants to
+   * know before they claim. It is also something a parent can actually answer,
+   * unlike "which department suits this", which is why the age line stayed
+   * flat while this one does not.
+   *
+   * "ما متأكد" is a real answer and is offered plainly. A parent guessing to
+   * get past a form is worse than a parent saying they do not know.
+   *
+   * **Every outcome here carries `paediatric` as well as the need.** That is
+   * what makes the case land in paedodontics rather than in operative, and it
+   * is why `listOpenCasesForStudent` now treats `paediatric` as containment
+   * rather than overlap — without that, a child needing a filling would appear
+   * to every fourth year in the city.
+   */
+  {
+    kind: 'question',
+    id: 'child-tooth',
+    text: 'السن اللي يحتاج علاج — لبني لو دائمي؟',
+    hint: 'السن اللبني هو اللي يوقع ويطلع بداله سن جديد. إذا ما متأكد اختر «ما متأكد» — الطالب راح يعرف.',
+    answers: [
+      { label: 'سن لبني', next: 'child-need-primary' },
+      { label: 'سن دائمي', next: 'child-need-permanent' },
+      { label: 'ما متأكد', next: 'child-need-unsure' },
+    ],
+  },
+
+  {
+    kind: 'question',
+    id: 'child-need-primary',
+    text: 'شنو يحتاج الطفل؟',
+    answers: [
+      { label: 'عنده ألم', next: 'result-child-pain' },
+      { label: 'أكو تسوّس أو سن متآكل', next: 'result-child-filling' },
+      { label: 'السن متحرك أو لازم ينقلع', next: 'result-child-extraction' },
+      { label: 'تنظيف', next: 'result-child-scaling' },
+      { label: 'فلورايد للوقاية من التسوّس', next: 'result-child-fluoride' },
+      { label: 'بس فحص', next: 'result-child-exam' },
+    ],
+  },
+
+  {
+    kind: 'question',
+    id: 'child-need-permanent',
+    text: 'شنو يحتاج الطفل؟',
+    answers: [
+      { label: 'عنده ألم', next: 'result-child-pain' },
+      { label: 'أكو تسوّس أو سن متآكل', next: 'result-child-filling' },
+      { label: 'السن لازم ينقلع', next: 'result-child-extraction' },
+      { label: 'تنظيف', next: 'result-child-scaling' },
+      { label: 'فلورايد للوقاية من التسوّس', next: 'result-child-fluoride' },
+      { label: 'بس فحص', next: 'result-child-exam' },
+    ],
+  },
+
+  {
+    kind: 'question',
+    id: 'child-need-unsure',
+    text: 'شنو يحتاج الطفل؟',
+    answers: [
+      { label: 'عنده ألم', next: 'result-child-pain' },
+      { label: 'أكو تسوّس أو سن متآكل', next: 'result-child-filling' },
+      { label: 'أكو سن لازم ينقلع', next: 'result-child-extraction' },
+      { label: 'تنظيف', next: 'result-child-scaling' },
+      { label: 'فلورايد للوقاية من التسوّس', next: 'result-child-fluoride' },
+      { label: 'ما أدري — بس فحص', next: 'result-child-exam' },
     ],
   },
 
@@ -190,7 +265,6 @@ export const TRIAGE_TREE: readonly TriageNode[] = [
       { label: 'لثتي تنزف أو أكو جير ورائحة', next: 'gums' },
       { label: 'عندي سن أو أسنان مفقودة', next: 'missing' },
       { label: 'أسناني مو منتظمة وأريد تقويم', next: 'result-ortho' },
-      { label: 'حالة طفل أقل من ١٢ سنة', next: 'result-paediatric' },
       { label: 'ما أدري — أريد بس فحص', next: 'result-exam' },
     ],
   },
@@ -341,14 +415,57 @@ export const TRIAGE_TREE: readonly TriageNode[] = [
     body: 'التقويم علاج طويل ويحتاج مواعيد منتظمة لمدة طويلة. الطالب راح يشرحلك المدة قبل ما تبدأ.',
     treatments: ['orthodontics'],
   },
+  /*
+   * The child's outcomes. All of them carry `paediatric`, which is what routes
+   * the case to paedodontics; the second slug is what the student will be
+   * doing there. The closing sentence is the same on every one because it is
+   * the same requirement — a parent has to be at the appointment.
+   */
   {
     kind: 'result',
-    id: 'result-paediatric',
-    title: 'أسنان الأطفال',
+    id: 'result-child-exam',
+    title: 'أسنان الأطفال — فحص',
+    body: 'الطالب راح يفحص ويحدد شنو يحتاج. لازم يكون ولي الأمر ويّا الطفل بالموعد.',
+    treatments: ['paediatric', 'examination'],
+  },
+  {
+    kind: 'result',
+    id: 'result-child-pain',
+    title: 'أسنان الأطفال — ألم',
     body:
-      'اللي عمره أقل من ١٥ سنة يروح لقسم أسنان الأطفال، وهناك الطالب يفحص ويحدد شنو يحتاج. ' +
+      'ألم سن عند طفل ينفحص أول بقسم أسنان الأطفال، ومنّاك الطالب يقرر العلاج. ' +
       'لازم يكون ولي الأمر ويّا الطفل بالموعد.',
-    treatments: ['paediatric'],
+    treatments: ['paediatric', 'examination'],
+  },
+  {
+    kind: 'result',
+    id: 'result-child-filling',
+    title: 'أسنان الأطفال — حشوة',
+    body: 'التسوّس عند الأطفال ينعالج بقسم أسنان الأطفال. لازم يكون ولي الأمر ويّا الطفل بالموعد.',
+    treatments: ['paediatric', 'filling'],
+  },
+  {
+    kind: 'result',
+    id: 'result-child-extraction',
+    title: 'أسنان الأطفال — قلع',
+    body: 'القلع عند الأطفال يصير بقسم أسنان الأطفال. لازم يكون ولي الأمر ويّا الطفل بالموعد.',
+    treatments: ['paediatric', 'extraction'],
+  },
+  {
+    kind: 'result',
+    id: 'result-child-scaling',
+    title: 'أسنان الأطفال — تنظيف',
+    body: 'التنظيف عند الأطفال يصير بقسم أسنان الأطفال. لازم يكون ولي الأمر ويّا الطفل بالموعد.',
+    treatments: ['paediatric', 'scaling'],
+  },
+  {
+    kind: 'result',
+    id: 'result-child-fluoride',
+    title: 'أسنان الأطفال — فلورايد',
+    body:
+      'الفلورايد علاج وقائي يقوّي السن ويقلل التسوّس، ويصير بقسم أسنان الأطفال. ' +
+      'لازم يكون ولي الأمر ويّا الطفل بالموعد.',
+    treatments: ['paediatric', 'fluoride'],
   },
 
   // ---- The exits. These are the reason a tree like this is safe to build at

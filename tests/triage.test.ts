@@ -79,13 +79,59 @@ describe('the triage tree', () => {
     const age = TRIAGE_TREE.find((n) => n.id === root.pass)!
     expect(age.kind).toBe('question')
     if (age.kind !== 'question') return
-    // Under fifteen is a paediatric case — Haider's flat line, deliberately
-    // not nuanced by what the child needs. See tree.ts.
+    // Under fifteen enters the child's own branch rather than ending there:
+    // Haider's follow-up is that a child says what they need too.
     const under = age.answers[0]!
-    const paed = TRIAGE_TREE.find((n) => n.id === under.next)!
-    expect(paed.kind).toBe('result')
-    if (paed.kind !== 'result') return
-    expect(paed.treatments).toEqual(['paediatric'])
+    const child = TRIAGE_TREE.find((n) => n.id === under.next)!
+    expect(child.kind).toBe('question')
+  })
+
+  /*
+   * Every outcome a child can reach must carry `paediatric`. That slug is what
+   * routes the case to paedodontics, and `listOpenCasesForStudent` treats it as
+   * containment — so a child's case that lost it would not merely be
+   * mislabelled, it would surface to every fourth year in the city, who must
+   * not treat children at all.
+   */
+  it('never lets a child reach an outcome without `paediatric`', () => {
+    const byId = new Map(TRIAGE_TREE.map((n) => [n.id, n]))
+    const age = TRIAGE_TREE.find((n) => n.id === 'age')!
+    if (age.kind !== 'question') throw new Error('age is not a question')
+    const seen = new Set<string>()
+    const walk = (id: string) => {
+      if (seen.has(id)) return
+      seen.add(id)
+      const node = byId.get(id)
+      if (!node) return
+      if (node.kind === 'result') {
+        expect(node.treatments, `${node.id} is reachable by a child`).toContain('paediatric')
+        return
+      }
+      for (const next of childrenOf(node)) walk(next)
+    }
+    walk(age.answers[0]!.next)
+    // And the branch really does go somewhere, rather than passing vacuously.
+    expect(seen.size).toBeGreaterThan(3)
+  })
+
+  it('offers fluoride to children, and only through the child branch', () => {
+    const withFluoride = TRIAGE_TREE.filter(
+      (n) => n.kind === 'result' && n.treatments.includes('fluoride'),
+    )
+    expect(withFluoride.length).toBeGreaterThan(0)
+    for (const node of withFluoride) {
+      if (node.kind !== 'result') continue
+      expect(node.treatments, node.id).toContain('paediatric')
+    }
+  })
+
+  it('asks a child whether the tooth is a milk tooth, and allows "not sure"', () => {
+    const tooth = TRIAGE_TREE.find((n) => n.id === 'child-tooth')!
+    expect(tooth.kind).toBe('question')
+    if (tooth.kind !== 'question') return
+    expect(tooth.answers.length).toBe(3)
+    // A parent guessing to get past a form is worse than one saying so.
+    expect(tooth.answers.some((a) => a.label.includes('ما متأكد'))).toBe(true)
   })
 
   it('fails the screen on any tick at all, and reads no value', () => {

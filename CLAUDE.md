@@ -275,6 +275,20 @@ year, and neither can finish the case alone. Three consequences, all built:
 3. **What counts as "my part" is read from the server**, never from the form — a value a
    client could set would let a student hand back work their stage can perfectly well do.
 
+**Seeding a stage's defaults is additive, and it used not to be.** `ensureStageDefaults`
+returned early whenever a stage already had any defaults at all, so that re-seeding could not
+overwrite an administrator's decision. The intention was right and the effect was a trap:
+adding a treatment to the defaults in `seed.ts` did **nothing** to a database that already had
+the stage. `fluoride` was created as a treatment type, stage 5 never gained it, and every case
+asking for it would have been invisible to everyone — which is precisely the failure this
+section calls out, because an empty queue reads as "no patients" rather than as a missing row.
+Found by querying the database rather than by trusting "Seed complete".
+
+It now adds what is missing and removes nothing. An administrator's *additions* survive; a
+deliberate *removal* of a default comes back on the next seed, which is the right way round —
+`defaultTreatmentTypes` is what a stage can do anywhere, and a clinic that genuinely differs
+gets its own `stage-capabilities` row, which the seed never touches.
+
 **Capability falls back to the stage's default.** `stage-capabilities` still holds per-clinic
 rows for clinics that genuinely differ, but an absent row now means "whatever this stage can
 do anywhere" rather than "nothing". Without that, adding a college hid every case from its
@@ -1442,6 +1456,27 @@ ticking a box and submitting with `javaScriptEnabled: false`.
 Which symptoms somebody ticked is health information about them; a distinct value per box
 would put a list of a stranger's symptoms into their browser history and into the `Referer`
 header on the way out. `screenOutcome` reads whether there were any, never which.
+
+**A child says what they need too, and which tooth.** Haider's follow-up. Under fifteen is
+no longer a dead end: it asks whether the tooth is a milk tooth, a permanent one, or unknown,
+then what the child needs — including **fluoride**, added as a treatment type on his
+instruction and seeded to the fifth year because that is where paedodontics sits. "ما متأكد"
+is offered plainly, because a parent guessing to get past a form is worse than one saying so.
+
+**Every child outcome carries `paediatric` as well as the need, and that forced an
+architectural exception.** `listOpenCasesForStudent` matched on array *overlap*, so a child
+needing a filling would overlap on `filling` and appear to every fourth year in the city —
+who must not treat children at all. So **a case carrying `paediatric` is visible only to a
+stage that can perform `paediatric`**: containment for that one slug, overlap for everything
+else. The overlap rule exists so a patient is not left waiting for a student who can do
+everything; that reasoning does not hold for a child, whose whole case belongs to one
+department. Recorded here rather than changed quietly, because "visibility is overlap, not
+containment" is written down two sections above.
+
+**Still open, and his call:** the tooth-type answer currently goes nowhere. All three routes
+reach the same outcomes, so the question is asked and discarded. Carrying it to the student
+needs a new field on the case — a real reason exists (a paedodontics student wants to know
+before claiming) but it is a schema change, so it waits for him.
 
 **Under fifteen is a flat line, deliberately.** Haider raised the real nuance himself — a
 thirteen-year-old wanting a composite on a permanent tooth does not *have* to go to

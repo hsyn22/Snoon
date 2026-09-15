@@ -1,4 +1,4 @@
-import { and, arrayOverlaps, asc, desc, eq, inArray, isNull } from 'drizzle-orm'
+import { and, arrayOverlaps, asc, desc, eq, inArray, isNull, sql } from 'drizzle-orm'
 import { db } from '@/db'
 import { appointments, caseEvents, casePhotos, cases, claims, students } from '@/db/schema'
 import { studentPreviouslyReleased } from '@/db/queries/claims'
@@ -186,6 +186,12 @@ export type StudentCaseListItem = {
  * case must be open, the student must be verified, and no contact detail is
  * returned under any argument.
  */
+/**
+ * The one treatment that narrows visibility instead of widening it. See the
+ * exception in `listOpenCasesForStudent`.
+ */
+export const PAEDIATRIC_SLUG = 'paediatric'
+
 export type StudentCaseFilter = {
   cityIds: string[]
   /** When given, only cases asking for at least one of these treatments. */
@@ -220,6 +226,27 @@ export async function listOpenCasesForStudent(
     // helper builds the array literal correctly; a hand-written `&&` template
     // sends a one-element list as a bare scalar and Postgres rejects it.
     conditions.push(arrayOverlaps(cases.treatmentTypeIds, filter.treatmentTypeIds))
+
+    /*
+     * **A child's case is the one exception to "visibility is overlap".**
+     *
+     * Overlap exists so a patient is not left waiting for a student who can do
+     * everything: a case wanting a filling and a root canal is a fourth year's
+     * case for the filling, and what their stage cannot do is marked rather
+     * than hidden. That reasoning does not hold for a child. Under fifteen the
+     * whole case belongs to paedodontics, and the guided questions now tick
+     * `paediatric` *plus* what the child needs — so a child needing a filling
+     * would otherwise overlap on `filling` and appear to every fourth year in
+     * the city, who must not treat children at all.
+     *
+     * So: a case carrying `paediatric` is visible only to a stage that can
+     * perform `paediatric`. Containment for this one slug, overlap for
+     * everything else. Raised with Haider rather than changed silently — it is
+     * a deliberate exception to a rule this project wrote down.
+     */
+    if (!filter.treatmentTypeIds.includes(PAEDIATRIC_SLUG)) {
+      conditions.push(sql`NOT (${cases.treatmentTypeIds} && ARRAY[${PAEDIATRIC_SLUG}]::text[])`)
+    }
   }
 
   return db
