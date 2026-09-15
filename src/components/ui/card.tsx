@@ -54,10 +54,10 @@ type StatusTone = 'neutral' | 'accent' | 'positive' | 'warning' | 'danger'
 
 const ribbonTones: Record<StatusTone, string> = {
   neutral: 'bg-surface-muted text-foreground-muted',
-  accent: 'bg-accent text-accent-foreground',
-  positive: 'bg-positive text-accent-foreground',
-  warning: 'bg-warning text-foreground',
-  danger: 'bg-danger text-accent-foreground',
+  accent: 'bg-accent-fill text-accent-foreground',
+  positive: 'bg-positive text-surface',
+  warning: 'bg-warning text-surface',
+  danger: 'bg-danger text-surface',
 }
 
 /** Which colour each lifecycle state reads as. Labels stay in copy.ts. */

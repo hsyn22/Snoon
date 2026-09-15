@@ -21,9 +21,15 @@ import { bridge } from '@/lib/copy'
  *   on a connection where a round trip costs 400ms.
  * - **Colour comes from tokens**, never from literals, so re-theming سنون by
  *   editing `tokens.css` re-themes this too — including the shading, which is
- *   `--color-warm-deep` and `--color-accent-strong` rather than grey laid over
- *   the top. Grey shading is what makes a flat illustration look dirty rather
- *   than round.
+ *   `--color-student-strong` and `--color-patient-strong` rather than grey laid
+ *   over the top. Grey shading is what makes a flat illustration look dirty
+ *   rather than round.
+ * - **Each figure wears their own audience's colour**, orange for the student
+ *   and green for whoever needs treating, and the link between them is a
+ *   gradient from the one to the other — so the connection is literally made of
+ *   both. The two were the other way round until Haider set the pairing; the
+ *   colours were always different, but which belonged to whom was arbitrary
+ *   until the student pages started carrying the orange too.
  *
  * The two figures are deliberately *different* colours rather than a mirrored
  * pair: they are not the same person, and the whole product is about what each
@@ -43,9 +49,9 @@ import { bridge } from '@/lib/copy'
  * made of both of them — with a node where it meets each figure, and a soft
  * ring behind the name.
  *
- * Both figures sit on light surfaces only. The accent-coloured student would
- * disappear on the accent band, so if this is ever moved there it needs a
- * variant rather than a copy.
+ * Both figures sit on light surfaces only. The green figure would disappear on
+ * the accent band, so if this is ever moved there it needs a variant rather
+ * than a copy.
  */
 export function MatchBridge({ className }: { className?: string }) {
   return (
@@ -59,20 +65,20 @@ export function MatchBridge({ className }: { className?: string }) {
               below puts its highlight at the same corner, which is most of what
               makes separate shapes read as one scene rather than as stickers. */}
           <radialGradient id="bridge-head-student" cx="0.68" cy="0.28" r="0.85">
-            <stop offset="0" stopColor="var(--color-accent-light)" />
-            <stop offset="1" stopColor="var(--color-accent-strong)" />
+            <stop offset="0" stopColor="var(--color-student-light)" />
+            <stop offset="1" stopColor="var(--color-student-strong)" />
           </radialGradient>
           <radialGradient id="bridge-body-student" cx="0.68" cy="0.12" r="1">
-            <stop offset="0" stopColor="var(--color-accent-light)" />
-            <stop offset="1" stopColor="var(--color-accent-strong)" />
+            <stop offset="0" stopColor="var(--color-student-light)" />
+            <stop offset="1" stopColor="var(--color-student-strong)" />
           </radialGradient>
           <radialGradient id="bridge-head-visitor" cx="0.68" cy="0.28" r="0.85">
-            <stop offset="0" stopColor="var(--color-warm)" />
-            <stop offset="1" stopColor="var(--color-warm-deep)" />
+            <stop offset="0" stopColor="var(--color-patient-light)" />
+            <stop offset="1" stopColor="var(--color-patient-strong)" />
           </radialGradient>
           <radialGradient id="bridge-body-visitor" cx="0.68" cy="0.12" r="1">
-            <stop offset="0" stopColor="var(--color-warm)" />
-            <stop offset="1" stopColor="var(--color-warm-deep)" />
+            <stop offset="0" stopColor="var(--color-patient-light)" />
+            <stop offset="1" stopColor="var(--color-patient-strong)" />
           </radialGradient>
 
           {/* userSpaceOnUse, not the default: a perfectly horizontal path has a
@@ -86,8 +92,8 @@ export function MatchBridge({ className }: { className?: string }) {
             x2="256"
             y2="0"
           >
-            <stop offset="0" stopColor="var(--color-warm)" />
-            <stop offset="1" stopColor="var(--color-accent)" />
+            <stop offset="0" stopColor="var(--color-patient)" />
+            <stop offset="1" stopColor="var(--color-student)" />
           </linearGradient>
         </defs>
 
@@ -111,8 +117,8 @@ export function MatchBridge({ className }: { className?: string }) {
         <circle className="bridge-mote" r="4.5" fill="var(--color-surface)" />
         {/* Where the link meets each figure. Without these the stroke stops in
             mid-air beside a shoulder; with them it is anchored at both ends. */}
-        <circle cx="84" cy="96" r="6.5" fill="var(--color-warm)" />
-        <circle cx="256" cy="96" r="6.5" fill="var(--color-accent-light)" />
+        <circle cx="84" cy="96" r="6.5" fill="var(--color-patient-light)" />
+        <circle cx="256" cy="96" r="6.5" fill="var(--color-student)" />
 
         {/* The student. Start edge — in Arabic the eye begins on the right. */}
         <g className="bridge-figure">

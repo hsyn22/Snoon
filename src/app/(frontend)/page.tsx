@@ -200,13 +200,13 @@ export default async function HomePage() {
                 <Link
                   href="/case/new"
                   data-flip-id="case-entry"
-                  className="press inline-flex min-h-12 items-center justify-center rounded-full bg-accent px-6 font-bold text-accent-foreground shadow-md"
+                  className="press inline-flex min-h-12 items-center justify-center rounded-full bg-accent-fill px-6 font-bold text-accent-foreground shadow-md"
                 >
                   {home.primaryAction}
                 </Link>
                 <Link
                   href="/student"
-                  className="press inline-flex min-h-12 items-center justify-center rounded-full border border-border bg-surface px-6 font-medium"
+                  className="press inline-flex min-h-12 items-center justify-center rounded-full border-2 border-student bg-surface px-6 font-bold text-student-strong"
                 >
                   {home.secondaryAction}
                 </Link>
@@ -306,7 +306,7 @@ export default async function HomePage() {
                     {/* The number rides the corner of the scene, so the
                         sequence is readable without a second column taking
                         width a phone does not have. */}
-                    <span className="ltr-run absolute -top-1 -start-1 flex size-6 items-center justify-center rounded-full bg-accent text-xs font-bold text-accent-foreground">
+                    <span className="ltr-run absolute -top-1 -start-1 flex size-6 items-center justify-center rounded-full bg-accent-fill text-xs font-bold text-accent-foreground">
                       {index + 1}
                     </span>
                   </span>
@@ -391,7 +391,7 @@ export default async function HomePage() {
           <p className="reveal mt-3 text-pretty text-foreground-muted">{home.studentsBody}</p>
           <Link
             href="/student"
-            className="press reveal mt-6 inline-flex min-h-12 items-center justify-center rounded-full bg-accent px-6 font-bold text-accent-foreground"
+            className="press reveal mt-6 inline-flex min-h-12 items-center justify-center rounded-full bg-accent-fill px-6 font-bold text-accent-foreground"
           >
             {home.studentsAction}
           </Link>

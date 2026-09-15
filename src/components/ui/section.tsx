@@ -22,7 +22,7 @@ export function Section({
 }) {
   const band =
     tone === 'accent'
-      ? 'bg-accent text-accent-foreground'
+      ? 'bg-accent-fill text-accent-foreground'
       : tone === 'muted'
         ? 'bg-surface-muted'
         : ''

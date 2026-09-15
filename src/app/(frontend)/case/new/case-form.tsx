@@ -43,7 +43,7 @@ function SubmitButton() {
          server, and reading the word from here is what stops the preview and
          copy.ts drifting apart. */
       data-submitting={caseForm.submitting}
-      className="flex min-h-12 w-full items-center justify-center gap-2 rounded-full bg-accent px-4 font-bold text-accent-foreground shadow-md disabled:opacity-60"
+      className="flex min-h-12 w-full items-center justify-center gap-2 rounded-full bg-accent-fill px-4 font-bold text-accent-foreground shadow-md disabled:opacity-60"
     >
       {/* The spinner is the addition, and it is not decoration: on the
           connection this form is designed for, sending a case with photographs

@@ -22,9 +22,26 @@
   --color-accent-foreground: var(--color-accent-foreground);
   --color-accent-muted: var(--color-accent-muted);
   --color-accent-strong: var(--color-accent-strong);
+  --color-accent-fill: var(--color-accent-fill);
+  --color-accent-fill-strong: var(--color-accent-fill-strong);
 
   --color-warm: var(--color-warm);
   --color-warm-muted: var(--color-warm-muted);
+
+  /* The audience colours. Exposed so `bg-student-strong` and `text-patient`
+     exist as utilities — a component that has to reach for an inline style to
+     colour itself is how literals get back into components. */
+  --color-student: var(--color-student);
+  --color-student-light: var(--color-student-light);
+  --color-student-strong: var(--color-student-strong);
+  --color-student-muted: var(--color-student-muted);
+  --color-student-foreground: var(--color-student-foreground);
+
+  --color-patient: var(--color-patient);
+  --color-patient-light: var(--color-patient-light);
+  --color-patient-strong: var(--color-patient-strong);
+  --color-patient-muted: var(--color-patient-muted);
+  --color-patient-foreground: var(--color-patient-foreground);
 
   --color-positive: var(--color-positive);
   --color-warning: var(--color-warning);

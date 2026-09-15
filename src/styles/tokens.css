@@ -47,6 +47,15 @@
      `-strong` reads as a spotlight rather than as a form. */
   --color-accent-light: oklch(60% 0.09 192);
 
+  /* **What a filled button is made of, as opposed to what accent-coloured text
+     is made of.** They are the same thing here and they are not the same thing
+     everywhere: text on white has to be dark enough to read, and a fill has to
+     be light enough for its own label to read on top. The teal satisfies both
+     at one value; the students' light orange cannot, and one token for both is
+     what turned the whole student area brown on the first attempt. */
+  --color-accent-fill: var(--color-accent);
+  --color-accent-fill-strong: var(--color-accent-strong);
+
   /* Warm counterweight: eyebrow pills, highlights, the second half of a
      two-tone heading. Never used for a call to action — one primary only.
 
@@ -60,10 +69,61 @@
   --color-warm-deep: oklch(56% 0.16 45);
   --color-warm-muted: oklch(96% 0.04 62);
 
-  /* Case status needs to read at a glance on a small screen. */
+  /* ---- Whose side of سنون is this? --------------------------------------
+   * ClinMatch give each audience its own colour and carry it all the way
+   * through; Haider asked for the same, orange for students and green for the
+   * people they treat. It answers a complaint copy alone could not fix — that
+   * سنون had almost nothing on it that felt aimed at students.
+   *
+   * `--color-patient` is the existing accent under a name that says what it
+   * means, so nothing about the patient side changes. `--color-student` is new.
+   *
+   * **The scope is deliberate: the audience colours are for the surfaces one
+   * audience owns, not for decoration.** `/student/*` is orange throughout, the
+   * bridge diagram gives each figure their own, and a student call to action is
+   * orange wherever it appears. The landing page stays green, because it is the
+   * door both of them come through and a page in two brand colours reads as two
+   * products. `--color-warm` keeps its decorative job there and is the same hue
+   * family on purpose.
+   *
+   * **The orange ramp is asymmetric and the green one is not**, because light
+   * orange cannot do both jobs. White on a 75% orange is about 2:1, which is
+   * illegible rather than merely weak; a dark enough orange to carry white is
+   * no longer light orange, it is brown — which is exactly what the first
+   * attempt produced and what Haider did not ask for. So an orange button is
+   * the light fill with `--color-student-ink` on it, near-black, while orange
+   * *text* on a white page is `-strong`, dark enough to read at label size. The
+   * teal happens to satisfy both at one value, which is why nothing about the
+   * patient side changes.                                                     */
+  --color-student: oklch(75% 0.165 60);
+  --color-student-light: oklch(84% 0.12 66);
+  --color-student-fill-strong: oklch(67% 0.17 54);
+  --color-student-ink: oklch(26% 0.08 45);
+  --color-student-strong: oklch(50% 0.16 47);
+  --color-student-deep: oklch(38% 0.13 42);
+  --color-student-muted: oklch(96% 0.035 62);
+
+  --color-patient: var(--color-accent);
+  --color-patient-light: var(--color-accent-light);
+  --color-patient-strong: var(--color-accent-strong);
+  --color-patient-muted: var(--color-accent-muted);
+  --color-patient-foreground: var(--color-accent-foreground);
+
+  /* Case status needs to read at a glance on a small screen.
+   *
+   * **Warning is a light red, and it used to be amber.** Haider's instruction,
+   * and the reason is the students' orange above: amber at 75° sat between the
+   * student colour and nothing else, so a warning ribbon and a student chip
+   * read as the same thing on a cheap screen in daylight. A warning has to be
+   * unmistakably not-a-brand-colour.
+   *
+   * Danger moved deeper at the same time. Two reds next to each other is only
+   * safe because every ribbon in سنون carries its Arabic label as well as its
+   * colour — the rule that colour is never the only signal is what makes this
+   * affordable, and it is not a rule to relax later on the strength of this. */
   --color-positive: oklch(52% 0.11 155);
-  --color-warning: oklch(68% 0.13 75);
-  --color-danger: oklch(54% 0.17 25);
+  --color-warning: oklch(62% 0.15 33);
+  --color-danger: oklch(47% 0.19 22);
 
   --color-focus-ring: var(--color-accent);
 
@@ -82,4 +142,30 @@
   --shadow-sm: 0 1px 2px oklch(24% 0.02 210 / 0.05);
   --shadow-md: 0 2px 6px oklch(24% 0.02 210 / 0.06), 0 8px 24px oklch(24% 0.02 210 / 0.05);
   --shadow-lg: 0 4px 12px oklch(24% 0.02 210 / 0.07), 0 16px 40px oklch(24% 0.02 210 / 0.06);
+}
+
+/*
+ * The student side of سنون, in the students' colour.
+ *
+ * Every page under `/student` is wrapped in this, and it re-points the accent
+ * tokens at the orange ramp rather than restating them. So `text-accent`,
+ * `tone="accent"` and `buttonClass('primary')` all turn orange inside it
+ * without a single component learning that audiences have colours — which is
+ * the same trick this file already relies on, and the reason a re-theme is one
+ * file rather than twenty.
+ *
+ * **The mapping is not one-to-one, and that is the point.** `--color-accent`
+ * becomes `-strong`, not `--color-student`: the accent is what white text sits
+ * on, and white on a 72% orange is illegible. The light orange goes to
+ * `-light`, where nothing has to be read on top of it.
+ */
+.student-area {
+  --color-accent: var(--color-student-strong);
+  --color-accent-strong: var(--color-student-deep);
+  --color-accent-light: var(--color-student-light);
+  --color-accent-muted: var(--color-student-muted);
+  --color-accent-fill: var(--color-student);
+  --color-accent-fill-strong: var(--color-student-fill-strong);
+  --color-accent-foreground: var(--color-student-ink);
+  --color-focus-ring: var(--color-student-strong);
 }

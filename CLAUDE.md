@@ -1349,11 +1349,38 @@ keyframes are noise against the typeface.
   inventing a product.
 - **AsnanLink's flip countdown to launch.** سنون has no launch date and must not invent one.
 
-**Worth revisiting, and not built:** both competitors give each audience its own colour —
-ClinMatch runs patients green and students amber throughout. سنون already has accent and warm
-doing exactly that inside the bridge diagram, and extending it across the student pages would
-answer Haider's "nothing talks to students" more thoroughly than copy changes alone. It is on
-`docs/roadmap.md`.
+**And the one thing left on the list is now built: each audience has its own colour.**
+ClinMatch run patients green and students amber throughout; Haider chose orange for students
+and green for the people they treat. It answers "nothing talks to students" in a way copy
+alone could not — a student who lands on `/student` is on a page that is visibly theirs.
+
+Four things about it that are not obvious and should survive:
+
+- **The scope is surfaces one audience owns, not decoration.** `/student/*` is orange
+  throughout, each figure in the bridge wears their own, and a student call to action is
+  orange wherever it appears — including the landing page's second button, which is the one
+  place the orange appears on a green page and is exactly the point. The landing page itself
+  stays green: it is the door both audiences come through, and a page in two brand colours
+  reads as two products rather than as one with two sides.
+- **It is one wrapper and one class, not an edit to twenty components.**
+  `student/layout.tsx` wraps everything in `.student-area`, which re-points the accent tokens
+  at the orange ramp. Every `text-accent`, every `tone="accent"` card and every primary button
+  inside turns orange on its own, and no component learns that audiences have colours. That is
+  what keeps `tokens.css` the only place a colour lives — the rule this whole file rests on.
+- **A filled button and accent-coloured text are now two different tokens.** They were one,
+  and light orange cannot do both jobs: white on a 75% orange is about 2:1, and an orange dark
+  enough to carry white is brown — which is literally what the first attempt shipped, and not
+  what was asked for. So `--color-accent-fill` is what a button is made of and
+  `--color-accent` is what text is made of. On the teal they are the same value and the
+  patient side is byte-identical; on the orange the fill is light with near-black ink on it,
+  and the text is a darker orange that reads at label size. Any new filled surface uses
+  `-fill`, or it will go brown the next time somebody re-themes.
+- **The warning colour moved from amber to a light red**, on Haider's instruction, because
+  amber at 75° sat right beside the students' orange and a warning ribbon has to be
+  unmistakably not a brand colour. Danger went deeper at the same time so the two reds
+  separate. Two reds is only affordable because every ribbon carries its Arabic label as well
+  as its colour — that rule is what pays for this, and is not one to relax later on the
+  strength of having got away with it here.
 
 **The steps were cards before they were a rail.** Four sentences each with a 16px icon read, in Haider's words, as
 icons put there to fill a gap rather than to mean anything — which was fair. Each step is a

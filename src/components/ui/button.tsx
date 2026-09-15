@@ -29,10 +29,10 @@ const base =
   'font-bold transition-colors disabled:cursor-not-allowed disabled:opacity-55'
 
 const variants: Record<Variant, string> = {
-  primary: 'bg-accent text-accent-foreground shadow-sm hover:bg-accent-strong',
+  primary: 'bg-accent-fill text-accent-foreground shadow-sm hover:bg-accent-fill-strong',
   secondary: 'border border-border bg-surface text-foreground hover:border-accent hover:text-accent',
   quiet: 'text-accent hover:bg-accent-muted',
-  danger: 'border border-danger bg-surface text-danger hover:bg-danger hover:text-accent-foreground',
+  danger: 'border border-danger bg-surface text-danger hover:bg-danger hover:text-surface',
 }
 
 export function buttonClass(variant: Variant = 'primary', className?: string) {
