@@ -800,9 +800,39 @@ and treat the screenshots as reference — see `docs/competitors.md`.
 **The want behind the question was right, and is answered in CSS.** Motion is in
 `src/styles/motion.css`. No JavaScript, no library, no second request.
 
-The arithmetic is the whole argument. framer-motion is roughly 50KB gzipped and
-GSAP roughly 70KB, against a landing page that weighs 269KB on the wire in total.
-Either would be among the largest things سنون downloads, to move some text.
+The arithmetic is most of the argument, and it is worth stating with figures that were
+actually measured rather than remembered. **Corrected:** this file said "GSAP roughly 70KB
+gzipped", which was wrong — 72KB is the *raw* minified size of the core. Measured from
+cdnjs, gzipped, which is what the wire carries:
+
+| | gzipped |
+|---|---|
+| `gsap` core | **28 KB** |
+| `ScrollTrigger` | **18 KB** |
+| `Flip` | **9.5 KB** |
+| framer-motion | ~50 KB |
+
+So GSAP core plus ScrollTrigger is **46KB against a 287KB page** — a sixth more, and the
+second largest thing سنون downloads after the typeface. Real, but not the four-times
+overstatement the old number implied. **GSAP is also free now**, plugins included, since
+Webflow acquired it; "the paid plugins" is no longer a reason.
+
+**The size is no longer the main argument. This is:** every scroll effect on this page runs
+on a `view()` or `scroll()` timeline, which the browser drives **off the main thread**.
+ScrollTrigger drives the same effects from a scroll handler **on** the main thread. On the
+4x-throttled cheap Android this project exists to serve, swapping CSS scroll timelines for
+ScrollTrigger buys nothing visually and makes the scrolling worse. It would be 46KB spent to
+go backwards.
+
+**And one plugin is actively unsafe here:** SplitText splits text per character, which breaks
+Arabic letter joining — the rule this file states twice. Never point it at Arabic.
+
+**Where GSAP would genuinely earn its place**, if it is ever wanted: `Flip`, for the
+shared-element page transition that React's `<ViewTransition>` cannot give us yet. That is a
+real capability CSS has no answer for. The way to buy it without charging the median user is
+the tier gate — `data-motion` is decided before first paint, so the script can be loaded
+**only at `full`, and only after the page is interactive**. A weak phone downloads nothing.
+That is the one proposal worth putting up, and it has not been built.
 
 ### Three tiers, chosen before the first paint
 
