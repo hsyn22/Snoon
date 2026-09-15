@@ -6,7 +6,8 @@ import { useDismissibleErrors } from '@/components/use-dismissible-errors'
 // From ./schema, not ./index: importing the Payload reader here would pull the
 // whole CMS into the browser bundle.
 import { WEEK_DAYS, type City, type TreatmentType } from '@/lib/config/schema'
-import { caseForm, casePhotos } from '@/lib/copy'
+import Link from 'next/link'
+import { caseForm, casePhotos, guide } from '@/lib/copy'
 import { MAX_PHOTOS_PER_CASE, MAX_PHOTO_BYTES, MAX_PHOTO_BYTES_TOTAL } from '@/lib/images/limits'
 import {
   controlClass,
@@ -70,9 +71,12 @@ function describePhotoSelection(files: File[]): string | null {
 export function CaseForm({
   cities,
   treatmentTypes,
+  preselected = [],
 }: {
   cities: readonly City[]
   treatmentTypes: readonly TreatmentType[]
+  /** Treatments the guided questions concluded, already filtered by the server. */
+  preselected?: readonly string[]
 }) {
   const [state, formAction] = useActionState(submitCaseAction, INITIAL)
   // A photograph problem the browser caught, before anything was uploaded.
@@ -119,6 +123,14 @@ export function CaseForm({
       <fieldset>
         <legend className={labelClass}>{caseForm.treatmentLabel}</legend>
         <p className={hintClass}>{caseForm.treatmentHint}</p>
+        {/* The way out for somebody who stalled here — and it is a link away
+            rather than an expander, so the form itself gains nothing. This is
+            the field people get stuck on: the hint above has always said "pick
+            the closest if you are unsure", which is an admission that سنون had
+            no better answer. Now it does. */}
+        <Link href="/case/guide" className="mt-1 inline-block text-sm font-bold text-accent">
+          {guide.fromForm}
+        </Link>
         <div className="mt-2 grid grid-cols-2 gap-2">
           {treatmentTypes.map((treatment) => (
             <label key={treatment.id} className={optionClass}>
@@ -126,7 +138,16 @@ export function CaseForm({
                 type="checkbox"
                 name="treatmentTypeIds"
                 value={treatment.id}
-                defaultChecked={values?.treatmentTypeIds.includes(treatment.id)}
+                /* A rejected submission wins over the guide, always: `values`
+                   is what this person actually ticked, and re-applying the
+                   guide's suggestion over it would silently undo an edit they
+                   made after disagreeing with it. `values` is only set once a
+                   submission has come back. */
+                defaultChecked={
+                  values
+                    ? values.treatmentTypeIds.includes(treatment.id)
+                    : preselected.includes(treatment.id)
+                }
                 className="size-4"
               />
               {treatment.nameAr}

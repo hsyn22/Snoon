@@ -1280,6 +1280,102 @@ If asked to build it anyway, raise the performance cost on low-end Android first
 
 ---
 
+## عالجني, and why سنون will not diagnose from a photograph
+
+A third competitor, and the first Iraqi one: **عالجني**. Haider's description, since it has
+no web presence to check — searched, and it is Instagram/Telegram-only, which is normal here.
+Two facts from him:
+
+- **Students buy patients on it.** It has launched and it is paid.
+- **It claims AI-assisted diagnosis from photographs alone.**
+
+**The first is the competitive answer and it is not close.** Selling patients to students is
+precisely what this file already forbids, in three separate places written before anybody
+knew عالجني existed: no bidding or pricing or competitive mechanism between students; the
+interface must not feel like students are shopping for patients; and سنون takes nothing from
+either side. A platform where a student pays for a case has changed what the case *is* — the
+patient becomes inventory. سنون does not need to react to this. It needs to keep saying
+plainly what it does, which is what the landing page's privacy section already does and
+neither competitor can copy.
+
+**The second was asked as a real question — is it possible, and is it free?** Three answers,
+and the third is the one that settles it:
+
+- **Possible, yes, and worse than it sounds.** Vision models will return a confident
+  paragraph about any intraoral photograph. The confidence is not accuracy: interproximal
+  caries is invisible without a bitewing, so is anything periapical, and a phone photo adds
+  bad light, bad angle and no dry field. A model that misses the lesion between two teeth
+  still writes fluently about the one it can see. Haider said this before asking, and he is
+  right.
+- **Free, no.** Every image is a paid API call. Free tiers exist and are small, and the cost
+  scales with exactly the thing سنون wants more of.
+- **And it would make سنون a care provider.** This is the one that decides it. The first line
+  of this file is that سنون matches people and does not deliver care — that sentence is what
+  keeps it out of medical liability, and it survives only while nothing here tells a patient
+  what is wrong with them. A diagnosis screen ends that, with no examining dentist behind it.
+  There is a privacy cost too: it would mean shipping intraoral photographs to a third party,
+  against a codebase that strips their GPS, serves them from behind an authorisation check
+  and deletes them after sixty days.
+
+**So سنون does the thing that actually helps and carries none of that: guided questions.**
+
+### The guided questions — `/case/guide`
+
+AsnanLink's idea, and Haider's ask. A patient who knows they want a filling ticks the box; a
+patient whose tooth simply hurts does not, and the form's own hint — "إذا مو متأكد، اختر
+الأقرب لحالتك" — was سنون admitting it had nothing better. Now it asks a few plain questions
+instead, each narrowing to the next, and ends either in a set of treatments to tick or in
+"this is not something a student clinic should handle".
+
+`src/lib/triage/`. Four rules, none of them cosmetic:
+
+1. **It never diagnoses, and the copy must never read as one.** Every leaf says what the
+   description *resembles* and that the student will decide — `يشبه`, `الطالب راح يشخّص` —
+   never `عندك`. A test greps for the diagnosing form, because this is the rule that would
+   erode one well-meaning copy edit at a time.
+2. **A result is a set of treatment slugs and nothing else.** The same slugs the form's
+   checkboxes carry and Payload seeds, so the whole output is "which boxes to tick". No new
+   field, no text landing on the case.
+3. **The path is never stored, and never even goes in the URL.** Which answers somebody
+   picked is health information about them; the treatments they end up requesting are what
+   سنون already needs. Only the current node id is in the query string — a full path would
+   follow them into their history, into the `Referer` header on the way out, and into any
+   screenshot they send. "رجوع" is computed from the tree instead.
+4. **Some answers must not end in a treatment at all.** A swollen face with a fever, a tooth
+   knocked out in an accident, an ulcer that has lasted weeks — those belong in a hospital
+   today, not in a queue for an appointment that may be a week away. A triage tree with no
+   exits is worse than no tree, because it routes everything into the one place it knows.
+   The referral screens offer **no route to the case form**; a "قدّم حالتك" button under
+   "go to a hospital now" would read as permission to wait. (The site footer still carries
+   its ordinary nav link, below the disclaimer — stripping a site's footer on one page reads
+   as broken rather than careful.)
+
+**Every answer is a real `<a href>`, and that is the whole design.** A tree needs state and
+the obvious way to hold it is a Client Component — which leaves a patient on a slow
+connection staring at a dead question until the JavaScript arrives, on the one page that
+exists for people who are already unsure. The current node lives in the query string instead,
+so every answer is an ordinary link: it works before hydration, with JavaScript disabled, and
+on a browser that never runs it. `<Link>` still prefetches, so after the first tap the rest
+are instant. **Verified with `javaScriptEnabled: false`** — the whole tree walks, the handoff
+pre-ticks the form, and a junk node id lands on the first question rather than a blank page.
+Slow 3G: **285 KB, first paint 2.6s**, the same as every other page.
+
+**The handoff only ever pre-ticks.** `/case/new?t=root-canal` arrives with that box checked
+and everything else exactly as editable as before — the case form gains no step, which is the
+one thing this file says it must never do. A rejected submission's own values always win over
+the guide's suggestion, or an edit somebody made after disagreeing with it would be silently
+undone. Unknown slugs are filtered against the real treatment list, so a renamed treatment
+means fewer boxes ticked and never a broken form.
+
+`tests/triage.test.ts` holds the structure: unique ids, no answer pointing at a node that
+does not exist, nothing unreachable, no cycle on any path, every result naming a treatment
+**read out of `seed.ts` itself** rather than a copied list, no referral carrying treatments,
+and at least one referral surviving. The seed cross-check is the one that matters most — a
+copied list passes forever after somebody renames a slug, and the symptom is a patient
+landing on a form with nothing ticked and no idea why.
+
+---
+
 ## Notifications — Telegram bot
 
 Notifications go through a **Telegram bot**, for both patients and students. Telegram is
@@ -1413,6 +1509,15 @@ These are genuinely unresolved. If a task depends on one, stop and ask rather th
    scale to thousands of cases and does not need to — at one or two cities it is a handful a
    week, and a wrong automatic answer costs someone their treatment or their case.
 5. **Photo requirement.** Optional at submission — but should some treatments require them?
+5c. **The guided questions' clinical content is a DRAFT and must not launch unreviewed.** The
+   machinery in `src/lib/triage/` is finished and tested; the questions, the answers and above
+   all the three `referral` exits were written by Claude, which is not a dentist. Haider is.
+   Nothing in that tree should reach a real patient until he has been through it line by line.
+   The referrals are the ones that matter — a missing exit sends somebody who needs a hospital
+   into a queue instead, and that is the failure mode this feature introduces. Also open, and
+   his call: whether the tree eventually moves into Payload so he can edit wording without a
+   deployment. It is a migration rather than a redesign, since the ids and slugs are already
+   the join keys, but the shape should settle first.
 5b. ~~**Does the university clinic charge for materials?**~~ **Answered by Haider.** Some
    universities charge a **symbolic fee** for services their own students provide, usually no
    more than **5,000 د.ع**, and the **student** states the exact price — and the cost of

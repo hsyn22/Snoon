@@ -276,6 +276,10 @@ export const footer = {
   forPatients: 'للمراجعين',
   forStudents: 'للطلبة',
   submitCase: 'قدّم حالة',
+  /* The guided questions, for somebody who never reaches the form because they
+     do not know what to ask for. The form's own link only helps people already
+     on it. */
+  guide: 'مو عارف شنو تحتاج؟',
   howItWorks: 'شلون تشتغل',
   findCase: 'ضيّعت رابط حالتك؟',
   myCases: 'حالاتي',
@@ -324,6 +328,35 @@ export const common = {
 } as const
 
 /** The patient case-submission form. */
+/**
+ * The guided questions. The chrome only — every question and answer lives in
+ * `src/lib/triage/tree.ts`, because the tree is one structure and splitting its
+ * wording from its shape is how the two stop matching.
+ */
+export const guide = {
+  eyebrow: 'أسئلة موجّهة',
+  title: 'مو عارف شنو تحتاج؟',
+  intro: 'جاوب على كم سؤال بسيط ونكَلك شنو يشبه وضعك، وندزّك للاستمارة وية الخيارات مأشّرة.',
+
+  /** The one sentence that keeps this from reading as a diagnosis. */
+  disclaimer:
+    'هذي مو تشخيص. سنون ما تعالج وما تفحص — الطالب هو اللي يشخّص بعد ما يشوفك بالعيادة.',
+
+  back: 'رجوع',
+  restart: 'ابدأ من الأول',
+  /** Shown on a result: carry the ticks into the form. */
+  continueToForm: 'كمّل وقدّم حالتك',
+  /** Shown on a result: the boxes that will arrive already ticked. */
+  willTick: 'راح نأشّر إلك:',
+  /** Shown on a referral. Never offers the form. */
+  referralNow: 'هذا مستعجل',
+  referralSoon: 'لا تأجّلها',
+  homeLink: 'رجوع للرئيسية',
+
+  /** The link from the case form, for somebody who opened it and stalled. */
+  fromForm: 'مو عارف شنو تحتاج؟ جاوب كم سؤال',
+} as const
+
 export const caseForm = {
   eyebrow: 'حالة جديدة',
   title: 'شنو يوجعك؟',

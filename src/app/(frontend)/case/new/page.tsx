@@ -4,6 +4,7 @@ import { PageShell } from '@/components/site-chrome'
 import { PageHeader } from '@/components/ui/section'
 import { ButtonLink } from '@/components/ui/button'
 import { caseForm, common, fees } from '@/lib/copy'
+import { parseHandoff } from '@/lib/triage'
 import { CaseForm } from './case-form'
 
 export const metadata: Metadata = { title: caseForm.title }
@@ -17,10 +18,33 @@ export const metadata: Metadata = { title: caseForm.title }
  */
 export const revalidate = 300
 
-export default async function NewCasePage() {
+export default async function NewCasePage({
+  searchParams,
+}: {
+  searchParams: Promise<{ t?: string }>
+}) {
   // Configuration is read on the server; the client component only receives the
   // options it needs to render.
-  const [cities, treatmentTypes] = await Promise.all([getCities(), getTreatmentTypes()])
+  const [cities, treatmentTypes, { t }] = await Promise.all([
+    getCities(),
+    getTreatmentTypes(),
+    searchParams,
+  ])
+
+  /*
+   * What the guided questions concluded, if the visitor came from there.
+   *
+   * It is a query parameter, so it is whatever anybody cares to type — and it
+   * is filtered against the real treatment list rather than trusted, so an
+   * unknown slug ticks nothing instead of reaching the form. That is also the
+   * behaviour when a treatment is renamed in Payload and an old link is
+   * followed: fewer boxes ticked, never a broken form.
+   *
+   * It only ever pre-ticks. Nothing here submits, nothing is hidden, and every
+   * box stays exactly as editable as it was — somebody who disagrees with the
+   * guide unticks it. The form gains no step.
+   */
+  const preselected = parseHandoff(t, treatmentTypes)
 
   return (
     <PageShell>
@@ -47,7 +71,7 @@ export default async function NewCasePage() {
           {fees.long}
         </p>
 
-        <CaseForm cities={cities} treatmentTypes={treatmentTypes} />
+        <CaseForm cities={cities} treatmentTypes={treatmentTypes} preselected={preselected} />
 
         <div className="mt-8">
           <ButtonLink href="/" variant="quiet" className="text-sm">

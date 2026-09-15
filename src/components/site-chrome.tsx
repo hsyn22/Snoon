@@ -53,6 +53,11 @@ export function SiteFooter() {
                 </Link>
               </li>
               <li>
+                <Link href="/case/guide" className="hover:text-accent">
+                  {footer.guide}
+                </Link>
+              </li>
+              <li>
                 <Link href="/#how" className="hover:text-accent">
                   {footer.howItWorks}
                 </Link>
