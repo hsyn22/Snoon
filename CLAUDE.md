@@ -1440,6 +1440,13 @@ and the third is the one that settles it:
 
 **So سنون does the thing that actually helps and carries none of that: guided questions.**
 
+**The case form asks what it can help with, not what hurts.** It opened with
+`شنو يوجعك؟` and Haider corrected it: pain is not the common case. Most people arrive
+because a tooth has stopped working — a missing one, a broken filling, a denture they cannot
+eat with — and a form that opens by asking where it hurts has already told those people it is
+not for them. `بشنو نكدر نساعدك؟` covers everyone who arrives, and it is also the sentence a
+receptionist actually says.
+
 ### The guided questions — `/case/guide`
 
 AsnanLink's idea, and Haider's ask. A patient who knows they want a filling ticks the box; a
