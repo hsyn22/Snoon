@@ -354,6 +354,15 @@ exactly as safe as running them hourly. If that latency ever matters more than t
 the answer is not Pro — it is any external scheduler hitting the same URL with `CRON_SECRET`
 as often as it likes, which is what the endpoint was built as a plain HTTP route for.
 
+**And the functions run in Frankfurt, because the database does.** `vercel.json` sets
+`regions: ["fra1"]`. Vercel's default is `iad1` (Washington), and the thing that actually
+costs time is not the distance from Baghdad to the server — it is the distance between the
+server and Postgres, because one page does several queries and each one pays the round trip.
+Split across the Atlantic is the worst of the three arrangements; together in Washington
+works; together in Frankfurt is the same arrangement roughly 80ms closer to the people using
+it. **So the two must be changed together or not at all** — moving the Neon database without
+this line, or this line without the database, makes سنون slower than leaving both alone.
+
 It changes case state, so it is not public: `CRON_SECRET` must match, compared in constant
 time, accepted either as `Authorization: Bearer` or `x-cron-secret`. It **fails closed** — an
 unset or implausibly short secret refuses everything, because a deployment that forgot the
