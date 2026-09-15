@@ -354,7 +354,18 @@ export const guide = {
   /** On an urgent referral only. Opens the phone's own maps app. */
   findHospital: 'دلّني على أقرب مستشفى',
 
-  /** The three fixed layers, shown as a rail above the card. */
+  /**
+   * The three fixed layers.
+   *
+   * **Drawn as three plain bars, with these words read only by a screen
+   * reader.** They were printed under the bars and Haider had them taken out:
+   * "الطوارئ · العمر · شنو تحتاج" is a description of how سنون sorts people,
+   * which is our concern and not the reader's, and on a phone it was three
+   * labels of chrome sitting above the one question they came to answer. The
+   * bars alone still say the one useful thing — how far along this is — and the
+   * words stay here because a bar with no name is nothing at all to somebody
+   * listening rather than looking.
+   */
   steps: ['الطوارئ', 'العمر', 'شنو تحتاج'] as const,
 
   /**
@@ -377,6 +388,23 @@ export const guide = {
   continueToForm: 'كمّل وقدّم حالتك',
   /** Shown on a result: the boxes that will arrive already ticked. */
   willTick: 'راح نأشّر إلك:',
+
+  /**
+   * A result is not the end, on Haider's instruction.
+   *
+   * Somebody with a broken filling often also has a tooth that needs taking
+   * out, and the tree used to hand them one answer and a button to the form —
+   * so the second complaint either got forgotten or got typed into the notes,
+   * where no matching looks at it. Asking plainly is one tap and it is the
+   * question a receptionist asks anyway.
+   *
+   * The second round does **not** repeat the emergency screen. Those six
+   * questions are about the person, not about the complaint, and they were
+   * answered a minute ago; asking again would read as the site not listening.
+   */
+  anotherLead: 'تشكي من شي ثاني؟',
+  another: 'إي، أكو شي ثاني',
+  done: 'لا، هذا كلشي',
   /** Shown on a referral. Never offers the form. Three, not two: a molar root
       canal is nothing to be frightened of, it is simply not student work, and
       dressing it in the same red as a spreading infection would scare somebody
@@ -386,7 +414,15 @@ export const guide = {
   referralScope: 'خارج نطاق عيادة الجامعة',
   homeLink: 'رجوع للرئيسية',
 
-  /** The link from the case form, for somebody who opened it and stalled. */
+  /**
+   * The way into this from the case form.
+   *
+   * It was a bare underlined sentence and Haider's note was that it did not
+   * read as something you could press. On the field people actually stall at,
+   * the escape hatch has to look like an escape hatch — so it is a bordered
+   * button with an arrow now, and the words are shorter because a button is
+   * read as an action rather than as a sentence.
+   */
   fromForm: 'مو عارف شنو تحتاج؟ جاوب كم سؤال',
 } as const
 

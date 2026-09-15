@@ -9,11 +9,13 @@ import { getTreatmentTypes } from '@/lib/config'
 import { guide } from '@/lib/copy'
 import {
   TRIAGE_ROOT,
+  mergeCollected,
+  parseHandoff,
   screenOutcome,
-  triageHandoff,
   triageLayer,
   triageNode,
   triageParent,
+  triageResume,
 } from '@/lib/triage'
 
 export const metadata: Metadata = { title: guide.title }
@@ -60,9 +62,9 @@ export const revalidate = 300
 export default async function GuidePage({
   searchParams,
 }: {
-  searchParams: Promise<{ q?: string; red?: string | string[] }>
+  searchParams: Promise<{ q?: string; red?: string | string[]; t?: string }>
 }) {
-  const { q, red } = await searchParams
+  const { q, red, t } = await searchParams
 
   /*
    * The emergency screen submits as a plain GET form, so its answer arrives
@@ -78,7 +80,22 @@ export default async function GuidePage({
       : asked
   const treatments = await getTreatmentTypes()
   const parent = node.id === TRIAGE_ROOT ? null : triageParent(node.id)
-  const handoff = triageHandoff(node)
+
+  /*
+   * What earlier rounds already settled on, carried in `t`.
+   *
+   * This is the one thing besides the current node that travels in the URL, and
+   * it is allowed for the same reason `/case/new?t=…` is: treatment slugs are
+   * what سنون collects anyway, and they are exactly what the patient would have
+   * ticked by hand. The *route* still never travels — which answers somebody
+   * gave stays unrecorded, and that is rule 3.
+   *
+   * It is validated against the real treatment list, so a renamed slug or an
+   * edited URL means fewer chips rather than a broken page.
+   */
+  const carried = parseHandoff(t, treatments)
+  const collected = mergeCollected(carried, node)
+  const carry = carried.length > 0 ? `&t=${encodeURIComponent(carried.join(','))}` : ''
 
   const nameFor = (slug: string) => treatments.find((t) => t.id === slug)?.nameAr ?? slug
 
@@ -89,9 +106,28 @@ export default async function GuidePage({
       {/* `guide-flow` is what tells the page-level fade to stand down, so only
           the card moves between questions rather than the whole screen. */}
       <div className="guide-flow">
-        {/* Three fixed layers, not a bar filled by depth — the paths are not
-            the same length, so a proportion would promise a distance no route
-            guarantees. */}
+        <PageHeader
+          eyebrow={guide.eyebrow}
+          title={node.kind === 'question' || node.kind === 'screen' ? guide.title : node.title}
+          lead={node.kind === 'question' || node.kind === 'screen' ? guide.intro : undefined}
+        />
+
+        {/*
+          * Three fixed layers, not a bar filled by depth — the paths are not
+          * the same length, so a proportion would promise a distance no route
+          * guarantees.
+          *
+          * **It sits directly on top of the card, below the heading.** It was
+          * above everything, which put the whole page header between the
+          * progress and the thing being progressed through; Haider asked for it
+          * closer, and next to the card is where it is actually read.
+          *
+          * **The layer names are read but not printed.** They described how
+          * سنون sorts people, which is our business rather than the reader's,
+          * and three words of chrome above one question is a poor trade on a
+          * phone. `sr-only` keeps them for anyone listening, because three
+          * unnamed bars are nothing at all to a screen reader.
+          */}
         <ol className="guide-steps" aria-label={guide.eyebrow}>
           {guide.steps.map((step, index) => {
             const n = index + 1
@@ -99,17 +135,11 @@ export default async function GuidePage({
             return (
               <li key={step} className="guide-step" data-state={state}>
                 <span aria-hidden="true" />
-                {step}
+                <span className="sr-only">{step}</span>
               </li>
             )
           })}
         </ol>
-
-        <PageHeader
-          eyebrow={guide.eyebrow}
-          title={node.kind === 'question' || node.kind === 'screen' ? guide.title : node.title}
-          lead={node.kind === 'question' || node.kind === 'screen' ? guide.intro : undefined}
-        />
 
         {node.kind === 'screen' ? (
           /*
@@ -125,6 +155,9 @@ export default async function GuidePage({
            */
           <form method="get" action="/case/guide">
             <input type="hidden" name="q" value={node.pass} />
+            {carried.length > 0 ? (
+              <input type="hidden" name="t" value={carried.join(',')} />
+            ) : null}
             <Card className="guide-card">
               <CardBody>
                 <fieldset>
@@ -165,7 +198,7 @@ export default async function GuidePage({
                 {node.answers.map((answer) => (
                   <li key={answer.next + answer.label}>
                     <Link
-                      href={`/case/guide?q=${encodeURIComponent(answer.next)}`}
+                      href={`/case/guide?q=${encodeURIComponent(answer.next)}${carry}`}
                       className={buttonClass(
                         'secondary',
                         'w-full justify-start text-start leading-snug',
@@ -185,20 +218,43 @@ export default async function GuidePage({
             <CardBody>
               <p className="text-sm">{node.body}</p>
 
+              {/* Everything collected so far, not only this round's — a
+                  second complaint adds to the list rather than replacing it. */}
               <p className="mt-4 text-xs text-foreground-muted">{guide.willTick}</p>
               <ul className="mt-1.5 flex flex-wrap gap-1.5">
-                {node.treatments.map((slug) => (
+                {collected.map((slug) => (
                   <li key={slug}>
                     <Chip>{nameFor(slug)}</Chip>
                   </li>
                 ))}
               </ul>
 
-              {/* The only thing that crosses into the form is the slugs. No
-                  answer text, no node id, nothing about the route taken. */}
-              <div className="mt-5">
-                <ButtonLink href={`/case/new?t=${encodeURIComponent(handoff ?? '')}`}>
-                  {guide.continueToForm}
+              {/*
+                * A result is not the end. Haider's instruction, and the case it
+                * fixes is ordinary: a broken filling and a tooth that needs
+                * taking out is one visit and two complaints, and سنون used to
+                * take the first and lose the second — forgotten, or typed into
+                * the notes where no matching ever looks.
+                *
+                * "هذا كلشي" is the primary, because finishing is what most
+                * people are doing; the second complaint is offered beside it
+                * rather than underneath, so neither reads as the way out.
+                *
+                * The only thing that crosses into the form is the slugs. No
+                * answer text, no node id, nothing about the route taken.
+                */}
+              <p className="mt-5 text-sm font-bold">{guide.anotherLead}</p>
+              <div className="mt-2 flex flex-col gap-2">
+                <ButtonLink
+                  href={`/case/new?t=${encodeURIComponent(collected.join(','))}`}
+                >
+                  {guide.done}
+                </ButtonLink>
+                <ButtonLink
+                  href={`/case/guide?q=${encodeURIComponent(triageResume(collected))}&t=${encodeURIComponent(collected.join(','))}`}
+                  variant="secondary"
+                >
+                  {guide.another}
                 </ButtonLink>
               </div>
             </CardBody>
@@ -281,7 +337,7 @@ export default async function GuidePage({
         <div className="mt-5 flex flex-wrap gap-2">
           {parent ? (
             <Link
-              href={`/case/guide?q=${encodeURIComponent(parent)}`}
+              href={`/case/guide?q=${encodeURIComponent(parent)}${carry}`}
               className={buttonClass('quiet')}
             >
               {guide.back}

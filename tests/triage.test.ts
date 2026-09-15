@@ -10,6 +10,8 @@ import {
   triageParent,
   childrenOf,
   screenOutcome,
+  mergeCollected,
+  triageResume,
 } from '@/lib/triage'
 
 /**
@@ -239,5 +241,54 @@ describe('the handoff to the case form', () => {
     expect(parseHandoff('filling,not-a-treatment,scaling', known)).toEqual(['filling', 'scaling'])
     expect(parseHandoff('<script>', known)).toEqual([])
     expect(parseHandoff(undefined, known)).toEqual([])
+  })
+})
+
+/**
+ * A result is not the end — Haider's instruction, and the second round is where
+ * this can go quietly wrong. It has to accumulate rather than replace, it has
+ * to resume into the right branch, and it must never resume into the emergency
+ * screen: those six questions are about the person and were answered a minute
+ * ago, and asking again reads as the site not having listened.
+ */
+describe('a second complaint', () => {
+  const resultFor = (id: string) => TRIAGE_TREE.find((n) => n.id === id)!
+
+  it('adds to what was collected rather than replacing it', () => {
+    expect(mergeCollected(['filling'], resultFor('result-extraction'))).toEqual([
+      'filling',
+      'extraction',
+    ])
+  })
+
+  it('does not repeat a treatment asked for twice', () => {
+    expect(mergeCollected(['filling'], resultFor('result-filling'))).toEqual(['filling'])
+  })
+
+  it('collects nothing from a question or a referral', () => {
+    const question = TRIAGE_TREE.find((n) => n.kind === 'question')!
+    const referral = TRIAGE_TREE.find((n) => n.kind === 'referral')!
+    expect(mergeCollected(['filling'], question)).toEqual(['filling'])
+    expect(mergeCollected(['filling'], referral)).toEqual(['filling'])
+  })
+
+  it('never resumes at the emergency screen', () => {
+    for (const collected of [[], ['filling'], ['paediatric', 'filling']]) {
+      expect(triageResume(collected)).not.toBe(TRIAGE_ROOT)
+    }
+  })
+
+  it('resumes into the child branch when the case is already a child\'s', () => {
+    expect(triageResume(['paediatric', 'filling'])).toBe('child-tooth')
+    expect(triageResume(['filling'])).toBe('start')
+    expect(triageResume([])).toBe('start')
+  })
+
+  it('resumes at a node that really exists and asks something', () => {
+    for (const collected of [[], ['paediatric']]) {
+      const node = triageNode(triageResume(collected))
+      expect(node.id, 'resume target fell back to the root').toBe(triageResume(collected))
+      expect(node.kind).toBe('question')
+    }
   })
 })

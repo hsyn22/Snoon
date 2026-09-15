@@ -1626,6 +1626,49 @@ are instant. **Verified with `javaScriptEnabled: false`** — the whole tree wal
 pre-ticks the form, and a junk node id lands on the first question rather than a blank page.
 Slow 3G: **285 KB, first paint 2.6s**, the same as every other page.
 
+**A result is not the end — "تشكي من شي ثاني؟".** Haider's instruction, and the case it
+fixes is completely ordinary: a broken filling *and* a tooth that needs taking out is one
+visit and two complaints, and the tree used to hand somebody the first and lose the second —
+forgotten, or typed into the notes, where no matching ever looks. So every result now asks,
+and offers two ways on: "هذا كلشي" to the form, or another round of questions.
+
+Four things about it, and the first is the one that would be got wrong:
+
+- **The second round skips the emergency screen, and the age question with it.** Those are
+  about the *person*, not about the complaint, and they were answered a minute ago; asking
+  again reads as the site not having listened. `triageResume` is where that lives.
+- **Which branch to resume into is inferred from the slugs, not remembered.** Remembering
+  would mean carrying the route, which rule 3 forbids. A collected set containing
+  `paediatric` can only have come from the child branch, so it resumes there; everything else
+  resumes at the adult complaint question. The tooth question *is* asked again, deliberately —
+  a second complaint is easily a different tooth.
+- **The collected slugs travel in the guide's own `?t=`**, which is the one thing besides the
+  current node in the URL. It is allowed for exactly the reason `/case/new?t=…` is: treatment
+  slugs are what سنون collects anyway and are what the patient would have ticked by hand. The
+  route still never travels. They are validated against the real treatment list on every
+  render, so an edited URL or a renamed slug means fewer chips rather than a broken page.
+- **The card shows everything collected, not this round's.** A patient who has answered twice
+  and sees one chip will reasonably assume the first answer was thrown away.
+
+Verified end to end with `javaScriptEnabled: false`: screen → age → complaint → result →
+"something else" → resumes at the complaint question carrying `t=filling`, and the form
+arrives with both boxes ticked.
+
+**Two smaller changes from the same note.** The step rail moved *below* the page heading so it
+sits directly on the card — progress belongs beside the thing being progressed through, and it
+had the whole header between them — and its three layer names are no longer printed. They
+described how سنون sorts people, which is our concern rather than the reader's, and three
+lines of chrome above one question is a poor trade on a phone. The names stay as `sr-only`
+text, because three unnamed bars are nothing at all to somebody listening. Done and current
+also stopped sharing a colour, which had made every bar filled by the third layer and the rail
+silent about the one thing it exists to say.
+
+**And the way in from the case form is a button now.** It was an underlined sentence in accent
+colour, and Haider's note was that it did not read as something you could press — which on the
+one field people actually stall at is the whole value of it lost. It is a bordered pill with an
+arrow, deliberately not the primary: the primary on that page is the submit, and there is only
+ever one.
+
 **The handoff only ever pre-ticks.** `/case/new?t=root-canal` arrives with that box checked
 and everything else exactly as editable as before — the case form gains no step, which is the
 one thing this file says it must never do. A rejected submission's own values always win over

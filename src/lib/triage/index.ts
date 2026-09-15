@@ -1,5 +1,14 @@
 import { TRIAGE_TREE, TRIAGE_ROOT, type TriageNode } from './tree'
 
+/**
+ * The one slug whose presence means the whole case belongs to paedodontics.
+ *
+ * Named here as well as in the case queries because `triageResume` below reads
+ * it to decide which branch a second complaint resumes into — the same fact,
+ * used for a different thing.
+ */
+const PAEDIATRIC_SLUG = 'paediatric'
+
 export * from './tree'
 
 const BY_ID = new Map<string, TriageNode>(TRIAGE_TREE.map((node) => [node.id, node]))
@@ -91,6 +100,44 @@ export function parseHandoff(
     .split(',')
     .map((slug) => slug.trim())
     .filter((slug) => ids.has(slug))
+}
+
+/**
+ * Where a second complaint starts, after a result.
+ *
+ * Haider's instruction: a result is not the end. Somebody with a broken filling
+ * often also has a tooth that needs taking out, and handing them one answer and
+ * a button to the form loses the second complaint — it gets forgotten, or typed
+ * into the notes where no matching looks at it.
+ *
+ * **The second round skips the emergency screen, and that is the point of this
+ * function.** Those six questions are about the person rather than about the
+ * complaint and they were answered a minute ago; asking again would read as the
+ * site not having listened. The age question is skipped for the same reason.
+ *
+ * Which branch to resume into is *inferred from the slugs already collected*
+ * rather than remembered, because remembering would mean carrying the route —
+ * which rule 3 forbids. A set containing `paediatric` can only have come from
+ * the child branch, so it resumes there; anything else resumes at the adult
+ * complaint question. The tooth question is asked again on purpose: a second
+ * complaint can easily be a different tooth.
+ */
+export function triageResume(collected: readonly string[]): string {
+  return collected.includes(PAEDIATRIC_SLUG) ? 'child-tooth' : 'start'
+}
+
+/**
+ * The slugs a result adds to what was already collected, de-duplicated.
+ *
+ * Order is "what came first stays first", so the chips on the card read in the
+ * order the patient answered rather than jumping about between rounds.
+ */
+export function mergeCollected(
+  collected: readonly string[],
+  node: TriageNode,
+): string[] {
+  const extra = node.kind === 'result' ? node.treatments : []
+  return [...new Set([...collected, ...extra])]
 }
 
 /** Every node id the tree can actually reach from the root. */

@@ -17,6 +17,7 @@ import {
   optionClass,
 } from '@/components/ui/field'
 import { ButtonSpinner } from '@/components/ui/success-check'
+import { ArrowIcon } from '@/components/ui/icon'
 import { submitCaseAction, type CaseFormState } from './actions'
 
 const INITIAL: CaseFormState = {}
@@ -123,13 +124,26 @@ export function CaseForm({
       <fieldset>
         <legend className={labelClass}>{caseForm.treatmentLabel}</legend>
         <p className={hintClass}>{caseForm.treatmentHint}</p>
-        {/* The way out for somebody who stalled here — and it is a link away
-            rather than an expander, so the form itself gains nothing. This is
-            the field people get stuck on: the hint above has always said "pick
-            the closest if you are unsure", which is an admission that سنون had
-            no better answer. Now it does. */}
-        <Link href="/case/guide" className="mt-1 inline-block text-sm font-bold text-accent">
+        {/*
+          * The way out for somebody who stalled here — and it is a link away
+          * rather than an expander, so the form itself gains nothing. This is
+          * the field people get stuck on: the hint above has always said "pick
+          * the closest if you are unsure", which is an admission that سنون had
+          * no better answer. Now it does.
+          *
+          * **It has to look pressable.** It was an underlined sentence in accent
+          * colour and Haider's note was that it did not read as an option at
+          * all — which on the one field people stall at is the whole value of
+          * it lost. A bordered pill with an arrow reads as somewhere to go. It
+          * is deliberately not `buttonClass('primary')`: the primary on this
+          * page is the submit, and there is only ever one.
+          */}
+        <Link
+          href="/case/guide"
+          className="mt-1.5 inline-flex min-h-11 items-center gap-2 rounded-full border border-accent bg-accent-muted px-4 text-sm font-bold text-accent"
+        >
           {guide.fromForm}
+          <ArrowIcon className="size-4 rotate-180" />
         </Link>
         <div className="mt-2 grid grid-cols-2 gap-2">
           {treatmentTypes.map((treatment) => (

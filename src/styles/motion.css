@@ -1355,36 +1355,42 @@
 }
 
 /* The rail itself: three fixed layers, because the tree really does have three
-   and a bar filling by tree depth would promise a length no path guarantees. */
+   and a bar filling by tree depth would promise a length no path guarantees.
+
+   Three bars and no words. The layer names used to print under them and Haider
+   had them removed — they described how سنون sorts people rather than telling
+   the reader anything, and on a phone they were three lines of chrome directly
+   above the one question somebody came to answer. The names survive in
+   `sr-only` text, because three unnamed bars are nothing at all to a listener.
+
+   It also sits lower than it did: directly on top of the card, rather than
+   above the page heading with the whole header in between. Progress belongs
+   beside the thing being progressed through. */
 .guide-steps {
   display: flex;
   align-items: center;
-  gap: 8px;
-  margin-block-end: 18px;
+  gap: 6px;
+  margin-block: 0 10px;
 }
 
 .guide-step {
   flex: 1;
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-  font-size: 0.75rem;
-  color: var(--color-foreground-muted);
 }
 
-.guide-step span {
+.guide-step span[aria-hidden] {
   display: block;
   block-size: 4px;
   border-radius: 999px;
   background: var(--color-border);
 }
 
-.guide-step[data-state='done'] span,
-.guide-step[data-state='current'] span {
-  background: var(--color-accent);
+/* Done and current are not the same colour. They were, which meant that by the
+   third layer every bar was filled and the rail said nothing about where the
+   reader had got to — the one thing it exists to say. */
+.guide-step[data-state='done'] span[aria-hidden] {
+  background: var(--color-accent-light);
 }
 
-.guide-step[data-state='current'] {
-  color: var(--color-accent-strong);
-  font-weight: 700;
+.guide-step[data-state='current'] span[aria-hidden] {
+  background: var(--color-accent);
 }
