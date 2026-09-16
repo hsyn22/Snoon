@@ -119,12 +119,47 @@ export async function submitCaseAction(
     patientAuthUserId = null
   }
 
+  /*
+   * The case is written first, on its own, and **nothing after this point may
+   * turn into a failure the patient sees**.
+   *
+   * It used to be one `try` around the write, the photographs and the student
+   * alert together. So a photograph that failed to store — object storage
+   * refusing a credential, say — was reported as `submitFailed` on a case that
+   * had already been saved. The patient, correctly reading the screen, submitted
+   * again. Haider ended up with a queue of duplicates and no photographs on any
+   * of them, which is exactly what that shape produces.
+   *
+   * A case with no photographs is a smaller case. A case submitted three times
+   * is three people's worth of a student's queue and three calls to the same
+   * number.
+   */
   let trackingToken: string
+  let caseId: string
   try {
     const result = await submitCase({ ...validated.value, patientAuthUserId })
     trackingToken = result.trackingToken
+    caseId = result.caseId
+  } catch (error) {
+    // Log that a submission failed, never what was in it — the form data holds
+    // the patient's name and phone number.
+    console.error(
+      'Case submission failed:',
+      error instanceof Error ? error.message : 'unknown error',
+    )
+    return { formError: caseForm.errors.submitFailed, values: fields }
+  }
 
-    if (processed.length > 0) {
+  /*
+   * Photographs, best effort.
+   *
+   * Logged under their own name rather than as a submission failure: the two
+   * have completely different fixes, and a log line saying "submission failed"
+   * for a case that is sitting in the database sends whoever reads it after the
+   * wrong thing. This is the line that names a broken storage credential.
+   */
+  if (processed.length > 0) {
+    try {
       const { getPayload } = await import('payload')
       const { default: payloadConfig } = await import('@payload-config')
       const payload = await getPayload({ config: payloadConfig })
@@ -142,43 +177,44 @@ export async function submitCaseAction(
             size: data.byteLength,
           },
         })
-        await attachCasePhoto(result.caseId, String(media.id))
+        await attachCasePhoto(caseId, String(media.id))
       }
-    }
-
-    /*
-     * Tell the students who could take it, after the case is safely written and
-     * outside its transaction.
-     *
-     * This is the one thing the site structurally cannot do: a queue only helps
-     * somebody who thought to open it, and a student with nothing waiting has no
-     * reason to look. It is also why the photographs are attached first — a
-     * student who opens the case the second the message arrives should find the
-     * pictures already there.
-     *
-     * Best effort, and deliberately awaited rather than left dangling: a
-     * serverless function that returns is a function that may be frozen
-     * mid-send. A failure is swallowed, because a patient must never lose a
-     * submission over a message.
-     */
-    try {
-      const { notifyStudentsOfNewCase } = await import('@/lib/notifications/new-case')
-      await notifyStudentsOfNewCase(result.caseId)
     } catch (error) {
+      // Never the image itself, and never the patient — only why storage said no.
       console.error(
-        'New-case alert failed:',
+        'Case photographs failed to store:',
         error instanceof Error ? error.message : 'unknown error',
       )
     }
-  } catch (error) {
-    // Log that a submission failed, never what was in it — the form data holds
-    // the patient's name and phone number.
-    console.error('Case submission failed:', error instanceof Error ? error.message : 'unknown error')
-    return { formError: caseForm.errors.submitFailed, values: fields }
   }
 
-  // redirect() signals by throwing, so it must sit outside the try/catch above —
-  // otherwise the catch would swallow it and report a submission failure for a
-  // case that was actually saved.
+  /*
+   * Tell the students who could take it, after the case is safely written and
+   * outside its transaction.
+   *
+   * This is the one thing the site structurally cannot do: a queue only helps
+   * somebody who thought to open it, and a student with nothing waiting has no
+   * reason to look. It is also why the photographs are attached first — a
+   * student who opens the case the second the message arrives should find the
+   * pictures already there.
+   *
+   * Best effort, and deliberately awaited rather than left dangling: a
+   * serverless function that returns is a function that may be frozen
+   * mid-send. A failure is swallowed, because a patient must never lose a
+   * submission over a message.
+   */
+  try {
+    const { notifyStudentsOfNewCase } = await import('@/lib/notifications/new-case')
+    await notifyStudentsOfNewCase(caseId)
+  } catch (error) {
+    console.error(
+      'New-case alert failed:',
+      error instanceof Error ? error.message : 'unknown error',
+    )
+  }
+
+  // redirect() signals by throwing, so it must sit outside every try above —
+  // otherwise a catch would swallow it and report a failure for a case that was
+  // actually saved.
   redirect(`/case/track/${trackingToken}?new=1`)
 }

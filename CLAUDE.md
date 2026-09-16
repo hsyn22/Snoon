@@ -645,6 +645,19 @@ Five things about it, and the first two are the ones a later change would break:
   `inset-inline-start` would mean the right edge and mirror every crop against the image it
   was drawn on.
 
+**A photograph that will not store must not lose the case.** `submitCaseAction` wrapped the
+case write, the photographs and the student alert in one `try`, so a photograph object
+storage refused was reported to the patient as `submitFailed` — on a case that had already
+been written. Reading the screen correctly, they submitted again. That shape produces
+exactly what Haider saw: a queue of duplicates carrying no photographs, one case left behind
+per attempt. **The case write is now its own `try`, and nothing after it may become a failure
+the patient sees**; photographs and the alert are best effort, each logged under its own
+name. "Case photographs failed to store" is the line that names a broken storage credential —
+logging it as a submission failure sends whoever reads it after the wrong thing entirely.
+`tests/case-submission.db.test.ts` makes Payload's `create` throw for `case-photos` only —
+narrowed, because validation reads the city list through the same client and a blanket stub
+would fail the submission for the wrong reason and pass against code still broken.
+
 **Contact data.** Phone numbers are the most sensitive field in the system. They exist to be
 shown to exactly one student. Do not log them, do not put them in error messages, do not
 include them in any list endpoint.
