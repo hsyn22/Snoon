@@ -6,7 +6,7 @@ import { revalidatePath } from 'next/cache'
 import { redirect } from 'next/navigation'
 import { db } from '@/db'
 import { students } from '@/db/schema'
-import { claimCase } from '@/db/queries/claims'
+import { claimCaseForStudent } from '@/lib/cases/claim'
 import { cases } from '@/db/schema'
 import { auth } from '@/lib/auth'
 import { studentQueue, telegramCopy } from '@/lib/copy'
@@ -23,6 +23,13 @@ export type ClaimActionState = { error?: string }
  * a claim is the moment a phone number becomes visible, so who is claiming must
  * come from the session and nowhere else. Verification is re-checked inside
  * claimCase's transaction as well.
+ *
+ * **The case id, unlike the student, does come from the form**, and that is why
+ * this goes through `claimCaseForStudent` rather than `claimCase`. Every export
+ * from a `'use server'` file is a public POST endpoint; nothing stopped a
+ * verified student in one city posting a case id from another and being handed
+ * that patient's number. The queue never showed it to them, which is not the
+ * same as it being refused.
  */
 export async function claimCaseAction(
   _previous: ClaimActionState,
@@ -42,7 +49,7 @@ export async function claimCaseAction(
 
   if (!student) redirect('/student')
 
-  const result = await claimCase(caseId, student.id)
+  const result = await claimCaseForStudent(caseId, student.id)
 
   if (!result.ok) {
     switch (result.reason) {
@@ -50,6 +57,10 @@ export async function claimCaseAction(
         return { error: studentQueue.claimFailedUnavailable }
       case 'STUDENT_NOT_VERIFIED':
         return { error: studentQueue.claimFailedNotVerified }
+      case 'NOT_IN_SCOPE':
+        return { error: studentQueue.claimFailedNotInScope }
+      case 'DAYS_DO_NOT_MATCH':
+        return { error: studentQueue.claimFailedDays }
       default:
         return { error: studentQueue.claimFailedGeneric }
     }

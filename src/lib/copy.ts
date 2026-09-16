@@ -905,6 +905,13 @@ export const studentQueue = {
   claimFailedUnavailable: 'هاي الحالة انحجزت من طالب ثاني. شوف باقي الحالات.',
   claimFailedNotVerified: 'حسابك مو موثّق.',
   claimFailedGeneric: 'ما كدرنا نحجز الحالة. جرّب مرة لخ.',
+  /** The case exists but was never in this student's queue. Deliberately says
+      nothing about whether the id is real — a student poking at case ids should
+      not learn which ones exist in other cities. */
+  claimFailedNotInScope: 'هاي الحالة مو ضمن حالاتك.',
+  /** In scope, wrong days. The queue offers "ask the patient" for exactly this,
+      so the message points at it rather than sounding like a refusal. */
+  claimFailedDays: 'أيام المراجع ما تتقاطع وية أيام دوامك. تكدر تسأله إذا يكدر يجي بيوم من أيامك.',
 } as const
 
 /** The case a student is holding right now. */

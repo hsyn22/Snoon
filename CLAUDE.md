@@ -375,6 +375,35 @@ update guarded by the status it may come from, so two schedulers racing is safe.
 **Nothing schedules it until the site is deployed.** Until then contact windows do not
 expire on their own, and a case can sit claimed indefinitely.
 
+### Claiming must also be authorised, which is a different thing
+
+`claimCase` is the atomic part and it takes a case id on trust. **That was a real hole, found
+while adding a claim button to the Telegram bot.** The web claim is a server action, every
+export from a `'use server'` file is a public POST endpoint, and the case id comes off the
+form — so a verified student in Basra could post a case id from Mosul and be handed that
+patient's phone number. Nothing enforced the city or the stage. The queue simply never showed
+it to them, which is not the same as it being refused, and the bot makes that obvious because
+`callback_data` is attacker-controlled in exactly the same way with no rendered page in front
+of it.
+
+`claimCaseForStudent` in `src/lib/cases/claim.ts` is now the only way in, from both the site
+and the bot. Three things about it:
+
+- **The check is the queue itself.** Rather than restate "same city, overlapping treatments,
+  not a child's case unless the stage does paediatrics", it asks `listOpenCasesForStudent` for
+  that one id — the filter gained an `onlyCaseIds` narrowing for exactly this — and requires
+  it to come back. One implementation of visibility, used both to draw the list and to
+  authorise acting on it, so the two cannot drift and a future change to what a student may
+  see changes what they may claim in the same edit.
+- **Day overlap is enforced here and only here.** The queue shows a case whose days do not
+  match and offers to *ask* the patient instead, which grants nothing; without this the bot's
+  button would have been a way round that whole mechanism.
+- **It fails closed on a missing mapping.** A college with no city, which is what a
+  half-finished admin setup looks like, means "claims nothing" and never "claims anything".
+
+`claimCase` itself is unchanged and still does the atomic work. Do not call it directly from
+anything a student can reach.
+
 ### Claiming must be atomic
 
 The claim is a conditional update inside a transaction:

@@ -20,6 +20,7 @@ describe.skipIf(!hasDatabase)('claiming', async () => {
     '@/db/queries/cases'
   )
   const { claimCase, releaseClaim, expireOverdueClaims } = await import('@/db/queries/claims')
+  const { claimCaseForStudent } = await import('@/lib/cases/claim')
 
   const createdCaseIds: string[] = []
   const createdStudentIds: string[] = []
@@ -386,6 +387,67 @@ describe.skipIf(!hasDatabase)('claiming', async () => {
 
       expect(await releaseClaim(result.claimId, { reason: 'a', actorType: 'SYSTEM' })).toBe(true)
       expect(await releaseClaim(result.claimId, { reason: 'b', actorType: 'SYSTEM' })).toBe(false)
+    })
+  })
+
+  /**
+   * Claiming has to be authorised, not merely un-offered.
+   *
+   * `claimCase` takes a case id and trusts it, and the queue is the only thing
+   * that ever handed a student one — which is not the same as the case being
+   * refused. Both the server action and the Telegram button take the id from
+   * something the student controls, so the check belongs below both.
+   */
+  describe('a student may only claim a case they were shown', () => {
+    it('narrows the queue to an id when asked, using the same filter', async () => {
+      const mine = await makeCase({ cityId: 'basra' })
+      const elsewhere = await makeCase({ cityId: 'najaf' })
+      const studentId = await makeStudent()
+
+      const found = await listOpenCasesForStudent(studentId, {
+        cityIds: ['basra'],
+        onlyCaseIds: [mine],
+      })
+      expect(found.map((c) => c.id)).toEqual([mine])
+
+      // The point of the whole exercise: asking for a case outside the scope by
+      // id returns nothing, rather than returning it because it was named.
+      const refused = await listOpenCasesForStudent(studentId, {
+        cityIds: ['basra'],
+        onlyCaseIds: [elsewhere],
+      })
+      expect(refused).toEqual([])
+    })
+
+    it('returns nothing for an empty id list rather than everything', async () => {
+      await makeCase({ cityId: 'basra' })
+      const studentId = await makeStudent()
+      expect(
+        await listOpenCasesForStudent(studentId, { cityIds: ['basra'], onlyCaseIds: [] }),
+      ).toEqual([])
+    })
+
+    it('refuses when the student has no scope at all, rather than falling open', async () => {
+      // `test-college` maps to no city, which is what an incomplete admin setup
+      // looks like. Failing closed here is the whole design: an unmapped college
+      // must mean "claims nothing", never "claims anything".
+      const caseId = await makeCase({ cityId: 'basra' })
+      const studentId = await makeStudent()
+
+      const result = await claimCaseForStudent(caseId, studentId)
+      expect(result.ok).toBe(false)
+      if (!result.ok) expect(result.reason).toBe('NOT_IN_SCOPE')
+
+      // And the case is untouched — a refused claim must not consume it.
+      const [row] = await db.select({ status: cases.status }).from(cases).where(eq(cases.id, caseId))
+      expect(row!.status).toBe('REQUESTED')
+    })
+
+    it('refuses a student who does not exist', async () => {
+      const caseId = await makeCase()
+      const result = await claimCaseForStudent(caseId, crypto.randomUUID())
+      expect(result.ok).toBe(false)
+      if (!result.ok) expect(result.reason).toBe('STUDENT_NOT_VERIFIED')
     })
   })
 })

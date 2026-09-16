@@ -196,6 +196,16 @@ export type StudentCaseFilter = {
   cityIds: string[]
   /** When given, only cases asking for at least one of these treatments. */
   treatmentTypeIds?: string[]
+  /**
+   * When given, narrow to these case ids.
+   *
+   * This exists so **authorising a claim uses the same filter that draws the
+   * queue**, rather than a second implementation of the visibility rule. Asking
+   * "is this case in the list I would have shown you?" and asking "may you claim
+   * it?" have to be the same question, or the two drift and the gap is a student
+   * seeing a patient's phone number they were never meant to see.
+   */
+  onlyCaseIds?: string[]
   limit?: number
 }
 
@@ -220,6 +230,11 @@ export async function listOpenCasesForStudent(
     // A student who already held this case and lost it is not offered it again.
     studentPreviouslyReleased(studentId),
   ]
+
+  if (filter.onlyCaseIds) {
+    if (filter.onlyCaseIds.length === 0) return []
+    conditions.push(inArray(cases.id, filter.onlyCaseIds))
+  }
 
   if (filter.treatmentTypeIds && filter.treatmentTypeIds.length > 0) {
     // Array overlap, served by the GIN index on treatment_type_ids. Drizzle's
