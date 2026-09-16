@@ -28,7 +28,7 @@ exists only inside this session. Options, cheapest first:
 Whichever it is, `pnpm db:migrate` and `pnpm payload:migrate` then have to run against it
 once before anything works, and `pnpm payload:seed` after that.
 
-### 0.2 Photograph and document storage — **real work, and the bigger blocker**
+### 0.2 Photograph and document storage — **built; four variables to paste**
 
 `case-photos` and `student-documents` are Payload upload collections with
 `staticDir: 'uploads/…'` — files on local disk, deliberately outside `/public`.
@@ -38,13 +38,21 @@ and every student's enrolment document would be written to a container that is d
 minutes later. This would not error loudly; it would appear to work and then lose files,
 which is the worst possible failure for a student's proof of enrolment.
 
-So this must change before deploying: `@payloadcms/storage-vercel-blob`, or S3/R2 via
-`@payloadcms/storage-s3`. **Vercel Blob is the smaller change** — one plugin, one token.
+**Done.** `src/payload/storage.ts` adds `@payloadcms/storage-s3` pointed at Cloudflare R2 —
+S3-compatible, so there is no R2-specific package. What remains is his, and it is four
+environment variables in Vercel: `R2_ACCOUNT_ID`, `R2_BUCKET`, `R2_ACCESS_KEY_ID`,
+`R2_SECRET_ACCESS_KEY`. `.env.example` has the click path for creating the bucket and the
+API token. **Until all four are set, uploads still go to the disk Vercel destroys** — the
+code cannot tell him that, so it is the one item here to actually verify after deploying by
+uploading a photograph and reloading the case the next day.
 
-Whatever is chosen, the authorisation rules must survive it. `/api/case-photos/[photoId]`
-re-answers "who is asking?" on every request and that is what keeps a patient's photographs
-private; a blob store that hands out public URLs would quietly undo it. The store must be
-private and the route must keep proxying.
+R2 rather than Vercel Blob, reversing the earlier leaning in this file: ten gigabytes free
+against one, nothing charged for serving, and — the reason that decides it — a bucket that
+is private by default. The authorisation rules had to survive this change.
+`disablePayloadAccessControl` is left off, so files keep going through Payload rather than
+through direct bucket URLs, and `/api/case-photos/[photoId]` keeps re-answering "who is
+asking?" on every request; it reads the bytes through `readUpload`, which is now the only
+thing in the codebase that knows where files live.
 
 ### 0.3 Secrets — **he must set them in Vercel**
 

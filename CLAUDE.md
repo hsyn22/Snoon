@@ -1931,10 +1931,25 @@ Do not build these unless explicitly asked:
 
 `docs/roadmap.md` holds it, in order, with the deployment blockers first — Haider asked for
 the remaining work written down and committed one item at a time rather than in one
-unreviewable change. **The two real blockers on deploying to Vercel are a hosted Postgres and
-somewhere to put uploaded files**; the rest is accounts he has to create. Uploads are the one
-that would fail silently: `staticDir` writes to a local disk that Vercel destroys minutes
-later, so photographs and enrolment documents would appear to save and then vanish.
+unreviewable change. **Both original blockers are now cleared**: Postgres is Neon in
+Frankfurt, and uploads go to Cloudflare R2 through `src/payload/storage.ts`.
+
+Uploads were the one that would have failed silently, and the shape of that failure is worth
+keeping in mind because it is not gone, only moved. `staticDir` writes to a local disk that
+Vercel destroys minutes later, so photographs and enrolment documents appeared to save and
+then vanished — nothing errored, and the row kept a filename pointing at a file that no
+longer existed. The adapter only engages when **all four** `R2_*` variables are set; with
+three of four سنون deliberately behaves as though there were none, because a deployment that
+believes it has object storage and does not is worse than one that knows it has none. So the
+thing to actually verify after any deployment is a photograph that is still there tomorrow,
+not a build that went green.
+
+Storage is R2 rather than Vercel Blob for one reason above the free allowances: a bucket that
+is private by default. `disablePayloadAccessControl` stays off, so files are served through
+Payload rather than through direct bucket URLs — a direct URL is a URL nobody checks, and it
+would make `read: isAdmin` on both upload collections decorative. `/api/case-photos/[photoId]`
+still re-answers "who is asking?" on every request and now reads the bytes through
+`readUpload`, the only thing in the codebase that knows where files live.
 
 ---
 
