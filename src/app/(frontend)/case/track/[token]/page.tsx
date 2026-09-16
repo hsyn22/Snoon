@@ -176,6 +176,25 @@ export default async function TrackCasePage({
           </Card>
         ) : null}
 
+        {/*
+          * The way into the bot, directly under the success.
+          *
+          * It was at the bottom of this page, under the case and the photographs
+          * — which is a fine place to *find* it and a poor place to be *offered*
+          * it. The moment somebody will ever say yes to notifications is the
+          * moment they have just handed over a phone number and a photograph of
+          * their mouth and are waiting to hear back; a patient who links here
+          * learns their case was claimed without opening anything, and one who
+          * does not still has the link and the phone.
+          *
+          * Only on `?new=1`. On a later visit they came to read the status, and
+          * an offer above it would be in the way of the thing they came for —
+          * so the ordinary placement further down is kept for that.
+          */}
+        {isNew && telegramAvailable ? (
+          <TelegramInvite trackingToken={token} alreadyLinked={patientLinked} />
+        ) : null}
+
         {/* The status card. Everything a patient opens this page to find out is
             on it: where the case has got to, the code they read out on the
             phone, what they asked for, and when they can come. It used to be a
@@ -255,7 +274,9 @@ export default async function TrackCasePage({
           </Card>
         ) : null}
 
-        {telegramAvailable ? (
+        {/* The ordinary placement, for a return visit. Skipped when the offer
+            has already been made above, or the page carries it twice. */}
+        {telegramAvailable && !isNew ? (
           <TelegramInvite trackingToken={token} alreadyLinked={patientLinked} />
         ) : null}
 

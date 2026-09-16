@@ -159,12 +159,29 @@ export default async function StudentHomePage() {
             </CardBody>
           </Card>
         ) : (
-          <CaseQueue
-            studentId={profile.id}
-            collegeId={profile.collegeId}
-            stageId={profile.stageId}
-            clinicDays={profile.clinicDays}
-          />
+          <>
+            {/*
+              * Above the queue, not below it.
+              *
+              * The offer used to sit at the bottom of the page, under a list a
+              * student scrolls and rarely reaches the end of — so the one
+              * feature that reaches a student who is *not* looking was itself
+              * only visible to a student who was. For everybody else the
+              * placement further down is the correct one — a pending student's
+              * first question is about their own account, not notifications.
+              */}
+            {telegramAvailable && !telegramLinked ? (
+              <div className="mb-4">
+                <TelegramLink needsDocument={false} />
+              </div>
+            ) : null}
+            <CaseQueue
+              studentId={profile.id}
+              collegeId={profile.collegeId}
+              stageId={profile.stageId}
+              clinicDays={profile.clinicDays}
+            />
+          </>
         )}
         {/* Only once verified: before that there is nothing to have a record of,
             and the student has a more pressing step in front of them. */}
@@ -176,7 +193,13 @@ export default async function StudentHomePage() {
           </div>
         ) : null}
 
-        {telegramAvailable && !telegramLinked && profile ? (
+        {/* Skipped once verified, where it has already been offered above the
+            queue. Still shown while a student is waiting, because the pitch
+            there is the document rather than the case alerts. */}
+        {telegramAvailable &&
+        !telegramLinked &&
+        profile &&
+        profile.verificationStatus !== 'VERIFIED' ? (
           <TelegramLink needsDocument={needsDocument} />
         ) : null}
 

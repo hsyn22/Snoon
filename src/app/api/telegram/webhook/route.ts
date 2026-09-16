@@ -36,7 +36,9 @@ export async function POST(request: Request): Promise<Response> {
     const outcome = await handleTelegramUpdate(update)
     // Acknowledge first: Telegram spins the button until this lands.
     if (outcome.answerCallbackId) await answerCallbackQuery(outcome.answerCallbackId)
-    if (outcome.reply) await sendTelegramMessage(outcome.reply.chatId, outcome.reply.text)
+    if (outcome.reply) {
+      await sendTelegramMessage(outcome.reply.chatId, outcome.reply.text, outcome.reply.buttons)
+    }
   } catch (error) {
     // Never echo the update: it carries whatever a stranger typed.
     console.error(

@@ -1016,7 +1016,114 @@ export const telegramCopy = {
   startWithoutToken: 'أهلاً. حتى تربط الإشعارات، افتح الرابط اللي بالموقع.',
   stopped: 'وقفنا الإشعارات. تكدر ترجع تربطها من الموقع بأي وقت.',
   nothingToStop: 'ما أكو إشعارات مربوطة بهذا الحساب.',
-  unknownCommand: 'ما فهمت. الأوامر المتاحة: /start و /stop',
+  unknownCommand: 'ما فهمت. اكتب /help وأوريك شنو أكدر أسوي.',
+
+  /**
+   * What the bot can do, for whoever is asking.
+   *
+   * Two lists rather than one: a patient shown a student's commands learns
+   * nothing except that the bot is not really for them. Which list to send is
+   * decided by what this chat is bound to, which the bot already knows.
+   */
+  helpPatient: [
+    'شنو أكدر أسويلك:',
+    '',
+    '/status — وين وصلت حالتك',
+    '/stop — وقّف الإشعارات',
+    '',
+    'وراح أدزلك إشعار أول ما يحجز طالب حالتك، بدون ما تسأل.',
+  ].join('\n'),
+
+  helpStudent: [
+    'شنو أكدر أسويلك:',
+    '',
+    '/cases — شوف الحالات المتاحة إلك واحجز وحدة',
+    '/stop — وقّف الإشعارات',
+    '',
+    'وتكدر تدزلي صورة وثيقتك الجامعية هنا بدل ما ترفعها بالموقع.',
+  ].join('\n'),
+
+  helpUnlinked: [
+    'أهلاً بمنصة سنون.',
+    '',
+    'هذا البوت يشتغل بعد ما تربطه بحسابك أو بحالتك، والربط يصير من الموقع.',
+  ].join('\n'),
+
+  /** `/status`, for a patient whose chat is bound to their case. */
+  patientStatus: (referenceCode: string, statusLabel: string) =>
+    [`حالتك ${referenceCode}`, '', `الوضع الحالي: ${statusLabel}`].join('\n'),
+  /** Said to a student who typed a patient's command, and the other way round. */
+  statusNotAPatient: 'هذا الأمر إلك بس إذا كنت مراجع وحالتك مربوطة بالبوت.',
+  casesNotAStudent: 'هذا الأمر للطلبة بس.',
+
+  /**
+   * The queue, one case at a time.
+   *
+   * **One case per message, not a list.** Telegram can only stack buttons under
+   * one message, and five cases in one message means five buttons a thumb has to
+   * pick between with no card to tell them apart. One case, two buttons — take
+   * it, or show me the next — is the shape a phone is good at, and it is how a
+   * student actually reads a queue: they look at one and decide.
+   *
+   * No patient name and no phone number appears anywhere in here. What a
+   * claimant is entitled to see stays behind their session on the site, and the
+   * bot hands them a link to it. Telegram keeps message history on its own
+   * servers, and a phone number sent once is there for good.
+   */
+  caseCard: (args: {
+    referenceCode: string
+    treatments: string
+    days: string
+    city: string
+  }) =>
+    [
+      `حالة ${args.referenceCode}`,
+      '',
+      `العلاج: ${args.treatments}`,
+      `المدينة: ${args.city}`,
+      `الأيام: ${args.days}`,
+    ].join('\n'),
+  /** Appended when the case needs something this student's stage cannot do. */
+  caseCardPartial: 'أكو جزء من هاي الحالة برة مرحلتك — تسوي اللي تكدر عليه ويكمّلها طالب ثاني.',
+  /** Appended when the days do not overlap, so there is no claim button. */
+  caseCardDays: 'أيام المراجع ما تتقاطع وية أيام دوامك. افتح الموقع حتى تسأله إذا يكدر يجي بيوم من أيامك.',
+  claimButton: 'أحجزها',
+  nextButton: 'الحالة الجاية',
+  queueEmpty: 'ماكو حالات متاحة إلك هسه. راح أدزلك إشعار أول ما تجي وحدة تناسبك.',
+  queueEnd: 'هذي آخر وحدة. راح أدزلك إشعار أول ما تجي حالة جديدة.',
+  queueNotVerified: 'حسابك لسه ما تم توثيقه، فما أكدر أوريك حالات.',
+  /**
+   * After a successful claim. The link is the whole point of it.
+   *
+   * The student has earned the right to the patient's number at this moment, and
+   * it still does not go in this message — it stays on the case page behind
+   * their session. One tap, and nothing sensitive in a chat history.
+   */
+  claimedByBot: (referenceCode: string, url: string) =>
+    [
+      `حجزت الحالة ${referenceCode}. 👍`,
+      '',
+      'رقم المراجع وتفاصيل الحالة بصفحتها:',
+      url,
+      '',
+      'اتصل بيه وعرّف بنفسك وبسنون، وتأكد إنه هو اللي قدّم الطلب قبل ما تحچي عن حالته.',
+    ].join('\n'),
+  claimTakenByBot: 'هاي الحالة انحجزت من طالب ثاني. اكتب /cases وشوف الباقي.',
+
+  /**
+   * The new-case alert — the one thing students asked for that the site cannot
+   * do, because it needs the student to not be looking.
+   */
+  newCaseForStudent: (args: { referenceCode: string; treatments: string; city: string }) =>
+    [
+      'أكو حالة جديدة تناسب مرحلتك.',
+      '',
+      `حالة ${args.referenceCode}`,
+      `العلاج: ${args.treatments}`,
+      `المدينة: ${args.city}`,
+      '',
+      'اكتب /cases حتى تشوفها وتحجزها.',
+    ].join('\n'),
 
   /** Sent to the patient when a student takes their case. */
   caseClaimed: (referenceCode: string) =>
@@ -1207,8 +1314,17 @@ export const telegramStudentDoc = {
 
 /** Offering the bot to a student. */
 export const studentTelegram = {
-  title: 'شغّل الإشعارات',
-  body: 'اربط تلگرام حتى نعلمك بالمهم — مثل قرار التوثيق ومهلة التواصل. اختياري.',
+  /**
+   * The pitch changed when the bot learned to announce new cases.
+   *
+   * It used to offer "we will tell you about the verification decision and your
+   * contact deadline", which are both things that happen *to* a student and
+   * neither of which is a reason to open an app. The alert is the reason: a
+   * queue only helps somebody who thought to look at it, and this is what
+   * reaches a student who is not looking.
+   */
+  title: 'خلّي الحالات توصلك',
+  body: 'اربط تلگرام ونعلمك أول ما تجي حالة تناسب مرحلتك — وتكدر تحجزها من البوت نفسه. اختياري.',
 
   sendDocTitle: 'دزّ وثيقتك بتلگرام',
   sendDocBody:

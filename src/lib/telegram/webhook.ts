@@ -2,17 +2,21 @@ import { eq } from 'drizzle-orm'
 import { db } from '@/db'
 import { cases } from '@/db/schema'
 import { linkChat, revokeLinksForChat, getSubjectForChat } from '@/db/queries/telegram'
-import { dayRequest, telegramConfirm, telegramCopy, telegramStudentDoc } from '@/lib/copy'
+import { caseStatus, dayRequest, telegramConfirm, telegramCopy, telegramStudentDoc } from '@/lib/copy'
 import {
   attachVerificationDocument,
   MAX_DOCUMENT_BYTES,
 } from '@/lib/students/document-intake'
-import { downloadTelegramFile } from './client'
+import { downloadTelegramFile, type InlineButton } from './client'
 import { confirmContactByPatient, reportNoContactByPatient } from '@/lib/cases/contact'
+import { sendNotification } from '@/lib/notifications/send'
 import { acceptDay, declineDay } from '@/db/queries/day-requests'
 import { notifyStudentOfDayAnswer } from '@/lib/notifications/day-requests'
 import { DAY_ANSWER_PREFIX, parseDayAnswer } from './day-answers'
 import { looksLikeInviteToken } from './invite-token'
+import { claimCaseForStudent } from '@/lib/cases/claim'
+import { siteUrl } from '@/lib/site-url'
+import { CLAIM_PREFIX, NEXT_PREFIX, nextCaseForStudent } from './student-queue'
 
 /**
  * Handling one Telegram update.
@@ -44,8 +48,14 @@ export type TelegramUpdate = {
 }
 
 export type WebhookOutcome = {
-  /** Reply to send back, or null to stay silent. */
-  reply: { chatId: string; text: string } | null
+  /**
+   * Reply to send back, or null to stay silent.
+   *
+   * `buttons` is one row under the message. The queue uses it for "take it" and
+   * "show me the next one", which is the whole interaction: a list with five
+   * buttons and no cards to tell them apart is not something a thumb can use.
+   */
+  reply: { chatId: string; text: string; buttons?: readonly InlineButton[] } | null
   /** Button tap to acknowledge, so Telegram stops showing a spinner. */
   answerCallbackId?: string
 }
@@ -209,6 +219,166 @@ async function handleStudentDocument(
   return { reply: { chatId, text: messages[result.reason] ?? telegramStudentDoc.failed } }
 }
 
+/**
+ * Turn a queue state into something to send.
+ *
+ * Shared by `/cases` and the "next" button so the two cannot describe the same
+ * queue differently.
+ */
+function queueReply(chatId: string, state: Awaited<ReturnType<typeof nextCaseForStudent>>) {
+  switch (state.kind) {
+    case 'not-verified':
+      return { chatId, text: telegramCopy.queueNotVerified }
+    case 'no-scope':
+      return { chatId, text: telegramCopy.queueEmpty }
+    case 'empty':
+      return { chatId, text: telegramCopy.queueEmpty }
+    case 'end':
+      return { chatId, text: telegramCopy.queueEnd }
+    case 'case':
+      return { chatId, text: state.card.text, buttons: state.buttons }
+  }
+}
+
+/**
+ * The student asks to see the queue.
+ *
+ * Who is asking comes from the chat binding and never from the message, like
+ * everything else here: a stranger can type `/cases` at the bot all day.
+ */
+async function handleCasesCommand(chatId: string): Promise<WebhookOutcome> {
+  const subject = await getSubjectForChat(chatId)
+  if (!subject) return { reply: { chatId, text: telegramCopy.startWithoutToken } }
+  if (subject.type !== 'STUDENT') {
+    return { reply: { chatId, text: telegramCopy.casesNotAStudent } }
+  }
+
+  return { reply: queueReply(chatId, await nextCaseForStudent(subject.id)) }
+}
+
+/**
+ * The "next case" button.
+ *
+ * The callback carries the case the student is looking *at*, which is
+ * attacker-controlled and harmless: it is a cursor into a list the server builds
+ * for this student, so the worst a forged one does is show them the first case
+ * in their own queue.
+ */
+async function handleNextCallback(
+  chatId: string,
+  data: string,
+  callbackId?: string,
+): Promise<WebhookOutcome> {
+  const subject = await getSubjectForChat(chatId)
+  if (!subject || subject.type !== 'STUDENT') {
+    return { reply: null, answerCallbackId: callbackId }
+  }
+
+  const afterId = data.slice(NEXT_PREFIX.length)
+  const state = await nextCaseForStudent(subject.id, afterId)
+  return { reply: queueReply(chatId, state), answerCallbackId: callbackId }
+}
+
+/**
+ * The claim button.
+ *
+ * **This is the one callback where the payload names something that grants
+ * access**, so it goes through `claimCaseForStudent` rather than `claimCase`:
+ * the case id in `callback_data` is attacker-controlled, and the only thing
+ * standing between a forged one and a stranger's phone number is that
+ * authorisation check. The student, as always, comes from the chat binding.
+ *
+ * The reply carries no contact detail. The student has earned it at this moment
+ * and it still stays on the case page behind their session — Telegram keeps
+ * message history on its own servers, where سنون cannot scrub a number when the
+ * retention period runs out.
+ */
+async function handleClaimCallback(
+  chatId: string,
+  data: string,
+  callbackId?: string,
+): Promise<WebhookOutcome> {
+  const subject = await getSubjectForChat(chatId)
+  if (!subject || subject.type !== 'STUDENT') {
+    return { reply: null, answerCallbackId: callbackId }
+  }
+
+  const caseId = data.slice(CLAIM_PREFIX.length)
+  const result = await claimCaseForStudent(caseId, subject.id)
+
+  if (!result.ok) {
+    const text =
+      result.reason === 'CASE_UNAVAILABLE'
+        ? telegramCopy.claimTakenByBot
+        : result.reason === 'DAYS_DO_NOT_MATCH'
+          ? telegramCopy.caseCardDays
+          : telegramCopy.queueNotVerified
+    return { reply: { chatId, text }, answerCallbackId: callbackId }
+  }
+
+  const [row] = await db
+    .select({ referenceCode: cases.referenceCode })
+    .from(cases)
+    .where(eq(cases.id, caseId))
+    .limit(1)
+
+  // Best effort and after the fact, exactly as on the site: the patient is told
+  // somebody is coming, and a message that fails to send must not undo a claim.
+  if (row) {
+    await sendNotification({
+      recipient: { kind: 'PATIENT_CASE', caseId },
+      text: telegramCopy.caseClaimed(row.referenceCode),
+    })
+  }
+
+  return {
+    reply: {
+      chatId,
+      text: telegramCopy.claimedByBot(
+        row?.referenceCode ?? '',
+        `${siteUrl()}/student/case/${caseId}`,
+      ),
+    },
+    answerCallbackId: callbackId,
+  }
+}
+
+/** The patient asking where their case has got to. */
+async function handleStatusCommand(chatId: string): Promise<WebhookOutcome> {
+  const subject = await getSubjectForChat(chatId)
+  if (!subject) return { reply: { chatId, text: telegramCopy.startWithoutToken } }
+  if (subject.type !== 'PATIENT_CASE') {
+    return { reply: { chatId, text: telegramCopy.statusNotAPatient } }
+  }
+
+  const [row] = await db
+    .select({ referenceCode: cases.referenceCode, status: cases.status })
+    .from(cases)
+    .where(eq(cases.id, subject.id))
+    .limit(1)
+
+  if (!row) return { reply: { chatId, text: telegramCopy.startWithoutToken } }
+
+  return {
+    reply: {
+      chatId,
+      text: telegramCopy.patientStatus(row.referenceCode, caseStatus[row.status]),
+    },
+  }
+}
+
+/** Which help to send is decided by what this chat is bound to. */
+async function handleHelpCommand(chatId: string): Promise<WebhookOutcome> {
+  const subject = await getSubjectForChat(chatId)
+  if (!subject) return { reply: { chatId, text: telegramCopy.helpUnlinked } }
+  return {
+    reply: {
+      chatId,
+      text: subject.type === 'STUDENT' ? telegramCopy.helpStudent : telegramCopy.helpPatient,
+    },
+  }
+}
+
 export async function handleTelegramUpdate(update: TelegramUpdate): Promise<WebhookOutcome> {
   const callback = update.callback_query
   if (callback) {
@@ -222,6 +392,12 @@ export async function handleTelegramUpdate(update: TelegramUpdate): Promise<Webh
     }
     if (data.startsWith(DAY_ANSWER_PREFIX)) {
       return handleDayCallback(String(callbackChatId), data, callback.id)
+    }
+    if (data.startsWith(CLAIM_PREFIX)) {
+      return handleClaimCallback(String(callbackChatId), data, callback.id)
+    }
+    if (data.startsWith(NEXT_PREFIX)) {
+      return handleNextCallback(String(callbackChatId), data, callback.id)
     }
     return { reply: null, answerCallbackId: callback.id }
   }
@@ -251,6 +427,10 @@ export async function handleTelegramUpdate(update: TelegramUpdate): Promise<Webh
   if (trimmed === '/start') {
     return { reply: { chatId, text: telegramCopy.startWithoutToken } }
   }
+
+  if (trimmed === '/help') return handleHelpCommand(chatId)
+  if (trimmed === '/cases') return handleCasesCommand(chatId)
+  if (trimmed === '/status') return handleStatusCommand(chatId)
 
   if (trimmed.startsWith('/start ')) {
     const token = trimmed.slice('/start '.length).trim()

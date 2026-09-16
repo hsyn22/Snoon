@@ -145,6 +145,31 @@ export async function submitCaseAction(
         await attachCasePhoto(result.caseId, String(media.id))
       }
     }
+
+    /*
+     * Tell the students who could take it, after the case is safely written and
+     * outside its transaction.
+     *
+     * This is the one thing the site structurally cannot do: a queue only helps
+     * somebody who thought to open it, and a student with nothing waiting has no
+     * reason to look. It is also why the photographs are attached first — a
+     * student who opens the case the second the message arrives should find the
+     * pictures already there.
+     *
+     * Best effort, and deliberately awaited rather than left dangling: a
+     * serverless function that returns is a function that may be frozen
+     * mid-send. A failure is swallowed, because a patient must never lose a
+     * submission over a message.
+     */
+    try {
+      const { notifyStudentsOfNewCase } = await import('@/lib/notifications/new-case')
+      await notifyStudentsOfNewCase(result.caseId)
+    } catch (error) {
+      console.error(
+        'New-case alert failed:',
+        error instanceof Error ? error.message : 'unknown error',
+      )
+    }
   } catch (error) {
     // Log that a submission failed, never what was in it — the form data holds
     // the patient's name and phone number.

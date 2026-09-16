@@ -70,7 +70,11 @@ async function main(): Promise<void> {
         const outcome = await handleTelegramUpdate(update)
         if (outcome.answerCallbackId) await answerCallbackQuery(outcome.answerCallbackId)
         if (outcome.reply) {
-          const sent = await sendTelegramMessage(outcome.reply.chatId, outcome.reply.text)
+          const sent = await sendTelegramMessage(
+            outcome.reply.chatId,
+            outcome.reply.text,
+            outcome.reply.buttons,
+          )
           console.info(
             sent.ok
               ? `replied to chat ${outcome.reply.chatId}`

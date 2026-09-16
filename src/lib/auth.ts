@@ -2,6 +2,7 @@ import { betterAuth } from 'better-auth'
 import { drizzleAdapter } from 'better-auth/adapters/drizzle'
 import { nextCookies } from 'better-auth/next-js'
 import { db } from '@/db'
+import { siteUrl } from '@/lib/site-url'
 import { account, session, user, verification } from '@/db/auth-schema'
 import { sendEmail } from '@/lib/email'
 import { googleCredentials, googleProvider } from '@/lib/oauth'
@@ -42,19 +43,12 @@ function requiredEnv(name: string): string {
  * registered in Google Cloud must match this value exactly, port included. A
  * mismatch is refused at Google's own screen with `redirect_uri_mismatch`,
  * before anything reaches سنون, so nothing is logged here to explain it.
+ *
+ * It lives in `site-url.ts` because the Telegram bot builds links from it too,
+ * and importing this file to get it would drag Better Auth and its secret check
+ * into a bot that may be the only thing a deployment has configured.
  */
-function resolveBaseUrl(): string {
-  if (process.env.BETTER_AUTH_URL) return process.env.BETTER_AUTH_URL
-
-  // Set by Vercel. The project production URL is stable across deployments;
-  // VERCEL_URL changes every push and would break a link sent yesterday.
-  const vercelHost = process.env.VERCEL_PROJECT_PRODUCTION_URL ?? process.env.VERCEL_URL
-  if (vercelHost) return `https://${vercelHost}`
-
-  return 'http://localhost:3000'
-}
-
-const baseURL = resolveBaseUrl()
+const baseURL = siteUrl()
 
 export const auth = betterAuth({
   secret: requiredEnv('BETTER_AUTH_SECRET'),

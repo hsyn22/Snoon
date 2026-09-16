@@ -1765,6 +1765,63 @@ Rules the implementation holds to:
 - A patient's invite is minted from their **tracking token**, never from a case id in a
   form — an id would let anyone request notifications for a case they do not hold.
 
+### The bot is a place students work, not only a place messages arrive
+
+Three things added on Haider's instruction, after he asked what the bot could do beyond
+notifications. The shape of all three is the same: **the bot formats and asks; it never
+decides.**
+
+- **`/cases` — the queue, one case at a time.** Telegram stacks buttons under a single
+  message, so a list of five cases means five buttons with nothing to tell them apart. One
+  case, two buttons — take it, or show me the next — is what a thumb can use and is how a
+  student reads a queue anyway. The cursor is a case id rather than an index, because the
+  queue changes under the reader when somebody else claims one, and an index would then skip
+  a case or repeat one. A cursor that no longer exists restarts the walk rather than
+  dead-ending, which is the better failure: being told there is nothing while the queue is
+  full is the worse one.
+- **A claim button.** It goes through `claimCaseForStudent`, which is the whole reason that
+  function exists — see "Claiming must also be authorised". `callback_data` is
+  attacker-controlled, and the only thing between a forged case id and a stranger's phone
+  number is that check.
+- **`/status` for a patient, `/help` for whoever is asking.** Which help is sent is decided by
+  what the chat is bound to; a patient shown a student's commands learns only that the bot is
+  not really for them.
+
+**And the new-case alert, which is the one thing the site structurally cannot do.**
+`notifyStudentsOfNewCase` runs after a case is written and outside its transaction. A queue
+only helps somebody who thought to open it, and a student with nothing waiting has no reason
+to look — so the free push is what turns سنون from a page students check into something that
+reaches them. It is the argument for Telegram over SMS made concrete, at nothing per message.
+
+Rules across all of it:
+
+- **Nothing the bot sends carries a phone number or a patient's name — not even to the
+  student who has just claimed the case and is entitled to it.** Telegram keeps message
+  history on its own servers, where سنون cannot scrub a number when the retention period runs
+  out. The claim reply is a link to the case page, where the number sits behind a session, and
+  that is one tap. `tests/telegram-commands.db.test.ts` asserts it of every canned message.
+- **The bot never decides what a student may see.** Both the queue and the alert ask
+  `listOpenCasesForStudent` — the alert asks it per candidate with `onlyCaseIds`, so "would
+  this have appeared in their queue?" is answered by the code that draws the queue. A second
+  implementation of the city, stage-capability and paediatric rules is exactly how a student
+  gets alerted to a case they must not treat.
+- **The alert is a query per linked student, deliberately.** One or two cities is tens of
+  students, so tens of cheap indexed queries once per submitted case. Collapsing it into one
+  join means reimplementing the visibility filter, which trades the property above for a
+  saving nobody can measure yet. At hundreds of students it becomes one query grouped by
+  (college, stage); not before.
+- **Who is asking always comes from the chat binding, never from the message.** Anyone can
+  type `/cases` at a bot.
+
+**The way in moved, twice.** The patient's offer now sits directly under the success card on
+`?new=1` — the only moment somebody will ever say yes to notifications is when they have just
+handed over a phone number and a photograph and are waiting to hear back. It stays in its old
+place further down for a return visit, where they came to read a status and an offer above it
+would be in the way. The student's moved above the queue rather than below a list they scroll
+and rarely finish, and its copy changed with it: it used to promise news about the
+verification decision and the contact deadline, which are things that happen *to* a student
+and no reason to open anything.
+
 Setup needs three environment variables (`TELEGRAM_BOT_TOKEN`, `TELEGRAM_BOT_USERNAME`,
 `TELEGRAM_WEBHOOK_SECRET`) from a bot created with @BotFather, and the webhook pointed at
 `/api/telegram/webhook`.
