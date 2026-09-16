@@ -9,7 +9,29 @@
  * misread as day/month or month/day.
  *
  * Digits stay Western per the Arabic conventions in CLAUDE.md.
+ *
+ * **Every format here is Baghdad time, and that is not a detail.** A server has
+ * no business deciding what day something happened on: Vercel's functions run in
+ * UTC, so without `timeZone` a case submitted at 01:45 Baghdad was stamped with
+ * *yesterday's* date — for three hours every night, every date in the product
+ * was a day out. Haider hit it directly: he submitted several cases after
+ * midnight, opened `/admin/cases`, and could not find them, because they were
+ * sitting at the top of the list under 16 أيلول while his phone said the 17th.
+ *
+ * It is worse on `formatCaseDateTime`, which carries the **contact deadline** a
+ * student reads: three hours wrong on the one number that decides whether they
+ * still hold a case.
+ *
+ * So the zone is pinned on every formatter, not only on the appointment one,
+ * and `BAGHDAD_ZONE` is the single place it is named.
  */
+
+/**
+ * Iraq abolished daylight saving in 2008, so this is a fixed +03:00 — but it is
+ * written as a zone rather than an offset so the ICU database stays the source
+ * of truth if that ever changes.
+ */
+const BAGHDAD_ZONE = 'Asia/Baghdad'
 
 /** Defensive: strip bidi control characters in case ICU data changes shape. */
 function stripBidiControls(value: string): string {
@@ -22,6 +44,7 @@ export function formatCaseDate(date: Date): string {
     day: 'numeric',
     month: 'long',
     year: 'numeric',
+    timeZone: BAGHDAD_ZONE,
     numberingSystem: 'latn',
   }).format(date)
 
@@ -42,6 +65,7 @@ export function formatCaseDateTime(date: Date): string {
     year: 'numeric',
     hour: 'numeric',
     minute: '2-digit',
+    timeZone: BAGHDAD_ZONE,
     numberingSystem: 'latn',
   }).format(date)
 
@@ -57,6 +81,8 @@ export function formatCaseDateTime(date: Date): string {
  * an arithmetic fix.
  */
 const BAGHDAD_OFFSET = '+03:00'
+// Must agree with BAGHDAD_ZONE above: one is for parsing a wall clock, the
+// other for printing an instant, and they describe the same country.
 
 /**
  * Turn a `datetime-local` value into an instant, read as Baghdad time.
@@ -84,7 +110,7 @@ export function formatAppointment(date: Date): string {
     year: 'numeric',
     hour: 'numeric',
     minute: '2-digit',
-    timeZone: 'Asia/Baghdad',
+    timeZone: BAGHDAD_ZONE,
     numberingSystem: 'latn',
   }).format(date)
 
@@ -100,7 +126,7 @@ export function formatAppointment(date: Date): string {
  */
 export function toBaghdadInputValue(date: Date): string {
   const parts = new Intl.DateTimeFormat('en-CA', {
-    timeZone: 'Asia/Baghdad',
+    timeZone: BAGHDAD_ZONE,
     year: 'numeric',
     month: '2-digit',
     day: '2-digit',

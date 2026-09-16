@@ -1,9 +1,10 @@
-import { describe, expect, it } from 'vitest'
+import { afterAll, beforeAll, describe, expect, it } from 'vitest'
 import {
   formatAppointment,
   formatCaseDate,
   formatCaseDateTime,
   parseBaghdadDateTime,
+  toBaghdadInputValue,
 } from '../src/lib/dates'
 
 const DATE = new Date('2026-09-09T10:00:00Z')
@@ -73,5 +74,63 @@ describe('formatAppointment', () => {
     expect(formatted).toMatch(/2026/)
     expect(formatted).not.toMatch(/[٠-٩]/)
     expect(formatted).not.toMatch(/[‎‏؜‪-‮⁦-⁩]/)
+  })
+})
+
+/**
+ * Baghdad, on every formatter — the bug Haider found by not finding his cases.
+ *
+ * Vercel's functions run in UTC. Without an explicit zone, `Intl` used the
+ * server's, so anything submitted between 21:00 and midnight Baghdad was
+ * printed with **yesterday's** date. He submitted several cases at 01:45
+ * Baghdad on the 17th, opened `/admin/cases`, and could not find them: they
+ * were at the top of the list under 16 أيلول.
+ *
+ * These run with the process pinned to UTC, which is the environment that was
+ * wrong. Under the old code the first assertion in each block fails.
+ */
+describe('dates are Baghdad time, whatever the server thinks', () => {
+  const saved = process.env.TZ
+
+  beforeAll(() => {
+    process.env.TZ = 'UTC'
+  })
+  afterAll(() => {
+    if (saved === undefined) delete process.env.TZ
+    else process.env.TZ = saved
+  })
+
+  /** 22:45 UTC on the 16th is 01:45 Baghdad on the 17th. */
+  const afterMidnightInBaghdad = new Date('2026-09-16T22:45:00Z')
+
+  it('formatCaseDate gives the Baghdad day, not the UTC one', () => {
+    expect(formatCaseDate(afterMidnightInBaghdad)).toContain('17')
+    expect(formatCaseDate(afterMidnightInBaghdad)).not.toContain('16')
+  })
+
+  it('formatCaseDateTime gives the Baghdad day and hour', () => {
+    // The contact deadline is read off this. Three hours wrong is the
+    // difference between a student thinking they have tonight and not.
+    const formatted = formatCaseDateTime(afterMidnightInBaghdad)
+    expect(formatted).toContain('17')
+    expect(formatted).toContain('1:45')
+  })
+
+  it('formatAppointment was already correct and stays correct', () => {
+    expect(formatAppointment(afterMidnightInBaghdad)).toContain('17')
+  })
+
+  it('agrees with the parser: what is typed is what is printed', () => {
+    // A student types a wall clock; the patient must be told the same one.
+    const instant = parseBaghdadDateTime('2026-09-17T09:30')
+    expect(instant).not.toBeNull()
+    expect(formatAppointment(instant!)).toContain('9:30')
+    expect(formatCaseDateTime(instant!)).toContain('9:30')
+    expect(toBaghdadInputValue(instant!)).toBe('2026-09-17T09:30')
+  })
+
+  it('leaves a midday instant on the same day', () => {
+    // Guards against "fixed" by subtracting three hours everywhere.
+    expect(formatCaseDate(new Date('2026-09-17T09:00:00Z'))).toContain('17')
   })
 })

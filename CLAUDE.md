@@ -284,6 +284,17 @@ student on the case they hold, in `src/lib/cases/lifecycle.ts`. Notes worth keep
   wall clock with no zone, so the server decides what it means — and trusting the browser's
   zone would let a student whose phone is set elsewhere book a patient hours from the time
   they typed. Iraq has no daylight saving, so a fixed `+03:00` is correct.
+- **And so is every other date in the product, which it was not.** Only
+  `formatAppointment` pinned the zone; `formatCaseDate` and `formatCaseDateTime` used the
+  server's, which on Vercel is UTC. So for the three hours between 21:00 Baghdad and
+  midnight, **every date in سنون was a day out** — the admin list, the student queue, the
+  patient's tracking page and the contact deadline alike. Haider found it by not finding
+  something: he submitted several cases at 01:45 and could not see them in `/admin/cases`,
+  because they were at the top of the list stamped with yesterday. A wrong date does not
+  look like a bug, it looks like missing data, which is why this went unnoticed through a
+  security review and 645 tests. `BAGHDAD_ZONE` is now the only place the zone is named and
+  every formatter takes it; `tests/dates.test.ts` pins `TZ=UTC` and asserts the Baghdad day,
+  which is the environment that was wrong.
 - **Rescheduling supersedes rather than overwrites**, and a partial unique index allows only
   one live appointment per case, so a patient is never shown two times at once.
 - **An outcome closes the claim** in the same transaction. Leaving it ACTIVE would keep a
