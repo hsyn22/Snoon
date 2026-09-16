@@ -166,6 +166,16 @@ anyone until the view started calling `payload.auth()` and returning null for no
 Query nothing until the caller is known. The same applies to server actions reached from
 such a view: being rendered inside the admin proves nothing about who calls the action.
 
+**A screen that is empty because Payload is empty has to say which list is empty.** The
+student profile form refuses to render until universities, colleges *and* stages all exist,
+and it used to say "universities and colleges are not added yet" whichever one was missing.
+Haider added a university, saw the same sentence, and reasonably read it as the site ignoring
+what he had entered — the college was the missing one. It names the specific list now, and
+universities are named before colleges because a college cannot exist without one, so naming
+the deeper gap sends somebody to fix the wrong end. This is the same failure the paragraph
+below describes for cities, and it will keep recurring wherever a screen depends on config an
+admin enters: **"not ready" is never a sufficient message to somebody who can fix it.**
+
 Any page rendering Payload config needs **both** a time-based `revalidate` and an
 `afterChange`/`afterDelete` hook calling `revalidatePath`. Without the hook an admin who
 adds a city sees nothing change and reasonably concludes the admin is broken; without the

@@ -39,6 +39,27 @@ export default async function StudentProfilePage() {
 
   const ready = universities.length > 0 && colleges.length > 0 && stages.length > 0
 
+  /*
+   * Which of the three is actually missing.
+   *
+   * The card used to say "universities and colleges are not added yet"
+   * regardless, so an admin who had added a university and not a college read
+   * it as the site ignoring what they had entered — the same failure this
+   * project already warns about for cities, where an admin who sees no change
+   * reasonably concludes the admin panel is broken.
+   *
+   * Universities come first because a college cannot exist without one, so
+   * naming the deeper gap would send somebody to fix the wrong end.
+   */
+  const missing =
+    universities.length === 0
+      ? studentProfile.notReadyUniversities
+      : colleges.length === 0
+        ? studentProfile.notReadyColleges
+        : stages.length === 0
+          ? studentProfile.notReadyStages
+          : null
+
   return (
     <PageShell>
       <>
@@ -57,6 +78,7 @@ export default async function StudentProfilePage() {
           <Card>
             <CardBody className="p-5">
               <h2 className="font-bold">{studentProfile.notReadyTitle}</h2>
+              {missing ? <p className="mt-2 text-sm">{missing}</p> : null}
               <p className="mt-2 text-sm text-foreground-muted">{studentProfile.notReadyBody}</p>
             </CardBody>
           </Card>
