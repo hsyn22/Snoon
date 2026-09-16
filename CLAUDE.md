@@ -2096,6 +2096,30 @@ pnpm payload:importmap  # regenerate the admin import map
 Run `payload:importmap` after adding or moving a collection, global or custom
 admin component, and `payload:types` after changing any field.
 
+**`importMap.js` is generated from the config and committed, so the config must not
+depend on the environment.** This produced the worst kind of failure سنون has had: a
+**completely blank `/admin` in production only**, with a 200 response, 51KB of correct
+HTML on the wire, the login form present in that HTML, and nothing at all on screen.
+Nothing in any log.
+
+`storagePlugins()` returned `[]` when R2 was unconfigured. Locally it was, so the S3
+plugin never loaded and `pnpm payload:importmap` wrote a map with no entry for its
+`S3ClientUploadHandler`. Production had the four `R2_*` variables, loaded the plugin,
+and the client could not resolve a provider the map did not carry — React threw during
+hydration and emptied the page it had just been given. **Server-side rendering is
+unaffected, which is why `curl` says everything is fine.** Only a real browser shows it.
+
+The fix is not a regenerated map, it is that the plugin is now **always installed** and
+`enabled: config !== null` is what varies — so the admin registers the same components
+on every machine and the generated file is the same everywhere. `tests/admin-import-map.test.ts`
+holds both halves: every declared component is in the committed map, and the set of
+declared components is identical with and without R2 set. The second is the one that
+matters; it fails on the old code and passes on the new.
+
+**Verify the admin in a browser, never with `curl`.** Reproduced and fixed by driving a
+real Chromium at a production build with R2 configured: 0 visible characters before, the
+Arabic login form after.
+
 ### Local database
 
 Development needs a PostgreSQL reachable at `DATABASE_URL`. Copy `.env.example`
