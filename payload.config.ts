@@ -9,6 +9,7 @@ import { Admins } from '@/payload/collections/admins'
 import { CasePhotos } from '@/payload/collections/case-photos'
 import { StudentDocuments } from '@/payload/collections/student-documents'
 import { Settings } from '@/payload/globals/settings'
+import { storagePlugins } from '@/payload/storage'
 import {
   Cities,
   Stages,
@@ -73,6 +74,13 @@ export default buildConfig({
   ],
 
   globals: [Settings],
+
+  /**
+   * Empty until R2 is configured, in which case uploads keep going to the local
+   * disk — right in development, and silently destructive on Vercel, where the
+   * filesystem is thrown away minutes after a deploy. See `src/payload/storage.ts`.
+   */
+  plugins: storagePlugins(),
 
   editor: lexicalEditor(),
 

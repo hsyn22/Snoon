@@ -4,6 +4,7 @@ import { getPayload } from 'payload'
 import config from '@payload-config'
 import { canViewCasePhoto, getPhotoMediaId, type PhotoViewer } from '@/db/queries/case-photos'
 import { auth } from '@/lib/auth'
+import { readUpload } from '@/lib/storage/read-upload'
 
 /**
  * Serving an intraoral photograph.
@@ -82,11 +83,12 @@ export async function GET(
     const filename = thumbName ?? media?.filename
     if (!filename) return NextResponse.json({ ok: false }, { status: 404 })
 
-    const { readFile } = await import('node:fs/promises')
-    const { join } = await import('node:path')
-    const file = await readFile(join(process.cwd(), 'uploads/case-photos', filename))
+    // Local disk in development, the R2 bucket in production. The route does
+    // not know which, and must not: what it owns is the authorisation above.
+    const file = await readUpload('case-photos', filename)
+    if (!file) return NextResponse.json({ ok: false }, { status: 404 })
 
-    return new NextResponse(new Uint8Array(file), {
+    return new NextResponse(file, {
       headers: {
         'content-type': 'image/webp',
         // Cached by the browser that fetched it, never by a shared cache: the
