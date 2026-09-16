@@ -1377,4 +1377,34 @@ export const casePhotos = {
 
   patientLabel: 'صورك',
   studentLabel: 'صور الحالة',
+
+  /**
+   * The preview, and the small editor on it.
+   *
+   * سنون warns "do not photograph your face" and then used to accept whatever
+   * was picked without showing it back, which made the warning advice rather
+   * than something a patient could act on. Cropping is how a lip or a chin that
+   * crept into the frame comes out — a privacy control in the hands of the one
+   * person who can see the picture.
+   */
+  preview: {
+    /** Says what the preview is for, in the words of the warning above it. */
+    hint: 'شوف صورك قبل ما تدزها. تكدر تشيل أي وحدة، أو تقصها إذا طلع بيها شي ما تريده.',
+    /** Shown while the browser is shrinking the pictures. */
+    preparing: 'نحضّر الصور…',
+    remove: 'شيل',
+    removeOne: (index: number) => `شيل الصورة ${index}`,
+    rotate: 'دوّر',
+    rotateOne: (index: number) => `دوّر الصورة ${index}`,
+    crop: 'قص',
+    cropOne: (index: number) => `قص الصورة ${index}`,
+    alt: (index: number) => `الصورة ${index}`,
+
+    /** The crop editor, opened under the picture it belongs to. */
+    cropTitle: 'اسحب الأطراف حتى تختار الجزء الي تريد ترسله',
+    cropApply: 'خلص',
+    cropCancel: 'إلغاء',
+    cropReset: 'رجّع الصورة الأصلية',
+    edited: 'معدّلة',
+  },
 } as const

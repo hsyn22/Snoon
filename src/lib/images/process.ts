@@ -1,5 +1,5 @@
 import sharp from 'sharp'
-import { MAX_PHOTO_BYTES } from './limits'
+import { MAX_PHOTO_BYTES, MAX_PHOTO_DIMENSION as MAX_DIMENSION } from './limits'
 
 /**
  * Preparing an intraoral photograph for storage.
@@ -19,8 +19,9 @@ import { MAX_PHOTO_BYTES } from './limits'
  *    than any screen needs, and the median user is paying for the bytes.
  */
 
-/** Long edge. Enough to see a tooth; far less than a phone's native size. */
-const MAX_DIMENSION = 1600
+/* The long edge cap lives in ./limits: the browser resizes to the same number
+   before uploading, and two different caps would mean the patient either pays
+   for pixels this throws away or hands over less than it would have kept. */
 const WEBP_QUALITY = 78
 
 // The limits live in ./limits so the case form can apply the same ones without
@@ -31,6 +32,7 @@ export {
   MAX_PHOTOS_PER_CASE,
   MAX_PHOTO_BYTES,
   MAX_PHOTO_BYTES_TOTAL,
+  MAX_PHOTO_DIMENSION,
 } from './limits'
 
 export type ProcessedPhoto = {

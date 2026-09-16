@@ -1,14 +1,14 @@
 'use client'
 
-import { useActionState, useState } from 'react'
+import { useActionState } from 'react'
 import { useFormStatus } from 'react-dom'
 import { useDismissibleErrors } from '@/components/use-dismissible-errors'
 // From ./schema, not ./index: importing the Payload reader here would pull the
 // whole CMS into the browser bundle.
 import { WEEK_DAYS, type City, type TreatmentType } from '@/lib/config/schema'
 import Link from 'next/link'
-import { caseForm, casePhotos, guide } from '@/lib/copy'
-import { MAX_PHOTOS_PER_CASE, MAX_PHOTO_BYTES, MAX_PHOTO_BYTES_TOTAL } from '@/lib/images/limits'
+import { caseForm, guide } from '@/lib/copy'
+import { PhotoPicker } from '@/components/photo-picker'
 import {
   controlClass,
   FormSection,
@@ -57,18 +57,6 @@ function SubmitButton() {
   )
 }
 
-/** The same rules the server applies, so the browser can say no first. */
-function describePhotoSelection(files: File[]): string | null {
-  if (files.length > MAX_PHOTOS_PER_CASE) return casePhotos.errors.tooMany
-  if (files.some((file) => file.size > MAX_PHOTO_BYTES)) return casePhotos.errors.tooLarge
-
-  const total = files.reduce((sum, file) => sum + file.size, 0)
-  if (total > MAX_PHOTO_BYTES_TOTAL) return casePhotos.errors.tooLargeTotal
-
-  return null
-}
-
-
 export function CaseForm({
   cities,
   treatmentTypes,
@@ -80,10 +68,6 @@ export function CaseForm({
   preselected?: readonly string[]
 }) {
   const [state, formAction] = useActionState(submitCaseAction, INITIAL)
-  // A photograph problem the browser caught, before anything was uploaded.
-  const [photoError, setPhotoError] = useState<string | null>(null)
-  // The styled label has to say what the hidden input holds.
-  const [photoCount, setPhotoCount] = useState(0)
   const errors = state.errors ?? {}
   // Clear a field's error as soon as it is edited.
   const { onInput, errorFor } = useDismissibleErrors(state)
@@ -247,57 +231,7 @@ export function CaseForm({
 
       <FormSection title={caseForm.sectionExtra}>
 
-      <div>
-        <label htmlFor="photos" className={labelClass}>
-          {casePhotos.label}
-        </label>
-        <p className={hintClass}>{casePhotos.hint}</p>
-        {/* The guide requires this warning, in Arabic, on the upload itself. */}
-        <p className="mt-2 text-sm font-medium text-warning">{casePhotos.faceWarning}</p>
-        {/* The native control renders its own English, left-to-right button
-            that cannot be translated or restyled. It is kept — it is the thing
-            that actually opens the picker, and it stays reachable by keyboard
-            and screen reader — but visually hidden behind a label that acts as
-            the button. */}
-        <label
-          htmlFor="photos"
-          className="mt-2 flex min-h-12 cursor-pointer items-center justify-center rounded-md border border-dashed border-border bg-surface-muted px-4 text-sm font-medium"
-        >
-          {photoCount === 0
-            ? casePhotos.choose
-            : photoCount === 1
-              ? casePhotos.chosenOne
-              : casePhotos.chosen(photoCount)}
-        </label>
-        <input
-          id="photos"
-          name="photos"
-          type="file"
-          accept="image/*"
-          multiple
-          // capture is deliberately omitted: on a phone this offers both the
-          // camera and the gallery, and a patient may already have a photo.
-          className="sr-only"
-          onChange={(event) => {
-            // Checked here as well as on the server, because the server never
-            // gets to answer: a request over the action's body limit is refused
-            // before the action runs, and the patient loses the whole form to an
-            // English error. On a slow connection this also saves them from
-            // uploading megabytes that were going to be rejected.
-            const files = Array.from(event.target.files ?? [])
-            const problem = describePhotoSelection(files)
-            setPhotoError(problem)
-            if (problem) event.target.value = ''
-            setPhotoCount(problem ? 0 : files.length)
-          }}
-        />
-        <p className="mt-2 text-xs text-foreground-muted">{casePhotos.privacy}</p>
-        {photoError || state.photoError ? (
-          <p role="alert" className="mt-2 text-sm text-danger">
-            {photoError ?? state.photoError}
-          </p>
-        ) : null}
-      </div>
+      <PhotoPicker serverError={state.photoError} />
 
       <div>
         <label htmlFor="notes" className={labelClass}>

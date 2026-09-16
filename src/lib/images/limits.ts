@@ -22,5 +22,15 @@ export const MAX_PHOTOS_PER_CASE = 4
  */
 export const MAX_PHOTO_BYTES_TOTAL = MAX_PHOTO_BYTES * MAX_PHOTOS_PER_CASE
 
+/**
+ * The long edge every stored photograph is capped at.
+ *
+ * Here rather than beside sharp because the browser now resizes to the same
+ * number before uploading. Two different caps would mean either the patient
+ * pays to upload pixels the server throws away, or the browser hands over
+ * something smaller than the server would have kept.
+ */
+export const MAX_PHOTO_DIMENSION = 1600
+
 /** What a browser may hand us. Checked again by decoding, not just believed. */
 export const ACCEPTED_PHOTO_TYPES = ['image/jpeg', 'image/png', 'image/webp', 'image/heic'] as const

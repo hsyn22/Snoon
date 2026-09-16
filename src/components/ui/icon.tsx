@@ -215,3 +215,32 @@ export function ClinicIcon({ className }: IconProps) {
     </Svg>
   )
 }
+
+/* The photograph preview's three controls. Each sits beside its Arabic word
+   rather than replacing it: a bare icon on a destructive action is a guess. */
+
+export function CloseIcon({ className }: IconProps) {
+  return (
+    <Svg className={className}>
+      <path d="M6 6l12 12M18 6L6 18" />
+    </Svg>
+  )
+}
+
+export function RotateIcon({ className }: IconProps) {
+  return (
+    <Svg className={className}>
+      <path d="M20 12a8 8 0 1 1-2.6-5.9" />
+      <path d="M20 3v4h-4" />
+    </Svg>
+  )
+}
+
+export function CropIcon({ className }: IconProps) {
+  return (
+    <Svg className={className}>
+      <path d="M6 2v14a2 2 0 0 0 2 2h14" />
+      <path d="M2 6h14a2 2 0 0 1 2 2v14" />
+    </Svg>
+  )
+}

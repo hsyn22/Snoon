@@ -596,6 +596,44 @@ anything.
   The row is kept and marked rather than removed, so a case that had photographs is
   distinguishable from one that never did.
 
+**The patient sees the photograph before it is sent** — `src/components/photo-picker.tsx`
+and `src/lib/images/edit.ts`. The form warned "لا تصوّر وجهك" and then accepted whatever was
+picked without showing it back, which made the warning advice rather than something anybody
+could act on. Now each photograph appears as a thumbnail with three controls: remove, rotate
+a quarter turn, and crop. **Cropping is a privacy control, not a convenience** — it is how a
+lip or a chin that crept into the frame comes out, decided by the one person who can see the
+picture.
+
+Five things about it, and the first two are the ones a later change would break:
+
+- **It is an enhancement over a control that already worked.** The real
+  `<input type="file" name="photos">` is still there and is still what the form posts; the
+  edited files are written back into it with `DataTransfer`. With JavaScript off, or on a
+  browser without `DataTransfer`, the originals go up exactly as before. `canEditPhotos()` is
+  read through `useSyncExternalStore` with a server snapshot of `false`, so the markup React
+  sends is the plain control. Verified with `javaScriptEnabled: false`: the input is present
+  and no preview markup is.
+- **It never replaces the server's processing and must not be made to.** `processCasePhoto`
+  still decodes, re-encodes and strips metadata, because everything here runs on a machine we
+  do not control and a hand-built request skips it entirely. The browser's work is a saving
+  and a choice, never a check. Every failure — a phone that cannot decode its own HEIC, a
+  canvas the browser refuses to encode — falls back to the original file. An editor is the
+  last thing that may stop somebody submitting a case.
+- **It makes the upload dramatically cheaper, which is the second reason it is worth the
+  code.** The browser resizes to `MAX_PHOTO_DIMENSION`, the same long edge the server keeps,
+  so nothing is lost that was ever going to be stored — but at 400kbps a 12MB photograph is
+  roughly four minutes and the WebP that leaves instead is a few hundred kilobytes. Measured
+  on a 2400×1200 source: 27KB in, 5.4KB out at 1600×800. The cap therefore lives in
+  `limits.ts` rather than beside sharp; two different caps would mean the patient pays to
+  upload pixels the server throws away.
+- **Edits always apply to the original, never to the last result.** Four rotations return to
+  where they started rather than to a fourth generation of re-encoding.
+- **The crop frame is the one place in سنون that sets `dir="ltr"`, and it is right.** A
+  photograph has no reading direction: the crop's x is measured from the picture's own left
+  edge, which is where the canvas reads it and where `clientX` grows from. Left RTL,
+  `inset-inline-start` would mean the right edge and mirror every crop against the image it
+  was drawn on.
+
 **Contact data.** Phone numbers are the most sensitive field in the system. They exist to be
 shown to exactly one student. Do not log them, do not put them in error messages, do not
 include them in any list endpoint.
