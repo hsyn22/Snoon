@@ -60,37 +60,26 @@ export const Cities: CollectionConfig = {
 }
 
 export const Universities: CollectionConfig = {
+  /*
+   * A university *is* its dental college, and there is no separate collection
+   * for one.
+   *
+   * سنون had both, and a student picked a college. Haider's correction is that
+   * every Iraqi university has exactly one dental college, so the college
+   * carried no information the university did not — and the "clinics" inside it
+   * (operative, surgery, prosthetics) are departments every student rotates
+   * through, not something anybody belongs to. Asking a student to pick one was
+   * asking a question with no answer, and the empty list was what blocked the
+   * first real sign-up.
+   */
   slug: 'universities',
-  labels: { singular: 'جامعة', plural: 'الجامعات' },
+  labels: { singular: 'جامعة (كلية طب أسنان)', plural: 'الجامعات' },
   admin: { useAsTitle: 'nameAr', defaultColumns: ['nameAr', 'city', 'active'], group: 'الإعدادات' },
   access: { read: () => true },
   fields: [
     nameArField,
     slugField,
     { name: 'city', type: 'relationship', relationTo: 'cities', required: true, label: 'المدينة' },
-    activeField,
-  ],
-}
-
-export const Colleges: CollectionConfig = {
-  slug: 'colleges',
-  labels: { singular: 'كلية / عيادة', plural: 'الكليات والعيادات' },
-  admin: {
-    useAsTitle: 'nameAr',
-    defaultColumns: ['nameAr', 'university', 'active'],
-    group: 'الإعدادات',
-  },
-  access: { read: () => true },
-  fields: [
-    nameArField,
-    slugField,
-    {
-      name: 'university',
-      type: 'relationship',
-      relationTo: 'universities',
-      required: true,
-      label: 'الجامعة',
-    },
     activeField,
   ],
 }
@@ -147,9 +136,10 @@ export const StageCapabilities: CollectionConfig = {
   labels: { singular: 'صلاحية مرحلة', plural: 'صلاحيات المراحل' },
   admin: {
     useAsTitle: 'label',
-    defaultColumns: ['college', 'stage', 'treatmentTypes'],
+    defaultColumns: ['university', 'stage', 'treatmentTypes'],
     group: 'الإعدادات',
-    description: 'شنو تكدر تعالج كل مرحلة بكل عيادة. هذا يحدد شنو يشوف الطالب.',
+    description:
+      'استثناء: شنو تكدر تعالج مرحلة معيّنة بجامعة معيّنة. اتركها فارغة إلا إذا الجامعة تختلف فعلاً عن الباقي — بدونها تنطبق صلاحيات المرحلة الافتراضية.',
   },
   access: { read: () => true },
   fields: [
@@ -159,15 +149,32 @@ export const StageCapabilities: CollectionConfig = {
       admin: { hidden: true },
       hooks: {
         // A readable title in listings, since the row is really a pair of relations.
-        beforeChange: [({ siblingData }) => `${siblingData.college ?? '—'} / ${siblingData.stage ?? '—'}`],
+        beforeChange: [
+          ({ siblingData }) => `${siblingData.university ?? '—'} / ${siblingData.stage ?? '—'}`,
+        ],
       },
     },
+    /*
+     * The exception mechanism, deliberately left empty.
+     *
+     * Haider: a few universities — mostly in the north and Kurdistan — are said
+     * to differ, letting students onto real patients earlier and possibly
+     * allowing molar endodontics, which the rest of Iraq does not. He is not
+     * certain of either, so **no row is seeded for them.** What exists is the
+     * shape: if students from one university turn up in numbers and say their
+     * stage may do something the default forbids, it is one row here and no
+     * deployment.
+     *
+     * An earlier stage works the same way: add the stage with empty defaults —
+     * "what it can do anywhere" is genuinely nothing — and grant it here for the
+     * one university that allows it.
+     */
     {
-      name: 'college',
+      name: 'university',
       type: 'relationship',
-      relationTo: 'colleges',
+      relationTo: 'universities',
       required: true,
-      label: 'الكلية / العيادة',
+      label: 'الجامعة',
     },
     { name: 'stage', type: 'relationship', relationTo: 'stages', required: true, label: 'المرحلة' },
     {

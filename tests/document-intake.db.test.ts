@@ -30,7 +30,6 @@ describe.skipIf(!hasDatabase)('verification document intake', async () => {
         authUserId: `doc-${crypto.randomUUID()}`,
         fullName: 'طالب',
         universityId: 'u',
-        collegeId: 'c',
         stageId: 'stage-4',
         verificationStatus: status,
         verificationReviewedBy: status === 'REJECTED' ? 'admin@example.com' : null,

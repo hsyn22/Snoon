@@ -1,9 +1,9 @@
 'use client'
 
-import { useActionState, useState } from 'react'
+import { useActionState } from 'react'
 import { useFormStatus } from 'react-dom'
 import { useDismissibleErrors } from '@/components/use-dismissible-errors'
-import { WEEK_DAYS, type College, type Stage, type University } from '@/lib/config/schema'
+import { WEEK_DAYS, type Stage, type University } from '@/lib/config/schema'
 import { caseForm, studentProfile } from '@/lib/copy'
 import { submitProfileAction, type ProfileFormState } from './actions'
 import { buttonClass } from '@/components/ui/button'
@@ -35,11 +35,9 @@ function SubmitButton() {
 
 export function ProfileForm({
   universities,
-  colleges,
   stages,
 }: {
   universities: readonly University[]
-  colleges: readonly College[]
   stages: readonly Stage[]
 }) {
   const [state, formAction] = useActionState(submitProfileAction, INITIAL)
@@ -47,11 +45,6 @@ export function ProfileForm({
   // Clear a field's error as soon as it is edited.
   const { onInput, errorFor } = useDismissibleErrors(state)
 
-  // The college list depends on the chosen university, so this one field is
-  // stateful rather than uncontrolled — picking a university has to narrow it
-  // immediately, before any round trip.
-  const [universityId, setUniversityId] = useState(state.values?.universityId ?? '')
-  const visibleColleges = colleges.filter((college) => college.universityId === universityId)
 
   return (
     <form action={formAction} onInput={onInput} className="space-y-5" noValidate>
@@ -60,11 +53,15 @@ export function ProfileForm({
           <label htmlFor="universityId" className={labelClass}>
             {studentProfile.universityLabel}
           </label>
+          {/* Uncontrolled again. It was stateful only to narrow the college
+              list as you picked, and there is no college list any more — so it
+              follows the same `defaultValue` + `key` rule as every other select
+              here, which is what keeps a rejected form from emptying itself. */}
           <select
             id="universityId"
             name="universityId"
-            value={universityId}
-            onChange={(event) => setUniversityId(event.target.value)}
+            key={`university-${state.values?.universityId ?? ''}`}
+            defaultValue={state.values?.universityId ?? ''}
             className={controlClass}
             aria-invalid={Boolean(errors.universityId)}
             aria-describedby={errors.universityId ? 'universityId-error' : undefined}
@@ -79,35 +76,6 @@ export function ProfileForm({
             ))}
           </select>
           <FieldError id="universityId-error" message={errorFor('universityId', errors.universityId)} />
-        </div>
-
-        <div>
-          <label htmlFor="collegeId" className={labelClass}>
-            {studentProfile.collegeLabel}
-          </label>
-          {universityId === '' ? <p className={hintClass}>{studentProfile.collegeHint}</p> : null}
-          <select
-            id="collegeId"
-            name="collegeId"
-            // Remounts when the university changes so the previous university's
-            // college cannot stay selected and be submitted.
-            key={`college-${universityId}`}
-            defaultValue={state.values?.collegeId ?? ''}
-            disabled={universityId === ''}
-            className={`${controlClass} disabled:opacity-60`}
-            aria-invalid={Boolean(errors.collegeId)}
-            aria-describedby={errors.collegeId ? 'collegeId-error' : undefined}
-          >
-            <option value="" disabled>
-              {studentProfile.collegePlaceholder}
-            </option>
-            {visibleColleges.map((college) => (
-              <option key={college.id} value={college.id}>
-                {college.nameAr}
-              </option>
-            ))}
-          </select>
-          <FieldError id="collegeId-error" message={errorFor('collegeId', errors.collegeId)} />
         </div>
 
         <div>

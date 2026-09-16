@@ -293,9 +293,16 @@ export const students = snoon.table(
 
     fullName: text('full_name').notNull(),
 
-    /** Stable IDs into Payload-managed configuration, as on cases. */
+    /**
+     * Stable IDs into Payload-managed configuration, as on cases.
+     *
+     * **There is no college here, and there was.** Every Iraqi university has
+     * exactly one dental college, so the column carried nothing the university
+     * did not; the "clinics" inside it are departments every student rotates
+     * through, not somewhere anybody belongs. The queue's city now comes from
+     * the university directly rather than through a second hop.
+     */
     universityId: text('university_id').notNull(),
-    collegeId: text('college_id').notNull(),
     stageId: text('stage_id').notNull(),
 
     /**
@@ -331,7 +338,10 @@ export const students = snoon.table(
     uniqueIndex('students_auth_user_id_key').on(table.authUserId),
     // The student-facing queue is filtered by verification first, then by where
     // the student actually studies.
-    index('students_verification_college_idx').on(table.verificationStatus, table.collegeId),
+    index('students_verification_university_idx').on(
+      table.verificationStatus,
+      table.universityId,
+    ),
   ],
 )
 

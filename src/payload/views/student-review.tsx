@@ -4,7 +4,7 @@ import { getPayload } from 'payload'
 import config from '@payload-config'
 import { db } from '@/db'
 import { students } from '@/db/schema'
-import { getColleges, getStages, getUniversities } from '@/lib/config'
+import { getStages, getUniversities } from '@/lib/config'
 import { decideStudentVerification } from './student-review-actions'
 
 /**
@@ -49,9 +49,8 @@ export default async function StudentReviewView() {
 
   // Students store slugs; an admin should read names. Falls back to the slug so a
   // student attached to a since-deleted college still shows something.
-  const [universities, colleges, stages] = await Promise.all([
+  const [universities, stages] = await Promise.all([
     getUniversities(),
-    getColleges(),
     getStages(),
   ])
   const nameOf = (list: readonly { id: string; nameAr: string }[], id: string) =>
@@ -62,7 +61,6 @@ export default async function StudentReviewView() {
       id: students.id,
       fullName: students.fullName,
       universityId: students.universityId,
-      collegeId: students.collegeId,
       stageId: students.stageId,
       verificationStatus: students.verificationStatus,
       verificationDocumentPath: students.verificationDocumentPath,
@@ -145,8 +143,6 @@ export default async function StudentReviewView() {
               >
                 <dt style={{ opacity: 0.7 }}>الجامعة</dt>
                 <dd style={{ margin: 0 }}>{nameOf(universities, row.universityId)}</dd>
-                <dt style={{ opacity: 0.7 }}>الكلية</dt>
-                <dd style={{ margin: 0 }}>{nameOf(colleges, row.collegeId)}</dd>
                 <dt style={{ opacity: 0.7 }}>المرحلة</dt>
                 <dd style={{ margin: 0 }}>{nameOf(stages, row.stageId)}</dd>
                 {row.verificationReviewedBy ? (

@@ -14,7 +14,6 @@ import { decideStuckContactAction } from './stuck-contact-actions'
 import {
   getAllCities,
   getAllTreatmentTypes,
-  getColleges,
   getStages,
   getUniversities,
 } from '@/lib/config'
@@ -134,11 +133,10 @@ export default async function CaseLookupView({
   const query = (Array.isArray(rawQuery) ? rawQuery[0] : rawQuery)?.trim() ?? ''
   const normalised = query ? normaliseReferenceCode(query) : null
 
-  const [cities, treatments, universities, colleges, stages] = await Promise.all([
+  const [cities, treatments, universities, stages] = await Promise.all([
     getAllCities(),
     getAllTreatmentTypes(),
     getUniversities(),
-    getColleges(),
     getStages(),
   ])
 
@@ -213,7 +211,6 @@ export default async function CaseLookupView({
           cities={cities}
           treatments={treatments}
           universities={universities}
-          colleges={colleges}
           stages={stages}
         />
       ) : (
@@ -435,7 +432,6 @@ function CaseDetail({
   cities,
   treatments,
   universities,
-  colleges,
   stages,
 }: {
   record: AdminCaseView
@@ -443,7 +439,6 @@ function CaseDetail({
   cities: readonly { id: string; nameAr: string }[]
   treatments: readonly { id: string; nameAr: string }[]
   universities: readonly { id: string; nameAr: string }[]
-  colleges: readonly { id: string; nameAr: string }[]
   stages: readonly { id: string; nameAr: string }[]
 }) {
   const liveAppointment = record.appointments.find((row) => row.supersededAt === null)
@@ -571,8 +566,7 @@ function CaseDetail({
                   }}
                 >
                   <Field label="الجامعة">
-                    {nameOf(universities, claim.studentUniversityId)} —{' '}
-                    {nameOf(colleges, claim.studentCollegeId)}
+                    {nameOf(universities, claim.studentUniversityId)}
                   </Field>
                   <Field label="المرحلة">{nameOf(stages, claim.studentStageId)}</Field>
                   <Field label="وقت الحجز">{formatCaseDateTime(claim.createdAt)}</Field>

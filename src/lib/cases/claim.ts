@@ -50,7 +50,7 @@ export async function claimCaseForStudent(
 ): Promise<StudentClaimResult> {
   const [profile] = await db
     .select({
-      collegeId: students.collegeId,
+      universityId: students.universityId,
       stageId: students.stageId,
       clinicDays: students.clinicDays,
     })
@@ -60,7 +60,7 @@ export async function claimCaseForStudent(
 
   if (!profile) return { ok: false, reason: 'STUDENT_NOT_VERIFIED' }
 
-  const scope = await getStudentCaseScope(profile.collegeId, profile.stageId)
+  const scope = await getStudentCaseScope(profile.universityId, profile.stageId)
   if (scope.cityIds.length === 0 || scope.treatmentTypeIds.length === 0) {
     return { ok: false, reason: 'NOT_IN_SCOPE' }
   }

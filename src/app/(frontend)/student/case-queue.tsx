@@ -29,17 +29,17 @@ import { AskDaysButton } from './ask-days-button'
  */
 export async function CaseQueue({
   studentId,
-  collegeId,
+  universityId,
   stageId,
   clinicDays,
 }: {
   studentId: string
-  collegeId: string
+  universityId: string
   stageId: string
   /** Empty means "any day" — every student recorded before clinic days existed. */
   clinicDays: readonly string[]
 }) {
-  const scope = await getStudentCaseScope(collegeId, stageId)
+  const scope = await getStudentCaseScope(universityId, stageId)
 
   if (scope.cityIds.length === 0 || scope.treatmentTypeIds.length === 0) {
     return (

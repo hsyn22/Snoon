@@ -800,9 +800,6 @@ export const studentProfile = {
   universityLabel: 'الجامعة',
   universityPlaceholder: 'اختر جامعتك',
 
-  collegeLabel: 'الكلية / العيادة',
-  collegePlaceholder: 'اختر كليتك',
-  collegeHint: 'اختر الجامعة أول.',
 
   clinicDaysLabel: 'أيام دوامك بالعيادة',
   clinicDaysHint:
@@ -821,13 +818,15 @@ export const studentProfile = {
   /**
    * The form is closed because Payload has nothing to fill it with.
    *
-   * **It now says which of the three is missing**, and that is the whole point
-   * of the change. It used to say "universities and colleges are not added yet"
-   * whichever one was actually absent, so Haider — who had added a university
-   * and not a college — read it as the site ignoring what he had entered, with
-   * nothing on the page to tell him otherwise. That is the same failure this
-   * project already warns about for cities: an admin who adds a thing and sees
-   * no change reasonably concludes the admin panel is broken.
+   * **It says which list is empty**, and that is the whole point of it. It used
+   * to say "universities and colleges are not added yet" whichever one was
+   * actually absent, so Haider — who had added a university and not a college —
+   * read it as the site ignoring what he had entered. That is the same failure
+   * this project already warns about for cities: an admin who adds a thing and
+   * sees no change reasonably concludes the admin panel is broken.
+   *
+   * The college is gone now, which removes the case that caused it. Two lists
+   * can still be empty, so the message stays.
    *
    * The wording stays truthful for a student to read. It names a list that is
    * empty, which is a fact about سنون, not internal detail about anybody.
@@ -835,15 +834,11 @@ export const studentProfile = {
   notReadyTitle: 'لسه ما نكدر نكمل',
   notReadyBody: 'راجعنا بعدين.',
   notReadyUniversities: 'ما مضافة أي جامعة لحد هسه.',
-  notReadyColleges: 'أكو جامعات، بس ما مضافة أي كلية أو عيادة إلها.',
   notReadyStages: 'ما مضافة أي مرحلة دراسية لحد هسه.',
 
   errors: {
     universityRequired: 'اختر جامعتك.',
     universityUnknown: 'هاي الجامعة مو متوفرة.',
-    collegeRequired: 'اختر كليتك.',
-    collegeUnknown: 'هاي الكلية مو متوفرة.',
-    collegeMismatch: 'الكلية هاي مو تابعة للجامعة اللي اخترتها.',
     stageRequired: 'اختر مرحلتك.',
     stageUnknown: 'هاي المرحلة مو متوفرة.',
     documentRequired: 'ارفع وثيقة التسجيل.',

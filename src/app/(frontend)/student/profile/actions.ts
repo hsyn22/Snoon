@@ -8,7 +8,7 @@ import config from '@payload-config'
 import { db } from '@/db'
 import { students } from '@/db/schema'
 import { auth } from '@/lib/auth'
-import { getColleges, getStages, getUniversities } from '@/lib/config'
+import { getStages, getUniversities } from '@/lib/config'
 import { studentProfile } from '@/lib/copy'
 import { validateProfile, type ProfileFieldErrors } from '@/lib/students/validation'
 
@@ -18,7 +18,6 @@ export type ProfileFormState = {
   /** Handed back so a rejected submission does not empty the form. */
   values?: {
     universityId?: string
-    collegeId?: string
     stageId?: string
     clinicDays?: string[]
   }
@@ -38,7 +37,6 @@ export async function submitProfileAction(
 
   const fields = {
     universityId: read(formData, 'universityId'),
-    collegeId: read(formData, 'collegeId'),
     stageId: read(formData, 'stageId'),
     clinicDays: formData.getAll('clinicDays').map(String),
   }
@@ -46,15 +44,14 @@ export async function submitProfileAction(
   const document = formData.get('document')
   const file = document instanceof File ? document : null
 
-  const [universities, colleges, stages] = await Promise.all([
+  const [universities, stages] = await Promise.all([
     getUniversities(),
-    getColleges(),
     getStages(),
   ])
 
   const validated = validateProfile(
     fields,
-    { universities, colleges, stages },
+    { universities, stages },
     file ? { size: file.size, type: file.type } : null,
   )
 
@@ -96,7 +93,6 @@ export async function submitProfileAction(
       authUserId: session.user.id,
       fullName: session.user.name,
       universityId: validated.value.universityId,
-      collegeId: validated.value.collegeId,
       stageId: validated.value.stageId,
       clinicDays: validated.value.clinicDays,
       verificationStatus: 'PENDING',

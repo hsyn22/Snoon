@@ -45,7 +45,6 @@ describe.skipIf(!hasDatabase)('scheduled jobs', async () => {
         authUserId: `sched-${crypto.randomUUID()}`,
         fullName: 'طالب',
         universityId: 'u',
-        collegeId: 'c',
         stageId: 'stage-4',
         verificationStatus: 'VERIFIED',
       })

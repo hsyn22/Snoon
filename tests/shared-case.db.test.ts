@@ -63,7 +63,6 @@ describe.skipIf(!hasDatabase)('a case needing two stages', async () => {
         authUserId: `test-${crypto.randomUUID()}`,
         fullName: stageId === 'stage-4' ? 'طالب رابع' : 'طالب خامس',
         universityId: 'test-university',
-        collegeId: 'test-college',
         stageId,
         verificationStatus: 'VERIFIED',
       })

@@ -26,13 +26,6 @@ export type University = {
   cityId: string
 }
 
-export type College = {
-  id: string
-  nameAr: string
-  /** Slug of the parent university. */
-  universityId: string
-}
-
 export type Stage = {
   id: string
   nameAr: string

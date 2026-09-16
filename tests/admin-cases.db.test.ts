@@ -51,7 +51,6 @@ describe.skipIf(!hasDatabase)('admin case lookup', async () => {
         authUserId: `test-${crypto.randomUUID()}`,
         fullName: 'طالب تجريبي',
         universityId: 'test-university',
-        collegeId: 'test-college',
         stageId: 'stage-4',
         verificationStatus: 'VERIFIED',
       })

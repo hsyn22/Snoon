@@ -108,12 +108,12 @@ This is the core architectural decision and it maps unusually well onto this pro
 to change without a deployment:
 
 - cities
-- universities and their colleges/clinics
+- universities — **which are the dental colleges**; see below
 - academic stages (4th year, 5th year, …)
 - treatment types
 - clinic schedules (which stage, which days, which hours, at which clinic)
-- treatment capability per stage per clinic — **this now decides what a student can see**,
-  not merely what they may do, so an incomplete mapping silently hides cases
+- treatment capability per stage per **university**, which is an exception and is expected to
+  stay empty — see "A university is its dental college" below
 - static pages, FAQ, announcements, Arabic copy blocks
 
 **Drizzle owns transactional and user-generated data** — the things with invariants:
@@ -167,14 +167,14 @@ Query nothing until the caller is known. The same applies to server actions reac
 such a view: being rendered inside the admin proves nothing about who calls the action.
 
 **A screen that is empty because Payload is empty has to say which list is empty.** The
-student profile form refuses to render until universities, colleges *and* stages all exist,
-and it used to say "universities and colleges are not added yet" whichever one was missing.
-Haider added a university, saw the same sentence, and reasonably read it as the site ignoring
-what he had entered — the college was the missing one. It names the specific list now, and
-universities are named before colleges because a college cannot exist without one, so naming
-the deeper gap sends somebody to fix the wrong end. This is the same failure the paragraph
-below describes for cities, and it will keep recurring wherever a screen depends on config an
-admin enters: **"not ready" is never a sufficient message to somebody who can fix it.**
+student profile form refuses to render until its config exists, and it used to say
+"universities and colleges are not added yet" whichever one was missing. Haider added a
+university, saw the same sentence, and reasonably read it as the site ignoring what he had
+entered — the college was the missing one, and the college turned out not to be a real thing
+at all. Both were fixed: the message names the specific list, and the college is gone. This
+is the same failure the paragraph below describes for cities, and it will keep recurring
+wherever a screen depends on config an admin enters: **"not ready" is never a sufficient
+message to somebody who can fix it.**
 
 Any page rendering Payload config needs **both** a time-based `revalidate` and an
 `afterChange`/`afterDelete` hook calling `revalidatePath`. Without the hook an admin who
@@ -194,9 +194,44 @@ clinic sessions run in the morning, so there is no time-of-day question, and Fri
 offered because it is always a holiday. Session times belong to the Payload-managed clinic
 schedule, not to a patient's case.
 
-A **student** belongs to a university, a college/clinic and a stage, and has a verification
-status. A verified student sees cases that match their clinic's location and their stage's
-treatment capability, and may **claim** one.
+A **student** belongs to a university and a stage, and has a verification status. A verified
+student sees cases that match their university's city and their stage's treatment capability,
+and may **claim** one.
+
+### A university is its dental college, and exceptions hang off the university
+
+سنون had `universities` *and* `colleges`, and a student picked both. Haider's correction, and
+it is a fact about Iraq rather than a preference: **every university has exactly one dental
+college**, so the college carried no information the university did not — and the "clinics"
+inside it (operative, surgery, prosthetics) are departments every student rotates through,
+not somewhere anybody belongs. Asking a student which one they were at was asking a question
+with no answer.
+
+It was not merely redundant. The empty college list is what blocked the first real sign-up:
+Haider added a university, the form still refused, and the message named the wrong thing.
+
+So the `colleges` collection is gone, `students.college_id` is dropped, and the queue's city
+comes from the university in one hop instead of two.
+
+**The exception mechanism survives, re-keyed to the university, and is deliberately empty.**
+Haider: a few universities — mostly the north and Kurdistan — are said to differ, putting
+students onto real patients earlier and possibly allowing molar endodontics that the rest of
+Iraq forbids. **He is not certain of either, so nothing is seeded for them.** What exists is
+the shape: a `stage-capabilities` row naming a university and a stage overrides that stage's
+defaults there, and adding one is an admin action with no deployment. His instruction was
+exactly this — keep the door open, walk through it only if students from one university turn
+up in numbers and ask.
+
+An *earlier stage* works through the same door and is worth writing down because it is not
+obvious: add the stage with an **empty** default list — "what it can do anywhere" is
+genuinely nothing — then grant it in `stage-capabilities` for the one university that allows
+it. No student anywhere else can pick it into anything.
+
+`payload migrate:create` prompts before a destructive change and needs a TTY, which a
+non-interactive shell does not have, so `20260916_090000_university_is_the_college.ts` is
+written by hand. It drops the capability rows rather than mapping them across: there were
+none in production, and inventing a university for a row whose college is about to stop
+existing would be guessing at data nobody entered.
 
 A **claim** binds one student to one case. On successful claim — and only then — the
 student can see the patient's contact details and is expected to make contact.
@@ -299,11 +334,12 @@ deliberate *removal* of a default comes back on the next seed, which is the righ
 `defaultTreatmentTypes` is what a stage can do anywhere, and a clinic that genuinely differs
 gets its own `stage-capabilities` row, which the seed never touches.
 
-**Capability falls back to the stage's default.** `stage-capabilities` still holds per-clinic
-rows for clinics that genuinely differ, but an absent row now means "whatever this stage can
-do anywhere" rather than "nothing". Without that, adding a college hid every case from its
-students until someone filled in the whole matrix by hand — and the symptom is an empty
-queue, which reads as "no patients" rather than as a missing row.
+**Capability falls back to the stage's default.** `stage-capabilities` holds per-university
+rows for the places that genuinely differ, but an absent row means "whatever this stage can do
+anywhere" rather than "nothing". Without that, adding a university would hide every case from
+its students until someone filled in the whole matrix by hand — and the symptom is an empty
+queue, which reads as "no patients" rather than as a missing row. The overwhelming majority of
+students take the fallback path, and that is the design rather than an accident.
 
 ### Days, and asking about a day the patient did not pick
 

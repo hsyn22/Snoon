@@ -58,7 +58,7 @@ export async function notifyStudentsOfNewCase(caseId: string): Promise<number> {
   const candidates = await db
     .select({
       id: students.id,
-      collegeId: students.collegeId,
+      universityId: students.universityId,
       stageId: students.stageId,
     })
     .from(students)
@@ -87,7 +87,7 @@ export async function notifyStudentsOfNewCase(caseId: string): Promise<number> {
   // a college and stage cost one lookup between them.
   let sent = 0
   for (const student of candidates) {
-    const scope = await getStudentCaseScope(student.collegeId, student.stageId)
+    const scope = await getStudentCaseScope(student.universityId, student.stageId)
     if (scope.cityIds.length === 0 || scope.treatmentTypeIds.length === 0) continue
 
     const [visible] = await listOpenCasesForStudent(student.id, {

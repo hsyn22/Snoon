@@ -200,7 +200,6 @@ describe.skipIf(!hasDatabase)('telegram links', async () => {
           authUserId: `tg-${crypto.randomUUID()}`,
           fullName: 'طالب',
           universityId: 'u',
-          collegeId: 'c',
           stageId: 'stage-4',
           verificationStatus: 'VERIFIED',
         })

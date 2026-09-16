@@ -12,10 +12,6 @@ const PLACES: ProfilePlaces = {
     { id: 'uni-a', nameAr: 'جامعة أ', cityId: 'basra' },
     { id: 'uni-b', nameAr: 'جامعة ب', cityId: 'najaf' },
   ],
-  colleges: [
-    { id: 'college-a', nameAr: 'كلية أ', universityId: 'uni-a' },
-    { id: 'college-b', nameAr: 'كلية ب', universityId: 'uni-b' },
-  ],
   stages: [
     { id: 'stage-4', nameAr: 'المرحلة الرابعة', order: 4 },
     { id: 'stage-5', nameAr: 'المرحلة الخامسة', order: 5 },
@@ -27,7 +23,6 @@ const GOOD_DOC = { size: 1024, type: 'image/jpeg' }
 function fields(overrides: Partial<ProfileFields> = {}): ProfileFields {
   return {
     universityId: 'uni-a',
-    collegeId: 'college-a',
     stageId: 'stage-4',
     clinicDays: ['sun', 'tue'],
     ...overrides,
@@ -35,40 +30,22 @@ function fields(overrides: Partial<ProfileFields> = {}): ProfileFields {
 }
 
 describe('validateProfile', () => {
-  it('accepts a matching university, college and stage', () => {
+  it('accepts a university and a stage', () => {
     const result = validateProfile(fields(), PLACES, GOOD_DOC)
     expect(result.ok).toBe(true)
   })
 
-  describe('the college must belong to the chosen university', () => {
-    it('rejects a college from a different university', () => {
-      // The browser can post any pair. Accepting this would place the student at
-      // a clinic they do not attend — and the case queue is filtered by exactly
-      // that, so it would decide which patients they can see.
-      const result = validateProfile(
-        fields({ universityId: 'uni-a', collegeId: 'college-b' }),
-        PLACES,
-        GOOD_DOC,
-      )
-      expect(result.ok).toBe(false)
-      if (!result.ok) expect(result.errors.collegeId).toBe(studentProfile.errors.collegeMismatch)
-    })
-
-    it('accepts each college with its own university', () => {
-      for (const [universityId, collegeId] of [
-        ['uni-a', 'college-a'],
-        ['uni-b', 'college-b'],
-      ] as const) {
-        expect(validateProfile(fields({ universityId, collegeId }), PLACES, GOOD_DOC).ok).toBe(true)
-      }
-    })
-  })
+  /*
+   * The college is gone, and with it the pairing rule that used to be tested
+   * here. Every Iraqi university has one dental college, so the college carried
+   * nothing the university did not; the clinics inside it are departments every
+   * student rotates through rather than somewhere to belong. What it decided —
+   * the city a student's queue is scoped to — now comes from the university.
+   */
 
   it.each([
     ['universityId', { universityId: '' }, studentProfile.errors.universityRequired],
     ['universityId', { universityId: 'nowhere' }, studentProfile.errors.universityUnknown],
-    ['collegeId', { collegeId: '' }, studentProfile.errors.collegeRequired],
-    ['collegeId', { collegeId: 'nowhere' }, studentProfile.errors.collegeUnknown],
     ['stageId', { stageId: '' }, studentProfile.errors.stageRequired],
     ['stageId', { stageId: 'stage-9' }, studentProfile.errors.stageUnknown],
   ])('rejects a bad %s', (field, override, message) => {
@@ -148,14 +125,13 @@ describe('validateProfile', () => {
 
   it('reports every problem at once rather than one at a time', () => {
     const result = validateProfile(
-      { universityId: '', collegeId: '', stageId: '', clinicDays: [] },
+      { universityId: '', stageId: '', clinicDays: [] },
       PLACES,
       { size: 99, type: 'text/html' },
     )
     expect(result.ok).toBe(false)
     if (!result.ok) expect(Object.keys(result.errors).sort()).toEqual([
       'clinicDays',
-      'collegeId',
       'document',
       'stageId',
       'universityId',

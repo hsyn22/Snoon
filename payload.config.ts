@@ -11,7 +11,6 @@ import { StudentDocuments } from '@/payload/collections/student-documents'
 import { Settings } from '@/payload/globals/settings'
 import {
   Cities,
-  Colleges,
   Stages,
   StageCapabilities,
   TreatmentTypes,
@@ -66,7 +65,6 @@ export default buildConfig({
     Admins,
     Cities,
     Universities,
-    Colleges,
     Stages,
     TreatmentTypes,
     StageCapabilities,

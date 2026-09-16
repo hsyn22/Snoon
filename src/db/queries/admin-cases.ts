@@ -71,7 +71,6 @@ export type AdminClaim = {
   studentId: string
   studentName: string
   studentUniversityId: string
-  studentCollegeId: string
   studentStageId: string
   contactDeadlineAt: Date
   contactAssertedAt: Date | null
@@ -162,7 +161,6 @@ export async function findCaseForAdmin(referenceCode: string): Promise<AdminCase
         studentId: claims.studentId,
         studentName: students.fullName,
         studentUniversityId: students.universityId,
-        studentCollegeId: students.collegeId,
         studentStageId: students.stageId,
         contactDeadlineAt: claims.contactDeadlineAt,
         contactAssertedAt: claims.contactAssertedAt,

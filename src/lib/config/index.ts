@@ -4,7 +4,7 @@ import 'server-only'
 import { cache } from 'react'
 import { getPayload } from 'payload'
 import config from '@payload-config'
-import type { City, College, Stage, TreatmentType, University } from './schema'
+import type { City, Stage, TreatmentType, University } from './schema'
 
 /**
  * Configuration, read from Payload.
@@ -22,7 +22,7 @@ import type { City, College, Stage, TreatmentType, University } from './schema'
  * city list five times hits the database once.
  */
 
-export type { City, College, Stage, TreatmentType, University, WeekDay } from './schema'
+export type { City, Stage, TreatmentType, University, WeekDay } from './schema'
 // Lives outside this module because it is read by a scheduled job, which cannot
 // load a `server-only` module. See ./settings.ts.
 export { getContactWindowHours } from './settings'
@@ -134,23 +134,6 @@ export const getUniversities = cache(async (): Promise<readonly University[]> =>
   })
 })
 
-export const getColleges = cache(async (): Promise<readonly College[]> => {
-  const payload = await getPayload({ config })
-  const result = await payload.find({
-    collection: 'colleges',
-    where: { active: { equals: true } },
-    sort: 'nameAr',
-    depth: 1,
-    limit: 500,
-    pagination: false,
-  })
-
-  return result.docs.flatMap((doc) => {
-    const universityId = relatedSlug(doc.university)
-    return universityId ? [{ id: doc.slug, nameAr: doc.nameAr, universityId }] : []
-  })
-})
-
 export const getStages = cache(async (): Promise<readonly Stage[]> => {
   const payload = await getPayload({ config })
   const result = await payload.find({
@@ -164,21 +147,27 @@ export const getStages = cache(async (): Promise<readonly Stage[]> => {
 })
 
 /**
- * Which treatments a stage may perform at a clinic.
+ * Which treatments a stage may perform at a university.
  *
- * This is what decides whether a case is visible to a student, so an absent
- * mapping returns an empty list and the student sees nothing — deliberately
- * conservative. Showing a student a case their stage may not treat wastes a
- * claim and the patient's time; showing them nothing is visible to an admin as
- * "cases are not being claimed", which is at least diagnosable.
+ * This is what decides whether a case is visible to a student, and **the
+ * normal answer is the stage's own default** — the per-university row is an
+ * exception that is expected to stay empty.
+ *
+ * Haider's instruction, and the reason it is keyed by university rather than by
+ * clinic: a few universities, mostly in the north and Kurdistan, are said to
+ * differ — students onto real patients earlier, possibly molar endodontics that
+ * the rest of Iraq forbids. He is not certain of either, so **nothing is seeded
+ * for them**. What exists is the shape: if students from one university turn up
+ * in numbers and say their stage may do something the default forbids, it is one
+ * row in the admin and no deployment.
  */
 export const getStageCapabilityTreatmentIds = cache(
-  async (collegeId: string, stageId: string): Promise<readonly string[]> => {
+  async (universityId: string, stageId: string): Promise<readonly string[]> => {
     const payload = await getPayload({ config })
     const result = await payload.find({
       collection: 'stage-capabilities',
       where: {
-        'college.slug': { equals: collegeId },
+        'university.slug': { equals: universityId },
         'stage.slug': { equals: stageId },
       },
       depth: 1,
@@ -196,18 +185,23 @@ export const getStageCapabilityTreatmentIds = cache(
       })
     }
 
-    // No row for this clinic, so fall back to what the stage can do anywhere.
-    //
-    // Without this, adding a college hid every case from its students until
-    // someone filled in the whole matrix by hand — and the symptom is an empty
-    // queue, which reads as "no patients" rather than as a missing row. What a
-    // fourth year may treat barely varies between clinics; the per-clinic row
-    // stays for the ones where it does.
+    // No exception row, so what this stage can do anywhere. This is the path
+    // almost every student takes, and it must stay that way: a matrix somebody
+    // has to fill in by hand before anyone sees a case is how an empty queue
+    // gets read as "no patients" rather than as a missing row.
     return getStageDefaultTreatmentIds(stageId)
   },
 )
 
-/** What a stage may treat where no clinic-specific row overrides it. */
+/**
+ * What a stage may treat anywhere, absent an exception.
+ *
+ * A stage whose default list is **empty** is the mechanism for "this exists in
+ * one place only": add the stage, leave its defaults empty — nothing is what it
+ * can do anywhere, truthfully — and grant it in `stage-capabilities` for the one
+ * university that allows it. That is how a second-year stage would work if the
+ * northern universities turn out to run one.
+ */
 export const getStageDefaultTreatmentIds = cache(
   async (stageId: string): Promise<readonly string[]> => {
     const payload = await getPayload({ config })
@@ -231,38 +225,32 @@ export const getStageDefaultTreatmentIds = cache(
 
 /** Whether the config needed for a student to describe where they study exists yet. */
 export async function hasStudentPlacesConfigured(): Promise<boolean> {
-  const [universities, colleges, stages] = await Promise.all([
-    getUniversities(),
-    getColleges(),
-    getStages(),
-  ])
-  return universities.length > 0 && colleges.length > 0 && stages.length > 0
+  const [universities, stages] = await Promise.all([getUniversities(), getStages()])
+  return universities.length > 0 && stages.length > 0
 }
 
 /**
- * The city a college sits in, resolved college → university → city.
+ * The city a university sits in.
  *
  * A student's queue is scoped to the city they actually attend clinic in, and
- * that fact lives across two Payload relationships rather than on the student.
- * Returns null if either link is missing, and the caller shows an empty queue —
- * an empty queue is diagnosable, a queue scoped to the wrong city is not.
+ * that fact lives on the university rather than on the student. It used to be
+ * two hops — college → university → city — which is one hop more than the world
+ * has, now that a university and its dental college are the same thing.
+ *
+ * Returns null if the link is missing, and the caller shows an empty queue: an
+ * empty queue is diagnosable, a queue scoped to the wrong city is not.
  */
-export const getCityIdForCollege = cache(async (collegeId: string): Promise<string | null> => {
+export const getCityIdForUniversity = cache(async (universityId: string): Promise<string | null> => {
   const payload = await getPayload({ config })
   const result = await payload.find({
-    collection: 'colleges',
-    where: { slug: { equals: collegeId } },
-    // Two hops: the college's university, and that university's city.
-    depth: 2,
+    collection: 'universities',
+    where: { slug: { equals: universityId } },
+    depth: 1,
     limit: 1,
     pagination: false,
   })
 
-  const college = result.docs[0]
-  if (!college || typeof college.university !== 'object' || college.university === null) return null
-
-  const city = (college.university as { city?: unknown }).city
-  return relatedSlug(city)
+  return relatedSlug(result.docs[0]?.city)
 })
 
 /**
@@ -270,12 +258,12 @@ export const getCityIdForCollege = cache(async (collegeId: string): Promise<stri
  * stage may treat there.
  */
 export async function getStudentCaseScope(
-  collegeId: string,
+  universityId: string,
   stageId: string,
 ): Promise<{ cityIds: string[]; treatmentTypeIds: string[] }> {
   const [cityId, treatmentTypeIds] = await Promise.all([
-    getCityIdForCollege(collegeId),
-    getStageCapabilityTreatmentIds(collegeId, stageId),
+    getCityIdForUniversity(universityId),
+    getStageCapabilityTreatmentIds(universityId, stageId),
   ])
 
   return {

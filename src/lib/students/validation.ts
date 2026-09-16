@@ -1,19 +1,23 @@
-import { isWeekDay, type College, type Stage, type University } from '@/lib/config/schema'
+import { isWeekDay, type Stage, type University } from '@/lib/config/schema'
 import { studentProfile } from '@/lib/copy'
 
 /**
  * Server-side validation of the student profile step.
  *
  * Pure: it takes the configuration rather than reading it, so the rules can be
- * tested without a database. The rule worth being careful about is the
- * university/college pairing — the browser can post any combination, and a
- * mismatched pair would place a student at a clinic they do not attend. The case
- * queue is filtered by exactly that, so it decides which patients they see.
+ * tested without a database.
+ *
+ * **The college is gone**, and with it the pairing rule this comment used to be
+ * about. Every Iraqi university has exactly one dental college, so the college
+ * carried nothing the university did not, and the clinics inside it are
+ * departments every student rotates through rather than something to belong to.
+ * What remains still decides which patients a student sees — the university
+ * gives the city and the stage gives the treatments — so an unknown value here
+ * is refused rather than ignored.
  */
 
 export type ProfileFields = {
   universityId: string
-  collegeId: string
   stageId: string
   /**
    * The days this student is in clinic. Required for a new profile: without it
@@ -30,7 +34,6 @@ export type ProfileValidationResult =
 
 export type ProfilePlaces = {
   universities: readonly University[]
-  colleges: readonly College[]
   stages: readonly Stage[]
 }
 
@@ -61,13 +64,6 @@ export function validateProfile(
   if (fields.clinicDays.length === 0) errors.clinicDays = e.clinicDaysRequired
   else if (!fields.clinicDays.every(isWeekDay)) errors.clinicDays = e.clinicDaysInvalid
 
-  const college = places.colleges.find((c) => c.id === fields.collegeId)
-  if (!fields.collegeId) errors.collegeId = e.collegeRequired
-  else if (!college) errors.collegeId = e.collegeUnknown
-  else if (fields.universityId && college.universityId !== fields.universityId) {
-    errors.collegeId = e.collegeMismatch
-  }
-
   if (!fields.stageId) errors.stageId = e.stageRequired
   else if (!places.stages.some((s) => s.id === fields.stageId)) errors.stageId = e.stageUnknown
 
@@ -85,7 +81,6 @@ export function validateProfile(
     ok: true,
     value: {
       universityId: fields.universityId,
-      collegeId: fields.collegeId,
       stageId: fields.stageId,
       clinicDays: fields.clinicDays,
     },

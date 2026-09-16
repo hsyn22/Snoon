@@ -82,7 +82,7 @@ export default async function StudentHomePage() {
   const [profile] = await db
     .select({
       id: students.id,
-      collegeId: students.collegeId,
+      universityId: students.universityId,
       stageId: students.stageId,
       clinicDays: students.clinicDays,
       verificationStatus: students.verificationStatus,
@@ -177,7 +177,7 @@ export default async function StudentHomePage() {
             ) : null}
             <CaseQueue
               studentId={profile.id}
-              collegeId={profile.collegeId}
+              universityId={profile.universityId}
               stageId={profile.stageId}
               clinicDays={profile.clinicDays}
             />

@@ -49,7 +49,6 @@ describe.skipIf(!hasDatabase)('case lifecycle', async () => {
         authUserId: `life-${crypto.randomUUID()}`,
         fullName: 'طالب',
         universityId: 'u',
-        collegeId: 'c',
         stageId: 'stage-4',
         verificationStatus: 'VERIFIED',
       })

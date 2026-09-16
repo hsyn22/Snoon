@@ -59,7 +59,6 @@ describe.skipIf(!hasDatabase)('a student’s case history', async () => {
         authUserId: `test-${crypto.randomUUID()}`,
         fullName: 'طالب تجريبي',
         universityId: 'test-university',
-        collegeId: 'test-college',
         stageId,
         verificationStatus: 'VERIFIED',
       })

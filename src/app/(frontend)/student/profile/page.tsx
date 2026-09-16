@@ -5,7 +5,7 @@ import { redirect } from 'next/navigation'
 import { db } from '@/db'
 import { students } from '@/db/schema'
 import { auth } from '@/lib/auth'
-import { getColleges, getStages, getUniversities } from '@/lib/config'
+import { getStages, getUniversities } from '@/lib/config'
 import { PageShell } from '@/components/site-chrome'
 import { PageHeader } from '@/components/ui/section'
 import { Card, CardBody } from '@/components/ui/card'
@@ -31,13 +31,9 @@ export default async function StudentProfilePage() {
     .limit(1)
   if (existing) redirect('/student')
 
-  const [universities, colleges, stages] = await Promise.all([
-    getUniversities(),
-    getColleges(),
-    getStages(),
-  ])
+  const [universities, stages] = await Promise.all([getUniversities(), getStages()])
 
-  const ready = universities.length > 0 && colleges.length > 0 && stages.length > 0
+  const ready = universities.length > 0 && stages.length > 0
 
   /*
    * Which of the three is actually missing.
@@ -48,17 +44,16 @@ export default async function StudentProfilePage() {
    * project already warns about for cities, where an admin who sees no change
    * reasonably concludes the admin panel is broken.
    *
-   * Universities come first because a college cannot exist without one, so
-   * naming the deeper gap would send somebody to fix the wrong end.
+   * The college used to be the third of these and was the one actually missing
+   * when Haider hit it. It no longer exists, which removes that case — but two
+   * lists can still be empty, so the message stays.
    */
   const missing =
     universities.length === 0
       ? studentProfile.notReadyUniversities
-      : colleges.length === 0
-        ? studentProfile.notReadyColleges
-        : stages.length === 0
-          ? studentProfile.notReadyStages
-          : null
+      : stages.length === 0
+        ? studentProfile.notReadyStages
+        : null
 
   return (
     <PageShell>
@@ -70,7 +65,7 @@ export default async function StudentProfilePage() {
         />
 
         {ready ? (
-          <ProfileForm universities={universities} colleges={colleges} stages={stages} />
+          <ProfileForm universities={universities} stages={stages} />
         ) : (
           // The universities and colleges are entered by an admin in Payload. Until
           // they exist there is nothing truthful to put in these dropdowns, and a

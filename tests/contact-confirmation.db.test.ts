@@ -48,7 +48,6 @@ describe.skipIf(!hasDatabase)('contact confirmation', async () => {
         authUserId: `contact-${crypto.randomUUID()}`,
         fullName: 'طالب',
         universityId: 'u',
-        collegeId: 'c',
         stageId: 'stage-4',
         verificationStatus: 'VERIFIED',
       })

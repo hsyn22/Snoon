@@ -62,7 +62,7 @@ export async function nextCaseForStudent(
 ): Promise<StudentQueueState> {
   const [profile] = await db
     .select({
-      collegeId: students.collegeId,
+      universityId: students.universityId,
       stageId: students.stageId,
       clinicDays: students.clinicDays,
       verificationStatus: students.verificationStatus,
@@ -73,7 +73,7 @@ export async function nextCaseForStudent(
 
   if (!profile || profile.verificationStatus !== 'VERIFIED') return { kind: 'not-verified' }
 
-  const scope = await getStudentCaseScope(profile.collegeId, profile.stageId)
+  const scope = await getStudentCaseScope(profile.universityId, profile.stageId)
   if (scope.cityIds.length === 0 || scope.treatmentTypeIds.length === 0) return { kind: 'no-scope' }
 
   const list = await listOpenCasesForStudent(studentId, scope)

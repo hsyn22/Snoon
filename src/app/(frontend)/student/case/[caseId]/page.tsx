@@ -80,7 +80,7 @@ export default async function ClaimedCasePage({
   if (!session) redirect('/student/login')
 
   const [student] = await db
-    .select({ id: students.id, collegeId: students.collegeId, stageId: students.stageId })
+    .select({ id: students.id, universityId: students.universityId, stageId: students.stageId })
     .from(students)
     .where(eq(students.authUserId, session.user.id))
     .limit(1)
@@ -139,7 +139,7 @@ export default async function ClaimedCasePage({
     getAllTreatmentTypes(),
     getCurrentAppointment(caseId),
     listCasePhotos(caseId),
-    getStageCapabilityTreatmentIds(student.collegeId, student.stageId),
+    getStageCapabilityTreatmentIds(student.universityId, student.stageId),
   ])
   const nameOfTreatment = (id: string) => treatments.find((t) => t.id === id)?.nameAr ?? id
   const treatmentChips = record.treatmentTypeIds.map((id) => ({

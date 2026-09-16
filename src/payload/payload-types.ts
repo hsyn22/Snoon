@@ -70,7 +70,6 @@ export interface Config {
     admins: Admin;
     cities: City;
     universities: University;
-    colleges: College;
     stages: Stage;
     'treatment-types': TreatmentType;
     'stage-capabilities': StageCapability;
@@ -86,7 +85,6 @@ export interface Config {
     admins: AdminsSelect<false> | AdminsSelect<true>;
     cities: CitiesSelect<false> | CitiesSelect<true>;
     universities: UniversitiesSelect<false> | UniversitiesSelect<true>;
-    colleges: CollegesSelect<false> | CollegesSelect<true>;
     stages: StagesSelect<false> | StagesSelect<true>;
     'treatment-types': TreatmentTypesSelect<false> | TreatmentTypesSelect<true>;
     'stage-capabilities': StageCapabilitiesSelect<false> | StageCapabilitiesSelect<true>;
@@ -200,25 +198,6 @@ export interface University {
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
- * via the `definition` "colleges".
- */
-export interface College {
-  id: number;
-  nameAr: string;
-  /**
-   * المعرّف الثابت (بالإنكليزي، بدون مسافات). لا تغيّره بعد ما تنربط بيه حالات — راح تنفصل عنه.
-   */
-  slug: string;
-  university: number | University;
-  /**
-   * إذا مطفي، ما يظهر بالخيارات الجديدة — بس الحالات القديمة تبقى.
-   */
-  active?: boolean | null;
-  updatedAt: string;
-  createdAt: string;
-}
-/**
- * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "stages".
  */
 export interface Stage {
@@ -260,7 +239,7 @@ export interface TreatmentType {
   createdAt: string;
 }
 /**
- * شنو تكدر تعالج كل مرحلة بكل عيادة. هذا يحدد شنو يشوف الطالب.
+ * استثناء: شنو تكدر تعالج مرحلة معيّنة بجامعة معيّنة. اتركها فارغة إلا إذا الجامعة تختلف فعلاً عن الباقي — بدونها تنطبق صلاحيات المرحلة الافتراضية.
  *
  * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "stage-capabilities".
@@ -268,7 +247,7 @@ export interface TreatmentType {
 export interface StageCapability {
   id: number;
   label?: string | null;
-  college: number | College;
+  university: number | University;
   stage: number | Stage;
   treatmentTypes: (number | TreatmentType)[];
   updatedAt: string;
@@ -367,10 +346,6 @@ export interface PayloadLockedDocument {
     | ({
         relationTo: 'universities';
         value: number | University;
-      } | null)
-    | ({
-        relationTo: 'colleges';
-        value: number | College;
       } | null)
     | ({
         relationTo: 'stages';
@@ -482,18 +457,6 @@ export interface UniversitiesSelect<T extends boolean = true> {
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
- * via the `definition` "colleges_select".
- */
-export interface CollegesSelect<T extends boolean = true> {
-  nameAr?: T;
-  slug?: T;
-  university?: T;
-  active?: T;
-  updatedAt?: T;
-  createdAt?: T;
-}
-/**
- * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "stages_select".
  */
 export interface StagesSelect<T extends boolean = true> {
@@ -523,7 +486,7 @@ export interface TreatmentTypesSelect<T extends boolean = true> {
  */
 export interface StageCapabilitiesSelect<T extends boolean = true> {
   label?: T;
-  college?: T;
+  university?: T;
   stage?: T;
   treatmentTypes?: T;
   updatedAt?: T;

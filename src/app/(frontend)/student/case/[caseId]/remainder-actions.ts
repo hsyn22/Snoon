@@ -33,13 +33,13 @@ export async function returnRemainderAction(
   if (!session) redirect('/student/login')
 
   const [student] = await db
-    .select({ id: students.id, collegeId: students.collegeId, stageId: students.stageId })
+    .select({ id: students.id, universityId: students.universityId, stageId: students.stageId })
     .from(students)
     .where(eq(students.authUserId, session.user.id))
     .limit(1)
   if (!student) redirect('/student')
 
-  const capable = await getStageCapabilityTreatmentIds(student.collegeId, student.stageId)
+  const capable = await getStageCapabilityTreatmentIds(student.universityId, student.stageId)
   const result = await returnRemainderToQueue(student.id, caseId, capable)
 
   if (!result.ok) {

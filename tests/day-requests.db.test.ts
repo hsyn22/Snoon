@@ -60,7 +60,6 @@ describe.skipIf(!hasDatabase)('day requests', async () => {
         authUserId: `test-${crypto.randomUUID()}`,
         fullName: 'طالب تجريبي',
         universityId: 'test-university',
-        collegeId: 'test-college',
         stageId: 'stage-4',
         clinicDays,
         verificationStatus: verified ? 'VERIFIED' : 'PENDING',
