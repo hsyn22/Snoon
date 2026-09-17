@@ -99,6 +99,13 @@
       "when": 1789686087461,
       "tag": "0013_fuzzy_leader",
       "breakpoints": true
+    },
+    {
+      "idx": 14,
+      "version": "7",
+      "when": 1789686491731,
+      "tag": "0014_broken_power_man",
+      "breakpoints": true
     }
   ]
 }

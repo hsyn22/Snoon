@@ -28,6 +28,9 @@ import { Card, CardBody, CardRibbon, Chip, statusTone } from '@/components/ui/ca
 import { AlertIcon, CalendarIcon, CheckIcon, NoteIcon, PhoneIcon, UserIcon } from '@/components/ui/icon'
 import { PageShell } from '@/components/site-chrome'
 import { ButtonLink } from '@/components/ui/button'
+import { hasReviewed, isReviewable } from '@/db/queries/reviews'
+import { ReviewForm } from '@/components/review-form'
+import { submitStudentReviewAction } from './review-actions'
 import { AssertContact } from './assert-contact'
 import { WrongNumberReport } from './wrong-number'
 import { AppointmentStep, OutcomeStep, RemainderStep } from './lifecycle-steps'
@@ -94,6 +97,17 @@ export default async function ClaimedCasePage({
     // instead — without contact details, which the closed claim no longer grants.
     const closed = await getClosedCaseForStudent(caseId, student.id)
 
+    /*
+     * The student's review belongs exactly here and nowhere else.
+     *
+     * This screen is what a student sees the moment a case is over: it is the
+     * one time they have the whole experience in mind and nothing left to do.
+     * On the live case page it would sit above a patient who is still waiting
+     * for a call, which is both a distraction and the wrong question.
+     */
+    const canReview = closed !== null && isReviewable(closed.status)
+    const alreadyReviewed = canReview ? await hasReviewed(caseId, 'STUDENT') : false
+
     return (
       <PageShell>
         {closed ? (
@@ -126,6 +140,12 @@ export default async function ClaimedCasePage({
             <p className="mt-2 text-foreground-muted">{studentClaim.notFoundBody}</p>
           </>
         )}
+        {canReview && !alreadyReviewed ? (
+          <div className="mt-6">
+            <ReviewForm action={submitStudentReviewAction} hidden={{ caseId }} />
+          </div>
+        ) : null}
+
         <div className="mt-6">
           <ButtonLink href="/student" variant="secondary">
             {studentClaim.backToQueue}

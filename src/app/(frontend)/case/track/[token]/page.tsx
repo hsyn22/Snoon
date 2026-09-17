@@ -37,7 +37,10 @@ import { AttachCase } from './attach-case'
 import { TelegramInvite } from './telegram-invite'
 import { ConfirmContact } from './confirm-contact'
 import { DayAnswer } from './day-answer'
+import { hasReviewed, isReviewable } from '@/db/queries/reviews'
+import { ReviewForm } from '@/components/review-form'
 import { hasPendingContactAssertion } from './confirm-queries'
+import { submitPatientReviewAction } from './review-actions'
 
 /**
  * The patient's view of their own case, opened by the tracking token in the URL.
@@ -130,6 +133,11 @@ export default async function TrackCasePage({
   // Only while the case is still open: a claimed case is not going anywhere.
   const pendingDays =
     record.status === 'REQUESTED' ? await pendingDaysForCase(record.id) : []
+
+  // Only asked once, and only once there is something to review.
+  const reviewed = isReviewable(record.status)
+    ? await hasReviewed(record.id, 'PATIENT')
+    : false
 
   const patientLinked = telegramAvailable ? await isSubjectLinked({ type: 'PATIENT_CASE', id: record.id }) : false
 
@@ -286,6 +294,26 @@ export default async function TrackCasePage({
         ) : null}
 
         <CasePhotoGrid photos={photos} label={photoCopy.patientLabel} trackingToken={token} />
+
+        {/*
+          * The review, and only once the case is over.
+          *
+          * Asking mid-treatment would be asking somebody to rate a thing that
+          * has not happened yet, while their student is still expected to ring
+          * them — and an unanswered question sitting above a live case reads as
+          * سنون having moved on.
+          *
+          * It sits below the status and above the link: the status is what they
+          * came for, and the link is the credential they already hold.
+          */}
+        {isReviewable(record.status) && !reviewed ? (
+          <div className="mt-4">
+            <ReviewForm
+              action={submitPatientReviewAction}
+              hidden={{ trackingToken: token }}
+            />
+          </div>
+        ) : null}
 
         {/* The tracking link, below the case rather than above it. It is the
             credential and it matters, but it is not what someone opens the page

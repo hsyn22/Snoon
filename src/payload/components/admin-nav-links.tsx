@@ -5,7 +5,7 @@ import Link from 'next/link'
  *
  * Payload lists its collections automatically, but a view registered under
  * `admin.components.views` has no entry anywhere — an admin would have to know
- * to type the URL. These are the two places where the CMS reads across into the
+ * to type the URL. These are the places where the CMS reads across into the
  * Drizzle schema, so they belong in the nav next to everything else.
  */
 export default function AdminNavLinks() {
@@ -24,6 +24,9 @@ export default function AdminNavLinks() {
       </Link>
       <Link href="/admin/students" style={{ textDecoration: 'none' }}>
         توثيق الطلبة
+      </Link>
+      <Link href="/admin/reviews" style={{ textDecoration: 'none' }}>
+        آراء عن سنون
       </Link>
     </nav>
   )

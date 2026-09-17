@@ -2063,6 +2063,51 @@ same updates.
 
 ---
 
+## Reviews of سنون — the service, never the people
+
+Haider raised this as a possibility and then settled its scope, which is the part that
+makes it safe to build: **"التقييمات للان فقط للادمن، و يكون بشكل عام عن الخدمة و سنون،
+ممكن مستقبلا ننشر بعض التعليقات الايجابية على الصفحة الرئيسية للتشجيع"**.
+
+That is not the thing the MVP list excludes. `ratings or reviews of students` is a
+reputation system: it scores a person, and the moment a score can affect who gets a case it
+becomes a reason for students to compete over patients — which is precisely what makes
+عالجني a different product. **Nothing here scores anybody.** Both sides are asked how
+سنون was; a student's standing remains `verification_status` and nothing else.
+
+`src/db/queries/reviews.ts`. What holds the line:
+
+- **The negative invariant is the design**: no student-facing or patient-facing query may
+  ever read the table. Nothing sorts a queue by it, nothing shows an average beside a case,
+  nothing tells a student what anybody said. `tests/reviews-are-admin-only.test.ts` asserts
+  it against the source tree — the reading functions are importable only by the admin view,
+  the write path only by the two actions, and the table only through its own module. This
+  is a rule that would **erode** rather than break, which is why it is a test and not a
+  paragraph.
+- **The copy carries it too.** The form says "رأيك عن سنون كخدمة، مو عن الشخص اللي تواصلت
+  وياه" above the field. Take that sentence out and the same form is a rating of people.
+- **One per side per case**, enforced by a unique index rather than read-then-write.
+- **Only once the case is over** (`COMPLETED`, `NO_SHOW`, `CANCELLED`, `EXPIRED`). Asking
+  mid-treatment asks somebody to rate a thing that has not happened, and on the patient's
+  side it would sit above a student who is still expected to ring them.
+- **A patient's review records no identifier at all.** They have no account, the case it
+  hangs off is scrubbed at ninety days, and a review outliving that scrub carrying a name
+  would make the scrub cosmetic. The student's id *is* stored — they have an account
+  already — and is never shown outside the admin.
+- **The admin sees the distribution, not only the mean.** Two fives and two ones average
+  the same as four threes and mean something completely different: one says سنون works for
+  half the people using it, and that is the actionable one.
+- **The where a patient reviews from is the tracking token**, never a case id in the form —
+  the same rule the contact answer and the day answer follow. A student proves it with
+  their session *and* a claim on the case, checked in the action rather than assumed from
+  the page that rendered the form.
+
+**Publishing a positive comment on the landing page is Haider's stated maybe, and is not
+built.** It needs two things this does not have: the author's explicit permission, and a
+decision about the "nothing on the landing page overstates — no testimonials" rule, which
+was written before this existed. Neither is settled, so the admin view has no publish
+button and the landing page reads nothing.
+
 ## Future: the supplies store
 
 A dental products marketplace is planned for later — oral hygiene products for patients,
@@ -2102,7 +2147,8 @@ Do not build these unless explicitly asked:
 - payments of any kind
 - the marketplace
 - automated verification of student documents
-- ratings or reviews of students
+- ratings or reviews **of students** — see "Reviews of سنون" below for what *is* built, and
+  why it is a different thing
 - bidding, pricing, or any competitive mechanism between students
 - a mobile app
 - multi-language switching (Arabic only for now)

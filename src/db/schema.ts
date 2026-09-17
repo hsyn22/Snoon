@@ -2,6 +2,7 @@ import { relations, sql } from 'drizzle-orm'
 import {
   boolean,
   index,
+  integer,
   pgSchema,
   text,
   timestamp,
@@ -375,6 +376,82 @@ export const students = snoon.table(
     ),
   ],
 )
+
+/** Who left a review. A case has exactly two sides and neither is named in it. */
+export const reviewAuthorType = snoon.enum('review_author_type', ['PATIENT', 'STUDENT'])
+
+/**
+ * Reviews of سنون itself — **not** of the people using it.
+ *
+ * Haider's framing and it is the part that makes this safe to build at all:
+ * "التقييمات للان فقط للادمن، و يكون بشكل عام عن الخدمة و سنون". The MVP
+ * exclusion in this project's guide is `ratings or reviews of students`, and
+ * this is not that. Nothing here attaches a score to a person, nothing ranks
+ * anybody, and no query outside the admin reads this table. A student's standing
+ * is `verification_status` and nothing else, exactly as before.
+ *
+ * That distinction is the whole design and any change that erodes it — a rating
+ * of the student, a score shown on a case, an average anywhere near the queue —
+ * turns a feedback box into the reputation system this product deliberately does
+ * not have, and with it into a reason for students to compete over patients.
+ *
+ * **The case is referenced, the person is not.** A review is anchored to the
+ * case it came out of so an admin can read it beside what happened, and the
+ * author is recorded only as PATIENT or STUDENT. Who the patient was is on the
+ * case and gets scrubbed with it at ninety days; the review outlives that and
+ * carries nothing to re-identify them.
+ */
+export const reviews = snoon.table(
+  'reviews',
+  {
+    id: uuid('id').primaryKey().defaultRandom(),
+
+    /**
+     * The case this came out of. Not a foreign key for the same reason nothing
+     * else here is one across schemas — but within `snoon` it is, so a review
+     * cannot outlive the case it describes and become unattributable.
+     */
+    caseId: uuid('case_id')
+      .notNull()
+      .references(() => cases.id, { onDelete: 'cascade' }),
+
+    authorType: reviewAuthorType('author_type').notNull(),
+
+    /**
+     * Who wrote it, when that is knowable — a student id, never a patient.
+     *
+     * A patient has no account, so there is nothing to record and deliberately
+     * nothing is: the case already says which case, and adding "who" would mean
+     * keeping an identifier for somebody whose details سنون erases at ninety
+     * days. Null is the normal state of this column.
+     */
+    studentId: uuid('student_id').references(() => students.id, { onDelete: 'set null' }),
+
+    /**
+     * One to five, about سنون. Stored as a small integer rather than an enum so
+     * it can be averaged without a cast.
+     */
+    rating: integer('rating').notNull(),
+
+    /** Free text, optional. The reason the whole thing is worth having. */
+    comment: text('comment'),
+
+    createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+  },
+  (table) => [
+    /**
+     * One review per side per case.
+     *
+     * A partial index is not needed — both columns are always set for a student
+     * and `author_type` alone settles the patient's side, since a patient is
+     * whoever holds the tracking token and there is only ever one of them.
+     */
+    uniqueIndex('reviews_one_per_side_per_case').on(table.caseId, table.authorType),
+    index('reviews_created_idx').on(table.createdAt),
+  ],
+)
+
+export type ReviewRow = typeof reviews.$inferSelect
 
 /**
  * How a day request ends.

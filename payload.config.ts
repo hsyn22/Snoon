@@ -50,6 +50,13 @@ export default buildConfig({
           Component: '@/payload/views/case-lookup#default',
           path: '/cases',
         },
+
+        // Reviews of سنون — the service, never the people. Read-only: an admin
+        // editing a review would be editing what somebody said.
+        reviews: {
+          Component: '@/payload/views/reviews#default',
+          path: '/reviews',
+        },
       },
     },
   },

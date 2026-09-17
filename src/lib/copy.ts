@@ -982,6 +982,45 @@ export const studentActiveClaims = {
 
 /** The case a student is holding right now. */
 /**
+ * Reviews — of سنون, never of the person on the other side.
+ *
+ * Every word here has to keep that straight. "How was the student?" is a
+ * different product and one this file forbids; "how was سنون?" is a question
+ * whose answer improves the thing we control.
+ */
+export const reviewCopy = {
+  title: 'شلون كانت تجربتك وية سنون؟',
+  /** Said twice — once here, once as a hint — because it is the whole point. */
+  scope: 'رأيك عن سنون كخدمة، مو عن الشخص اللي تواصلت وياه.',
+  intro: 'رأيك يوصل لإدارة سنون بس. ما ينشر وما يشوفه أي طالب أو مراجع.',
+
+  ratingLabel: 'تقييمك',
+  ratingHint: 'من 1 (ما عجبني) إلى 5 (ممتاز).',
+  commentLabel: 'تريد تضيف شي؟',
+  commentHint: 'اختياري. شنو اشتغل زين وشنو لأ.',
+  commentPlaceholder: 'مثلاً: الموقع كان سهل، بس انتظرت وايد لحد ما أحد تواصل وياي.',
+
+  submit: 'دز رأيك',
+  submitting: 'قيد الإرسال…',
+  done: 'وصل رأيك. شكراً — هذا اللي يخلينا نحسّن سنون.',
+  already: 'دزيت رأيك عن هذي الحالة من قبل.',
+  notAllowed: 'التقييم يفتح بعد ما تنتهي الحالة.',
+  failed: 'ما كدرنا نسجّل رأيك. جرّب مرة لخ.',
+  invalidRating: 'اختر تقييم من 1 إلى 5.',
+
+  /** Admin-facing. */
+  adminTitle: 'آراء عن سنون',
+  adminIntro:
+    'آراء المراجعين والطلبة عن الخدمة. ما تنشر بأي مكان وما يشوفها غير الإدارة.',
+  adminEmpty: 'ما وصل أي رأي لحد الآن.',
+  adminFromPatient: 'مراجع',
+  adminFromStudent: 'طالب',
+  adminAverage: 'المعدل',
+  adminCount: 'عدد الآراء',
+  adminNoComment: 'بلا تعليق',
+} as const
+
+/**
  * Notification settings — the one screen a student comes back to change.
  *
  * Two questions, and the second only if the first is yes: do you want to be
