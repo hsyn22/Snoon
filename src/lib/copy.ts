@@ -924,6 +924,41 @@ export const studentQueue = {
   /** In scope, wrong days. The queue offers "ask the patient" for exactly this,
       so the message points at it rather than sounding like a refusal. */
   claimFailedDays: 'أيام المراجع ما تتقاطع وية أيام دوامك. تكدر تسأله إذا يكدر يجي بيوم من أيامك.',
+
+  /**
+   * The cap, said as a workload rather than as a refusal.
+   *
+   * The student did nothing wrong and the case is genuinely theirs to take —
+   * later. So the sentence names what is in the way and what clears it, and
+   * never reads like a rejection.
+   */
+  claimFailedLimit: (limit: number) =>
+    limit === 1
+      ? 'عندك حالة شغّالة هسه. خلّصها أو رجّعها للقائمة، وبعدين تكدر تحجز وحدة ثانية.'
+      : `وصلت أكثر عدد حالات تكدر تحجزها بنفس الوقت (${limit}). خلّص وحدة منهن حتى تحجز غيرها.`,
+
+  /** Sits on the queue itself, not only after a refused tap. */
+  limitReachedTitle: 'وصلت الحد',
+  limitReachedBody: (limit: number) =>
+    limit === 1
+      ? 'تكدر تشوف كل الحالات، بس ما تكدر تحجز وحدة ثانية قبل ما تخلّص حالتك الشغّالة. هذا حتى المراجع ما ينتظر خلف طالب مشغول.'
+      : `تكدر تشوف كل الحالات، بس ما تكدر تحجز أكثر من ${limit} بنفس الوقت. هذا حتى المراجع ما ينتظر خلف طالب مشغول.`,
+} as const
+
+/**
+ * The cases a student is holding right now, listed above the queue.
+ *
+ * They used to *replace* the queue, which meant a student with one case in hand
+ * saw a site with nothing on it.
+ */
+export const studentActiveClaims = {
+  title: 'الحالات اللي حاجزها',
+  one: 'الحالة اللي حاجزها',
+  intro: 'تواصل وية المراجع واتفق وياه على الموعد.',
+  open: 'افتح الحالة',
+  deadline: 'لازم تتواصل قبل',
+  deadlinePassed: 'انتهت المهلة',
+  contacted: 'كَلت إنك اتصلت — ننتظر تأكيد المراجع',
 } as const
 
 /** The case a student is holding right now. */
@@ -1121,6 +1156,11 @@ export const telegramCopy = {
       'اتصل بيه وعرّف بنفسك وبسنون، وتأكد إنه هو اللي قدّم الطلب قبل ما تحچي عن حالته.',
     ].join('\n'),
   claimTakenByBot: 'هاي الحالة انحجزت من طالب ثاني. اكتب /cases وشوف الباقي.',
+  /** The cap, in the bot. Same rule the site puts under a disabled button. */
+  claimLimitReached: (limit: number) =>
+    limit === 1
+      ? 'عندك حالة شغّالة هسه. خلّصها أو رجّعها للقائمة، وبعدين تكدر تحجز وحدة ثانية.'
+      : `وصلت أكثر عدد حالات تكدر تحجزها بنفس الوقت (${limit}). خلّص وحدة منهن حتى تحجز غيرها.`,
 
   /**
    * The new-case alert — the one thing students asked for that the site cannot

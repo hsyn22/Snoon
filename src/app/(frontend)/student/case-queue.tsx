@@ -1,4 +1,5 @@
 import { getAllTreatmentTypes, getStudentCaseScope } from '@/lib/config'
+import { getMaxActiveClaimsPerStudent } from '@/lib/config/settings'
 import { listOpenCasesForStudent } from '@/db/queries/cases'
 import { pendingRequestCaseIds } from '@/db/queries/day-requests'
 import { listCasePhotos } from '@/db/queries/case-photos'
@@ -32,12 +33,15 @@ export async function CaseQueue({
   universityId,
   stageId,
   clinicDays,
+  heldCount,
 }: {
   studentId: string
   universityId: string
   stageId: string
   /** Empty means "any day" — every student recorded before clinic days existed. */
   clinicDays: readonly string[]
+  /** How many cases this student is already holding. */
+  heldCount: number
 }) {
   const scope = await getStudentCaseScope(universityId, stageId)
 
@@ -52,10 +56,22 @@ export async function CaseQueue({
     )
   }
 
-  const [cases, treatments] = await Promise.all([
+  const [cases, treatments, claimLimit] = await Promise.all([
     listOpenCasesForStudent(studentId, scope),
     getAllTreatmentTypes(),
+    getMaxActiveClaimsPerStudent(),
   ])
+
+  /**
+   * At the cap the list is still drawn in full and only the button goes.
+   *
+   * The opposite — swapping the queue for the held case — is what this page did
+   * and it is the mistake worth not repeating: a student cannot tell an empty
+   * سنون from one that is refusing them, and they leave on the first reading.
+   * `claimCaseForStudent` refuses the same thing server-side, so this is the
+   * explanation rather than the rule.
+   */
+  const atLimit = heldCount >= claimLimit
 
   const capableSet = new Set(scope.treatmentTypeIds)
   const anyOtherStage = cases.some((entry) =>
@@ -103,6 +119,15 @@ export async function CaseQueue({
       {/* The count above the list. A student opening this page again wants to
           know whether anything is here before reading a single card. */}
       <p className="text-sm font-bold text-accent">{studentQueue.count(cases.length)}</p>
+
+      {atLimit ? (
+        <div className="rounded-lg border border-warm bg-warm-muted p-3">
+          <p className="text-sm font-bold">{studentQueue.limitReachedTitle}</p>
+          <p className="mt-1 text-xs text-foreground">
+            {studentQueue.limitReachedBody(claimLimit)}
+          </p>
+        </div>
+      ) : null}
 
       {anyOtherStage ? (
         <p className="flex items-start gap-2 rounded-lg border border-border bg-surface p-3 text-xs text-foreground-muted">
@@ -200,7 +225,7 @@ export async function CaseQueue({
               />
 
               {attendable ? (
-                <ClaimButton caseId={entry.id} />
+                <ClaimButton caseId={entry.id} atLimit={atLimit} limit={claimLimit} />
               ) : (
                 <div className="mt-3 rounded-md bg-warm-muted p-3">
                   <p className="flex items-start gap-2 text-xs text-foreground">

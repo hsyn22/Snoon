@@ -204,21 +204,70 @@ export function studentPreviouslyReleased(studentId: string) {
 }
 
 
-/** The claim a student is currently holding, if any. A student holds at most one at a time. */
-export async function getActiveClaimForStudent(
-  studentId: string,
-): Promise<{ id: string; caseId: string; contactDeadlineAt: Date } | null> {
-  const [row] = await db
+export type ActiveClaim = {
+  id: string
+  caseId: string
+  referenceCode: string
+  treatmentTypeIds: string[]
+  contactDeadlineAt: Date
+  /** Whether the student has already reported reaching the patient. */
+  contactAsserted: boolean
+  claimedAt: Date
+}
+
+/**
+ * Every case this student is currently holding.
+ *
+ * It used to be `getActiveClaimForStudent`, singular, because a student held at
+ * most one — and the student page acted on that by **replacing the queue** with
+ * the held case. The cap was fair enough; hiding the queue behind it was not.
+ * A student with one case in hand saw an empty site and no way to tell whether
+ * سنون had run out of patients or was refusing them, and the first reading is
+ * the one they leave on. The cap is now a Payload setting and lives on the claim
+ * button; the list is always drawn.
+ *
+ * Ordered oldest first, so the case whose contact window runs out soonest is the
+ * one at the top.
+ *
+ * No contact details: the reference code is what a student needs to recognise a
+ * case, and the number sits one tap away behind `getCaseForClaimant`, which
+ * re-checks the claim.
+ */
+export async function listActiveClaimsForStudent(studentId: string): Promise<ActiveClaim[]> {
+  const rows = await db
     .select({
       id: claims.id,
       caseId: claims.caseId,
+      referenceCode: cases.referenceCode,
+      treatmentTypeIds: cases.treatmentTypeIds,
       contactDeadlineAt: claims.contactDeadlineAt,
+      contactAssertedAt: claims.contactAssertedAt,
+      claimedAt: claims.createdAt,
     })
     .from(claims)
+    .innerJoin(cases, eq(cases.id, claims.caseId))
     .where(and(eq(claims.studentId, studentId), eq(claims.status, 'ACTIVE')))
-    .limit(1)
+    .orderBy(claims.contactDeadlineAt)
 
-  return row ?? null
+  return rows.map(({ contactAssertedAt, ...row }) => ({
+    ...row,
+    contactAsserted: contactAssertedAt !== null,
+  }))
+}
+
+/**
+ * How many cases this student is holding right now.
+ *
+ * Counted in the database rather than by measuring the list above, because the
+ * only caller that matters is the claim check and it wants a number, not rows.
+ */
+export async function countActiveClaimsForStudent(studentId: string): Promise<number> {
+  const [row] = await db
+    .select({ total: count() })
+    .from(claims)
+    .where(and(eq(claims.studentId, studentId), eq(claims.status, 'ACTIVE')))
+
+  return Number(row?.total ?? 0)
 }
 
 /**

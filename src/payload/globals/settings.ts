@@ -85,6 +85,19 @@ export const Settings: GlobalConfig = {
       admin: { description: 'حد إضافي على السرعة، مو بس على العدد المفتوح.' },
     },
     {
+      name: 'maxActiveClaimsPerStudent',
+      type: 'number',
+      required: true,
+      defaultValue: 1,
+      min: 1,
+      max: 10,
+      label: 'أكثر عدد حالات يحجزها الطالب بنفس الوقت',
+      admin: {
+        description:
+          'كل حالة محجوزة معناها مراجع ينتظر مكالمة خلال مهلة التواصل. واحدة هو الافتراضي: الطالب يخلّص حالته وياخذ غيرها. ترفعه إذا صار عدد الحالات أكثر من الطلبة، وتنزّله إذا صارت حالات تنحجز وما أحد يتصل بيها. الطالب يظل يشوف كل الحالات بالقائمة على أي حال — بس ما يكدر يحجز زيادة على هذا العدد.',
+      },
+    },
+    {
       name: 'contactRetentionDays',
       type: 'number',
       required: true,

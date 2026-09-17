@@ -2,8 +2,9 @@ import { eq } from 'drizzle-orm'
 import { db } from '@/db'
 import { students } from '@/db/schema'
 import { listOpenCasesForStudent } from '@/db/queries/cases'
-import { claimCase, type ClaimResult } from '@/db/queries/claims'
+import { claimCase, countActiveClaimsForStudent, type ClaimResult } from '@/db/queries/claims'
 import { getStudentCaseScope } from '@/lib/config'
+import { getMaxActiveClaimsPerStudent } from '@/lib/config/settings'
 
 /**
  * Claiming a case, with the authorisation that `claimCase` deliberately does
@@ -36,6 +37,12 @@ import { getStudentCaseScope } from '@/lib/config'
  * days do not match and offers to *ask* the patient instead of claiming, which
  * grants nothing. Without this the bot's button would have been a way round that
  * whole mechanism.
+ *
+ * **So is the cap on how many cases one student may hold**, for the same reason
+ * and it is the same shape of hole: the cap used to exist only as a branch in
+ * the student page that swapped the queue for the held case, which the bot's
+ * claim button and a hand-made POST both walked straight past. A rule that is
+ * only a rendering decision is not a rule.
  */
 export type StudentClaimResult =
   | ClaimResult
@@ -43,6 +50,8 @@ export type StudentClaimResult =
   | { ok: false; reason: 'NOT_IN_SCOPE' }
   /** In scope, but on days this student is not in clinic. They may ask instead. */
   | { ok: false; reason: 'DAYS_DO_NOT_MATCH' }
+  /** Allowed to see it, already holding as many cases as the setting permits. */
+  | { ok: false; reason: 'CLAIM_LIMIT_REACHED'; limit: number }
 
 export async function claimCaseForStudent(
   caseId: string,
@@ -78,6 +87,27 @@ export async function claimCaseForStudent(
   const clinic = new Set(profile.clinicDays ?? [])
   const attendable = clinic.size === 0 || visible.availabilityDays.some((day) => clinic.has(day))
   if (!attendable) return { ok: false, reason: 'DAYS_DO_NOT_MATCH' }
+
+  /*
+   * Checked last, deliberately.
+   *
+   * The other refusals say "this case is not yours to take"; this one says "you
+   * have your hands full", which is only worth telling somebody about a case
+   * they could otherwise have had. Ordering it first would answer a student in
+   * Basra poking at a Mosul case with a sentence about their own workload, and
+   * that sentence is a small leak: it says the case exists and is claimable.
+   *
+   * There is no transaction around the count and the claim, and that is
+   * acceptable here in a way it is not for "a case can never be claimed twice".
+   * The worst a race costs is one student holding one case over the cap, which
+   * self-corrects the moment they close either — against a database-enforced
+   * invariant whose failure hands a stranger's phone number to a second person.
+   */
+  const [held, limit] = await Promise.all([
+    countActiveClaimsForStudent(studentId),
+    getMaxActiveClaimsPerStudent(),
+  ])
+  if (held >= limit) return { ok: false, reason: 'CLAIM_LIMIT_REACHED', limit }
 
   return claimCase(caseId, studentId)
 }

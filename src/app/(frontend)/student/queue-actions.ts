@@ -61,6 +61,8 @@ export async function claimCaseAction(
         return { error: studentQueue.claimFailedNotInScope }
       case 'DAYS_DO_NOT_MATCH':
         return { error: studentQueue.claimFailedDays }
+      case 'CLAIM_LIMIT_REACHED':
+        return { error: studentQueue.claimFailedLimit(result.limit) }
       default:
         return { error: studentQueue.claimFailedGeneric }
     }

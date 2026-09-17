@@ -11,6 +11,7 @@ import * as migration_20260910_212909_contact_grace from './20260910_212909_cont
 import * as migration_20260910_213352_contact_retention from './20260910_213352_contact_retention'
 import * as migration_20260916_090000_university_is_the_college from './20260916_090000_university_is_the_college';
 import * as migration_20260917_210000_upload_prefix from './20260917_210000_upload_prefix';
+import * as migration_20260918_010000_claim_limit from './20260918_010000_claim_limit';
 
 export const migrations = [
   {
@@ -77,5 +78,10 @@ export const migrations = [
     up: migration_20260917_210000_upload_prefix.up,
     down: migration_20260917_210000_upload_prefix.down,
     name: '20260917_210000_upload_prefix',
+  },
+  {
+    up: migration_20260918_010000_claim_limit.up,
+    down: migration_20260918_010000_claim_limit.down,
+    name: '20260918_010000_claim_limit',
   },
 ];

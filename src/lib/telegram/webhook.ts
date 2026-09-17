@@ -312,7 +312,14 @@ async function handleClaimCallback(
         ? telegramCopy.claimTakenByBot
         : result.reason === 'DAYS_DO_NOT_MATCH'
           ? telegramCopy.caseCardDays
-          : telegramCopy.queueNotVerified
+          : // The cap is the same rule the site shows on a disabled button, and
+            // the bot has to say it too: `callback_data` reaches
+            // `claimCaseForStudent` with no rendered page in front of it, so
+            // without this a student at the cap would be told their account was
+            // not verified.
+            result.reason === 'CLAIM_LIMIT_REACHED'
+            ? telegramCopy.claimLimitReached(result.limit)
+            : telegramCopy.queueNotVerified
     return { reply: { chatId, text }, answerCallbackId: callbackId }
   }
 

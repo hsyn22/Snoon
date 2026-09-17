@@ -617,6 +617,10 @@ export interface Setting {
    */
   maxCasesPerPhonePerDay: number;
   /**
+   * كل حالة محجوزة معناها مراجع ينتظر مكالمة خلال مهلة التواصل. واحدة هو الافتراضي: الطالب يخلّص حالته وياخذ غيرها. ترفعه إذا صار عدد الحالات أكثر من الطلبة، وتنزّله إذا صارت حالات تنحجز وما أحد يتصل بيها. الطالب يظل يشوف كل الحالات بالقائمة على أي حال — بس ما يكدر يحجز زيادة على هذا العدد.
+   */
+  maxActiveClaimsPerStudent: number;
+  /**
    * بعد هذي المدة، اسم المريض ورقمه وملاحظاته تنمحى نهائياً من الحالة. الحالة نفسها تبقى — رمزها وسجلها ونوع العلاج — حتى تكدر تجاوب إذا أحد سأل عن حالة قديمة. رقم الموبايل هو أخطر شي بالنظام، وحالة خالصة ما تحتاجه.
    */
   contactRetentionDays: number;
@@ -638,6 +642,7 @@ export interface SettingsSelect<T extends boolean = true> {
   wrongNumberBlockDays?: T;
   maxOpenCasesPerPhone?: T;
   maxCasesPerPhonePerDay?: T;
+  maxActiveClaimsPerStudent?: T;
   contactRetentionDays?: T;
   photoRetentionDays?: T;
   updatedAt?: T;

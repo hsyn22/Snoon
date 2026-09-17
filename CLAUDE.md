@@ -461,6 +461,49 @@ and the bot. Three things about it:
 `claimCase` itself is unchanged and still does the atomic work. Do not call it directly from
 anything a student can reach.
 
+### How many cases a student may hold, and the queue that disappeared
+
+Haider's report on the first real day: a student claimed one فحص case and **every other
+case vanished for them**. The cause was one `? :` on the student page — `activeClaim ?
+<the held case> : <the queue>` — so holding a case replaced the entire screen.
+
+Two separate faults, and the second is the one that mattered:
+
+1. **It made سنون look empty.** A student cannot tell "there are no patients" from "I am
+   not allowed to take another", and the first reading is the one they leave on. It is the
+   same failure this file already records for an unseeded config list: a screen that is
+   blank for a reason has to say the reason.
+2. **It was not a rule.** A rendering decision stops nobody. The bot's claim button reaches
+   `claimCaseForStudent` through attacker-controlled `callback_data` with no page in front
+   of it, and every server action is a public POST — so a student at the "limit" could hold
+   as many cases as they could name ids for.
+
+So: **the cap is enforced in `claimCaseForStudent`**, beside the city, stage and day
+checks, and **the number is a Payload setting** (`maxActiveClaimsPerStudent`, default 1).
+Haider chose both halves — one at a time, and adjustable without a deployment, because
+which number is right depends on whether cases outnumber students and nobody knows yet.
+
+Four things worth keeping:
+
+- **The queue is always drawn in full.** At the cap the claim button is disabled with a
+  sentence naming what clears it, and the held cases are listed *above* the queue. Never
+  hide the list to express a rule.
+- **The cap is checked last**, after city, stage and days. The other refusals say "this
+  case is not yours"; this one says "your hands are full", which is only worth telling
+  somebody about a case they could otherwise have had — answering an out-of-scope probe
+  with it would confirm the case exists and is claimable.
+- **Not in a transaction with the claim, deliberately.** The worst a race costs is one
+  student one case over the cap, which self-corrects the moment they close either. That is
+  a different order of thing from "a case can never be claimed twice", whose failure hands
+  a stranger's phone number to a second person — and which stays a conditional update.
+- **The refusal has its own reason in the bot too.** Without `CLAIM_LIMIT_REACHED` in
+  `webhook.ts`, a student at the cap fell through to "your account is not verified", which
+  is both false and alarming.
+
+`tests/claim-limit.db.test.ts` holds it, including that a refused claim leaves the case in
+`REQUESTED` — a case knocked out of the queue by a claim that was then refused would be
+held by nobody and visible to no one.
+
 ### Claiming must be atomic
 
 The claim is a conditional update inside a transaction:

@@ -32,6 +32,36 @@ export const getContactWindowHours = cache(async (): Promise<number> => {
 })
 
 
+const FALLBACK_MAX_ACTIVE_CLAIMS_PER_STUDENT = 1
+
+/**
+ * How many cases one student may hold at the same time.
+ *
+ * One by default, and the default is the patient's side of the argument: a
+ * claimed case is a person waiting for a call inside the contact window, so a
+ * student holding five is five people waiting on one person's afternoon.
+ *
+ * It is a setting rather than a constant because the right number depends on
+ * something nobody knows yet — whether cases outnumber students or the other way
+ * round. Raise it when the queue sits full; lower it when cases are claimed and
+ * never rung.
+ *
+ * **This is a cap on claiming, never on seeing.** The queue is drawn in full
+ * whatever this says; what the cap switches off is the claim button, with a
+ * sentence saying why. A student who cannot see the queue cannot tell whether
+ * سنون is empty or they are simply not allowed, and the first reading is the
+ * one they leave on.
+ */
+export const getMaxActiveClaimsPerStudent = cache(async (): Promise<number> => {
+  const payload = await getPayload({ config })
+  const settings = await payload.findGlobal({ slug: 'settings' })
+  const value = settings.maxActiveClaimsPerStudent
+  // Zero would mean nobody may ever claim, which is not a configuration anybody
+  // means to make — it is an empty field or a bad migration.
+  return typeof value === 'number' && value > 0 ? value : FALLBACK_MAX_ACTIVE_CLAIMS_PER_STUDENT
+})
+
+
 const FALLBACK_CASE_EXPIRY_DAYS = 30
 
 /**

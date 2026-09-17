@@ -3,11 +3,11 @@ import { eq } from 'drizzle-orm'
 import { headers } from 'next/headers'
 import { db } from '@/db'
 import { students } from '@/db/schema'
-import { getActiveClaimForStudent } from '@/db/queries/claims'
+import { listActiveClaimsForStudent } from '@/db/queries/claims'
 import { auth } from '@/lib/auth'
 import {
+  studentActiveClaims,
   studentAuth,
-  studentClaim,
   studentHistory,
   studentStatus,
   studentTelegram,
@@ -92,9 +92,18 @@ export default async function StudentHomePage() {
     .where(eq(students.authUserId, session.user.id))
     .limit(1)
 
-  // A student holds at most one case at a time, and the case they hold matters
-  // more than the queue: someone is waiting for their call.
-  const activeClaim = profile ? await getActiveClaimForStudent(profile.id) : null
+  /*
+   * The cases this student is holding. They are listed *above* the queue rather
+   * than instead of it.
+   *
+   * The page used to read `activeClaim ? <the case> : <the queue>`, so a student
+   * who claimed one case watched every other case vanish — which Haider hit
+   * within a day of the site going up, and reasonably read as سنون breaking. The
+   * cap on how many a student may hold is real and now lives where a rule has to
+   * live: `claimCaseForStudent`, checked on the site and in the bot alike. What
+   * it switches off is the claim button, with a sentence saying why.
+   */
+  const activeClaims = profile ? await listActiveClaimsForStudent(profile.id) : []
 
   // The bot is offered for two reasons: notifications, and — more usefully —
   // sending the enrolment document without a web file picker.
@@ -146,20 +155,35 @@ export default async function StudentHomePage() {
           <Panel title={studentStatus.rejectedTitle} body={studentStatus.rejectedBody} />
         ) : profile.verificationStatus === 'SUSPENDED' ? (
           <Panel title={studentStatus.suspendedTitle} body={studentStatus.suspendedBody} />
-        ) : activeClaim ? (
-          <Card tone="accent">
-            <CardBody className="p-5">
-              <h1 className="text-xl font-bold">{studentClaim.title}</h1>
-              <p className="mt-2 text-sm">{studentClaim.intro}</p>
-              <div className="mt-4">
-                <ButtonLink href={`/student/case/${activeClaim.caseId}`}>
-                  {studentClaim.title}
-                </ButtonLink>
-              </div>
-            </CardBody>
-          </Card>
         ) : (
           <>
+            {activeClaims.length > 0 ? (
+              <Card tone="accent" className="mb-4">
+                <CardBody className="p-5">
+                  <h1 className="text-xl font-bold">
+                    {activeClaims.length === 1
+                      ? studentActiveClaims.one
+                      : studentActiveClaims.title}
+                  </h1>
+                  <p className="mt-2 text-sm">{studentActiveClaims.intro}</p>
+                  <ul className="mt-4 space-y-2">
+                    {activeClaims.map((claim) => (
+                      <li key={claim.id}>
+                        <ButtonLink
+                          href={`/student/case/${claim.caseId}`}
+                          className="w-full justify-between"
+                        >
+                          {/* A reference code is Latin and digits inside an
+                              Arabic button; without its own run it re-orders. */}
+                          <span className="ltr-run font-mono text-sm">{claim.referenceCode}</span>
+                          <span className="text-sm">{studentActiveClaims.open}</span>
+                        </ButtonLink>
+                      </li>
+                    ))}
+                  </ul>
+                </CardBody>
+              </Card>
+            ) : null}
             {/*
               * Above the queue, not below it.
               *
@@ -180,6 +204,7 @@ export default async function StudentHomePage() {
               universityId={profile.universityId}
               stageId={profile.stageId}
               clinicDays={profile.clinicDays}
+              heldCount={activeClaims.length}
             />
           </>
         )}
