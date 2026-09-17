@@ -432,6 +432,46 @@ update guarded by the status it may come from, so two schedulers racing is safe.
 **Nothing schedules it until the site is deployed.** Until then contact windows do not
 expire on their own, and a case can sit claimed indefinitely.
 
+### Filtering the queue, and the two lists that must not be confused
+
+Haider asked for filters on the case lists — days and treatments, several from each list,
+and newest first.
+
+**The filter is a plain GET form inside a `<details>`, with no JavaScript at all.** Same
+decision as the guided questions and the same reason: the browser builds the query string
+and navigates, so it works before hydration, with JavaScript off, and on a phone that never
+finishes running it. It is a Server Component; nothing about it is in the bundle.
+
+**The part that is not a convenience** is that `treatmentTypeIds` and
+`onlyTreatmentTypeIds` are two different things wearing the same shape:
+
+- `treatmentTypeIds` is the **scope** — what this student's university and stage allow,
+  decided server-side. It is an access-control boundary.
+- `onlyTreatmentTypeIds` and `onlyDays` are the **filter** — values off a query string a
+  student types.
+
+Putting the query string into the scope field would turn `?t=root-canal` into a fourth year
+asking for a fifth year's queue and being handed it. So the filter is an *additional*
+condition that can only ever remove rows, and the values are validated against the student's
+own scope before they are used at all — belt as well as braces, so the braces are never
+load-bearing. `tests/queue-filter.db.test.ts` asserts the escape attempt returns nothing.
+
+Three smaller things:
+
+- **An empty filter is not "match nothing".** The page passes `[]` whenever no box is
+  ticked, and reading that as a condition would empty every student's queue by default.
+- **A filtered-empty list gets its own sentence**, and the filter stays on screen to be
+  cleared. "There are no cases" to somebody who has filtered themselves down to nothing
+  reads as سنون being empty — the same failure this file records for an unseeded config
+  list.
+- **Newest first, on Haider's instruction**, reversing oldest-first. Oldest-first has the
+  better fairness argument — the longest wait served first — and the worse practical one:
+  a student opening the page wants what is new, and ascending order puts the case they
+  already decided against at the top every time. The cost is that an unclaimed case sinks
+  and only `expireStaleRequestedCases` eventually catches it. **If old cases start expiring
+  unclaimed, this is why**, and the answer is a sort the student chooses, not a different
+  default.
+
 ### Claiming must also be authorised, which is a different thing
 
 `claimCase` is the atomic part and it takes a case id on trust. **That was a real hole, found

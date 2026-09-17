@@ -891,6 +891,25 @@ export const studentQueue = {
   caseNotes: 'ملاحظات المراجع',
   caseSubmitted: 'قُدّمت',
 
+  /**
+   * The filter. Days and treatments, several of each, as a plain GET form.
+   *
+   * "Which days" is the one a student actually reaches for: their clinic days
+   * are fixed by a timetable, and a case they cannot attend is a case they
+   * cannot claim.
+   */
+  filterTitle: 'صفّي الحالات',
+  filterActive: (n: number) => (n === 1 ? 'فلتر واحد' : `${n} فلاتر`),
+  filterDays: 'الأيام',
+  filterDaysHint: 'تظهر الحالات اللي المراجع يكدر يجي بيها بأي يوم من اللي تختاره.',
+  filterTreatments: 'نوع العلاج',
+  filterApply: 'طبّق',
+  filterClear: 'شيل الفلاتر',
+  /** The empty state when a filter is what emptied it — never the plain
+      "no cases" sentence, which would read as سنون having no patients. */
+  filteredEmptyTitle: 'ما أكو حالة تطابق الفلتر',
+  filteredEmptyBody: 'أكو حالات بالقائمة، بس ما وحدة منهن تطابق اللي اخترته. شيل بعض الفلاتر.',
+
   claim: 'احجز الحالة',
 
   /**

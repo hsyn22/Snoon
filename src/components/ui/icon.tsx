@@ -244,3 +244,13 @@ export function CropIcon({ className }: IconProps) {
     </Svg>
   )
 }
+
+/** The queue's filter control. Three bars narrowing — the funnel everybody knows,
+    drawn as lines rather than a solid so it sits with the rest of the set. */
+export function FilterIcon({ className }: IconProps) {
+  return (
+    <Svg className={className}>
+      <path d="M3 5h18M6 12h12M10 19h4" />
+    </Svg>
+  )
+}

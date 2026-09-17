@@ -1,4 +1,5 @@
 import { getAllTreatmentTypes, getStudentCaseScope } from '@/lib/config'
+import { WEEK_DAYS } from '@/lib/config/schema'
 import { getMaxActiveClaimsPerStudent } from '@/lib/config/settings'
 import { listOpenCasesForStudent } from '@/db/queries/cases'
 import { pendingRequestCaseIds } from '@/db/queries/day-requests'
@@ -9,6 +10,7 @@ import { AlertIcon, CalendarIcon, CheckIcon, ClockIcon, NoteIcon } from '@/compo
 import { PageHeader } from '@/components/ui/section'
 import { caseForm, casePhotos as photoCopy, caseStatus, studentQueue } from '@/lib/copy'
 import { formatCaseDate } from '@/lib/dates'
+import { QueueFilter } from './queue-filter'
 import { ClaimButton } from './claim-button'
 import { AskDaysButton } from './ask-days-button'
 
@@ -28,12 +30,32 @@ import { AskDaysButton } from './ask-days-button'
  * Presented as clinical cases, not as people: a reference code, what is needed,
  * and when. No names, and nothing to rank or browse.
  */
+/**
+ * Read a repeated query parameter as a validated set.
+ *
+ * Validated against the real list rather than trusted, for the reason the guide
+ * handoff already gives: an edited URL or a renamed slug must mean fewer filters
+ * rather than a broken page. It is belt and braces — what survives is passed as
+ * a narrowing, so even an unfiltered forgery could only ever show less — but the
+ * belt is what keeps the braces from being load-bearing.
+ */
+function selectedFrom(
+  params: Record<string, string | string[] | undefined>,
+  key: string,
+  allowed: readonly string[],
+): string[] {
+  const raw = params[key]
+  const values = Array.isArray(raw) ? raw : raw ? [raw] : []
+  return [...new Set(values.filter((value) => allowed.includes(value)))]
+}
+
 export async function CaseQueue({
   studentId,
   universityId,
   stageId,
   clinicDays,
   heldCount,
+  params,
 }: {
   studentId: string
   universityId: string
@@ -42,6 +64,8 @@ export async function CaseQueue({
   clinicDays: readonly string[]
   /** How many cases this student is already holding. */
   heldCount: number
+  /** The raw query string. Validated here, against this student's own scope. */
+  params: Record<string, string | string[] | undefined>
 }) {
   const scope = await getStudentCaseScope(universityId, stageId)
 
@@ -56,11 +80,38 @@ export async function CaseQueue({
     )
   }
 
-  const [cases, treatments, claimLimit] = await Promise.all([
-    listOpenCasesForStudent(studentId, scope),
+  const [allTreatments, claimLimit] = await Promise.all([
     getAllTreatmentTypes(),
     getMaxActiveClaimsPerStudent(),
   ])
+
+  /**
+   * Only what this stage may treat. Filtering by anything else is not a filter,
+   * it is a request for somebody else's queue — so those values are dropped
+   * here rather than passed on and relied upon to match nothing.
+   */
+  const filterableTreatments = allTreatments.filter((treatment) =>
+    scope.treatmentTypeIds.includes(treatment.id),
+  )
+
+  const filterDays = selectedFrom(params, 'd', WEEK_DAYS)
+  const filterTreatments = selectedFrom(
+    params,
+    't',
+    filterableTreatments.map((treatment) => treatment.id),
+  )
+  const filtering = filterDays.length > 0 || filterTreatments.length > 0
+
+  // Narrowing, never widening: `scope` decides what this student may see and
+  // these can only remove from it. Feeding a query string into
+  // `treatmentTypeIds` instead would be a fourth year asking for a fifth year's
+  // queue and getting it.
+  const cases = await listOpenCasesForStudent(studentId, {
+    ...scope,
+    onlyDays: filterDays,
+    onlyTreatmentTypeIds: filterTreatments,
+  })
+  const treatments = allTreatments
 
   /**
    * At the cap the list is still drawn in full and only the button goes.
@@ -97,24 +148,50 @@ export async function CaseQueue({
     ),
   )
 
-  if (cases.length === 0) {
-    return (
-      <Card>
-        <CardBody className="p-5">
-          <h2 className="font-bold">{studentQueue.emptyTitle}</h2>
-          <p className="mt-2 text-sm text-foreground-muted">{studentQueue.emptyBody}</p>
-        </CardBody>
-      </Card>
-    )
-  }
-
-  return (
-    <div className="space-y-4">
+  /*
+   * An empty list has two quite different meanings and must never use one
+   * sentence for both. "There are no cases" to a student who has filtered
+   * themselves down to nothing reads as سنون being empty, and they leave —
+   * which is the same failure this codebase records for an unseeded config
+   * list. The filtered version says what is in the way and how to clear it, and
+   * the filter itself stays on screen to be cleared.
+   */
+  const header = (
+    <>
       <PageHeader
         eyebrow={studentQueue.eyebrow}
         title={studentQueue.title}
         lead={studentQueue.intro}
       />
+      <QueueFilter
+        treatments={filterableTreatments}
+        selectedDays={filterDays}
+        selectedTreatments={filterTreatments}
+      />
+    </>
+  )
+
+  if (cases.length === 0) {
+    return (
+      <div className="space-y-4">
+        {filtering ? header : null}
+        <Card>
+          <CardBody className="p-5">
+            <h2 className="font-bold">
+              {filtering ? studentQueue.filteredEmptyTitle : studentQueue.emptyTitle}
+            </h2>
+            <p className="mt-2 text-sm text-foreground-muted">
+              {filtering ? studentQueue.filteredEmptyBody : studentQueue.emptyBody}
+            </p>
+          </CardBody>
+        </Card>
+      </div>
+    )
+  }
+
+  return (
+    <div className="space-y-4">
+      {header}
 
       {/* The count above the list. A student opening this page again wants to
           know whether anything is here before reading a single card. */}

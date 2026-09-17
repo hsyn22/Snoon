@@ -56,7 +56,11 @@ function Panel({
   )
 }
 
-export default async function StudentHomePage() {
+export default async function StudentHomePage({
+  searchParams,
+}: {
+  searchParams: Promise<Record<string, string | string[] | undefined>>
+}) {
   const session = await auth.api.getSession({ headers: await headers() })
 
   if (!session) {
@@ -104,6 +108,12 @@ export default async function StudentHomePage() {
    * it switches off is the claim button, with a sentence saying why.
    */
   const activeClaims = profile ? await listActiveClaimsForStudent(profile.id) : []
+
+  // The queue's filter lives in the query string, so it survives a reload, can
+  // be shared, and needs no JavaScript to apply. It is handed over raw: the
+  // queue knows this student's scope and is the only thing that can say which
+  // values are theirs to filter by.
+  const params = await searchParams
 
   // The bot is offered for two reasons: notifications, and — more usefully —
   // sending the enrolment document without a web file picker.
@@ -205,6 +215,7 @@ export default async function StudentHomePage() {
               stageId={profile.stageId}
               clinicDays={profile.clinicDays}
               heldCount={activeClaims.length}
+              params={params}
             />
           </>
         )}

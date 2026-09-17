@@ -1,4 +1,4 @@
-import { and, arrayOverlaps, asc, desc, eq, inArray, isNull, sql } from 'drizzle-orm'
+import { and, arrayOverlaps, desc, eq, inArray, isNull, sql } from 'drizzle-orm'
 import { db } from '@/db'
 import { appointments, caseEvents, casePhotos, cases, claims, students } from '@/db/schema'
 import { studentPreviouslyReleased } from '@/db/queries/claims'
@@ -197,6 +197,22 @@ export type StudentCaseFilter = {
   /** When given, only cases asking for at least one of these treatments. */
   treatmentTypeIds?: string[]
   /**
+   * The student's own filter, narrowing *within* the scope above.
+   *
+   * These are two different things wearing the same shape and conflating them
+   * would be a hole rather than a bug: `treatmentTypeIds` is what this student's
+   * stage may treat, decided server-side from their university and stage;
+   * `onlyTreatmentTypeIds` and `onlyDays` come off a query string a student
+   * types. Passing the query string into the scope field would let
+   * `?t=root-canal` hand a fourth year a fifth year's queue.
+   *
+   * So they are additional conditions, never replacements, and an empty or
+   * unrecognised list simply narrows nothing.
+   */
+  onlyTreatmentTypeIds?: string[]
+  /** Only cases the patient can attend on at least one of these days. */
+  onlyDays?: string[]
+  /**
    * When given, narrow to these case ids.
    *
    * This exists so **authorising a claim uses the same filter that draws the
@@ -264,6 +280,21 @@ export async function listOpenCasesForStudent(
     }
   }
 
+  /*
+   * The student's own filter, applied on top of everything above.
+   *
+   * Both are plain array overlaps against the same GIN-indexed columns the
+   * scope uses. Narrowing only: whatever these say, a case still has to have
+   * passed the city, stage-capability and paediatric conditions to get here.
+   */
+  if (filter.onlyTreatmentTypeIds && filter.onlyTreatmentTypeIds.length > 0) {
+    conditions.push(arrayOverlaps(cases.treatmentTypeIds, filter.onlyTreatmentTypeIds))
+  }
+
+  if (filter.onlyDays && filter.onlyDays.length > 0) {
+    conditions.push(arrayOverlaps(cases.availabilityDays, filter.onlyDays))
+  }
+
   return db
     .select({
       id: cases.id,
@@ -276,7 +307,21 @@ export async function listOpenCasesForStudent(
     })
     .from(cases)
     .where(and(...conditions))
-    .orderBy(asc(cases.createdAt))
+    /*
+     * Newest first, on Haider's instruction.
+     *
+     * It was oldest first, which has the better fairness argument — the patient
+     * who has waited longest is served first — and the worse practical one. A
+     * student opening the page wants to know what is new since they last looked,
+     * and an ascending list puts the case they have already decided against at
+     * the top every single time.
+     *
+     * The cost is real and worth knowing: a case nobody claims sinks, and the
+     * only thing that eventually catches it is `expireStaleRequestedCases`. If
+     * old cases start expiring unclaimed, this line is the reason and the answer
+     * is a sort the student chooses, not a different default.
+     */
+    .orderBy(desc(cases.createdAt))
     .limit(filter.limit ?? 50)
 }
 
