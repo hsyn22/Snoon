@@ -9,6 +9,7 @@ import {
   studentActiveClaims,
   studentAuth,
   studentHistory,
+  studentNotifications,
   studentStatus,
   studentTelegram,
 } from '@/lib/copy'
@@ -222,9 +223,12 @@ export default async function StudentHomePage({
         {/* Only once verified: before that there is nothing to have a record of,
             and the student has a more pressing step in front of them. */}
         {profile?.verificationStatus === 'VERIFIED' ? (
-          <div className="mt-4">
+          <div className="mt-4 flex flex-wrap gap-2">
             <ButtonLink href="/student/history" variant="secondary" className="text-sm">
               {studentHistory.link}
+            </ButtonLink>
+            <ButtonLink href="/student/notifications" variant="secondary" className="text-sm">
+              {studentNotifications.link}
             </ButtonLink>
           </div>
         ) : null}

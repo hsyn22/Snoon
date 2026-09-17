@@ -28,6 +28,13 @@ import { sendNotification } from './send'
  * - **It is best effort and never a precondition.** It runs after the case is
  *   safely written and outside its transaction; a failed send must not cost a
  *   patient their submission.
+ * - **The student's own settings are read here, not in the bot.** A student may
+ *   turn the alerts off entirely, or mute particular treatments — a fifth year
+ *   who does not want to be woken for every cleaning. Both are filters on
+ *   *telling* somebody and never on what they may see: a muted treatment still
+ *   appears in their queue and is still theirs to claim. Confusing the two
+ *   would make a notification preference quietly shrink somebody's queue, which
+ *   nobody would connect to a checkbox they ticked a month ago.
  *
  * **It is a query per linked student, and that is deliberate at this size.** One
  * or two cities means tens of students, so tens of cheap indexed queries once
@@ -60,6 +67,7 @@ export async function notifyStudentsOfNewCase(caseId: string): Promise<number> {
       id: students.id,
       universityId: students.universityId,
       stageId: students.stageId,
+      mutedTreatmentTypeIds: students.mutedTreatmentTypeIds,
     })
     .from(students)
     .innerJoin(
@@ -70,7 +78,10 @@ export async function notifyStudentsOfNewCase(caseId: string): Promise<number> {
         isNull(telegramLinks.revokedAt),
       ),
     )
-    .where(eq(students.verificationStatus, 'VERIFIED'))
+    // Wanting the alerts is part of being a candidate, so a student who turned
+    // them off costs nothing per case rather than a scope lookup and a queue
+    // query to discover there is nowhere to send.
+    .where(and(eq(students.verificationStatus, 'VERIFIED'), eq(students.notifyNewCases, true)))
 
   if (candidates.length === 0) return 0
 
@@ -87,6 +98,22 @@ export async function notifyStudentsOfNewCase(caseId: string): Promise<number> {
   // a college and stage cost one lookup between them.
   let sent = 0
   for (const student of candidates) {
+    /*
+     * Muting is per treatment, and a case asking for several is silenced only
+     * when **every** one of them is muted.
+     *
+     * The other way round — silence if any is muted — would lose a case wanting
+     * a cleaning and a root canal to a student who muted cleanings, and it is
+     * the root canal they were waiting for. Muting says "do not wake me for
+     * this"; it cannot be allowed to mean "and hide anything it is attached to".
+     */
+    if (
+      student.mutedTreatmentTypeIds.length > 0 &&
+      record.treatmentTypeIds.every((id) => student.mutedTreatmentTypeIds.includes(id))
+    ) {
+      continue
+    }
+
     const scope = await getStudentCaseScope(student.universityId, student.stageId)
     if (scope.cityIds.length === 0 || scope.treatmentTypeIds.length === 0) continue
 

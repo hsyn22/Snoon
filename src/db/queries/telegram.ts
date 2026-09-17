@@ -137,6 +137,24 @@ export async function getSubjectForChat(chatId: string): Promise<TelegramSubject
  * an id and answering a question about it — when all it is used for is rendering
  * a panel the caller is already authorised to see.
  */
+/**
+ * Every subject of one kind with a live chat binding, as a set.
+ *
+ * For the admin's student list, which would otherwise call `isSubjectLinked`
+ * once per student — 200 queries to answer one yes/no column. Bounded by
+ * bindings rather than by students, and the admin already reads the whole list.
+ */
+export async function listLinkedSubjectIds(
+  type: TelegramSubject['type'],
+): Promise<Set<string>> {
+  const rows = await db
+    .select({ subjectId: telegramLinks.subjectId, chatId: telegramLinks.chatId })
+    .from(telegramLinks)
+    .where(and(eq(telegramLinks.subjectType, type), isNull(telegramLinks.revokedAt)))
+
+  return new Set(rows.filter((row) => row.chatId).map((row) => row.subjectId))
+}
+
 export async function isSubjectLinked(subject: TelegramSubject): Promise<boolean> {
   const [row] = await db
     .select({ chatId: telegramLinks.chatId })

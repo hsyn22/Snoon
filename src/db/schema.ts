@@ -1,5 +1,6 @@
 import { relations, sql } from 'drizzle-orm'
 import {
+  boolean,
   index,
   pgSchema,
   text,
@@ -319,6 +320,36 @@ export const students = snoon.table(
     clinicDays: text('clinic_days').array().notNull().default([]),
 
     verificationStatus: verificationStatus('verification_status').notNull().default('PENDING'),
+
+    /**
+     * Whether this student wants a Telegram message when a new case appears.
+     *
+     * On by default, and the default is the whole point of the feature: a queue
+     * only helps somebody who thought to open it, and a student with nothing
+     * waiting has no reason to look. The free push is what turns سنون from a
+     * page students check into something that reaches them.
+     *
+     * Turning it off is not the same as unlinking Telegram. A student still
+     * wants the bot for sending their enrolment document and for the case they
+     * hold; what they may not want is a message every time somebody in their
+     * city submits anything.
+     */
+    notifyNewCases: boolean('notify_new_cases').notNull().default(true),
+
+    /**
+     * Treatments this student does *not* want to be told about.
+     *
+     * Stored as the exclusions rather than the inclusions, and that is the
+     * load-bearing decision: an inclusion list is a snapshot of the treatment
+     * types that existed on the day it was saved, so adding `fluoride` to a
+     * stage would silently send its alerts to nobody — which is precisely the
+     * failure this codebase already has on record for `ensureStageDefaults`,
+     * and whose symptom is an empty inbox that reads as "no patients".
+     *
+     * Empty means everything, which is what every student recorded before this
+     * existed, so adding the column changes nothing for them.
+     */
+    mutedTreatmentTypeIds: text('muted_treatment_type_ids').array().notNull().default([]),
 
     /**
      * Path to the uploaded proof of enrolment. Stored outside the public

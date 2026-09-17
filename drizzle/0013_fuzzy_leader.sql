@@ -1,0 +1,2 @@
+ALTER TABLE "snoon"."students" ADD COLUMN "notify_new_cases" boolean DEFAULT true NOT NULL;--> statement-breakpoint
+ALTER TABLE "snoon"."students" ADD COLUMN "muted_treatment_type_ids" text[] DEFAULT '{}' NOT NULL;

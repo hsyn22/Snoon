@@ -4,7 +4,11 @@ import { getPayload } from 'payload'
 import config from '@payload-config'
 import { db } from '@/db'
 import { students } from '@/db/schema'
-import { getStages, getUniversities } from '@/lib/config'
+import { getAllTreatmentTypes, getStages, getUniversities } from '@/lib/config'
+import { summariseClaimsByStudent } from '@/db/queries/claims'
+import { listLinkedSubjectIds } from '@/db/queries/telegram'
+import { caseForm, studentHistory, studentNotifications } from '@/lib/copy'
+import { formatCaseDate } from '@/lib/dates'
 import { decideStudentVerification } from './student-review-actions'
 
 /**
@@ -49,9 +53,14 @@ export default async function StudentReviewView() {
 
   // Students store slugs; an admin should read names. Falls back to the slug so a
   // student attached to a since-deleted college still shows something.
-  const [universities, stages] = await Promise.all([
+  const [universities, stages, treatments, records, linkedStudentIds] = await Promise.all([
     getUniversities(),
     getStages(),
+    getAllTreatmentTypes(),
+    // One query for every student's case record, rather than one per row: this
+    // page draws up to 200 students.
+    summariseClaimsByStudent(),
+    listLinkedSubjectIds('STUDENT'),
   ])
   const nameOf = (list: readonly { id: string; nameAr: string }[], id: string) =>
     list.find((entry) => entry.id === id)?.nameAr ?? id
@@ -62,6 +71,9 @@ export default async function StudentReviewView() {
       fullName: students.fullName,
       universityId: students.universityId,
       stageId: students.stageId,
+      clinicDays: students.clinicDays,
+      notifyNewCases: students.notifyNewCases,
+      mutedTreatmentTypeIds: students.mutedTreatmentTypeIds,
       verificationStatus: students.verificationStatus,
       verificationDocumentPath: students.verificationDocumentPath,
       verificationReviewedBy: students.verificationReviewedBy,
@@ -90,6 +102,10 @@ export default async function StudentReviewView() {
   }
 
   const pending = rows.filter((row) => row.verificationStatus === 'PENDING')
+
+  /** A student with no claims has a record too — it is simply empty. */
+  const recordFor = (studentId: string) =>
+    records.get(studentId) ?? { total: 0, treated: 0, active: 0, entries: [] }
 
   return (
     <div style={{ padding: '2rem', maxWidth: '60rem', margin: '0 auto' }} dir="rtl">
@@ -157,7 +173,94 @@ export default async function StudentReviewView() {
                     <dd style={{ margin: 0 }}>{row.verificationNote}</dd>
                   </>
                 ) : null}
+                <dt style={{ opacity: 0.7 }}>أيام الدوام</dt>
+                <dd style={{ margin: 0 }}>
+                  {row.clinicDays.length === 0
+                    ? 'كل الأيام'
+                    : row.clinicDays
+                        .map(
+                          (day) => caseForm.weekDays[day as keyof typeof caseForm.weekDays] ?? day,
+                        )
+                        .join('، ')}
+                </dd>
+                <dt style={{ opacity: 0.7 }}>تلگرام</dt>
+                <dd style={{ margin: 0 }}>{linkedStudentIds.has(row.id) ? 'مربوط' : 'مو مربوط'}</dd>
+                <dt style={{ opacity: 0.7 }}>الإشعارات</dt>
+                <dd style={{ margin: 0 }}>
+                  {row.notifyNewCases
+                    ? `${studentNotifications.adminOn} — ${
+                        row.mutedTreatmentTypeIds.length === 0
+                          ? studentNotifications.adminAll
+                          : studentNotifications.adminMuted(row.mutedTreatmentTypeIds.length)
+                      }`
+                    : studentNotifications.adminOff}
+                  {/* Named rather than counted when muted, because "3 muted" is
+                      not something an admin can act on and the names are. */}
+                  {row.notifyNewCases && row.mutedTreatmentTypeIds.length > 0 ? (
+                    <span style={{ opacity: 0.7 }}>
+                      {' '}
+                      ({row.mutedTreatmentTypeIds.map((id) => nameOf(treatments, id)).join('، ')})
+                    </span>
+                  ) : null}
+                </dd>
               </dl>
+
+              {/*
+                * The student's own case record, for the admin.
+                *
+                * Haider asked for it to be visible here as well as to the
+                * student. It carries no contact details and cannot — the
+                * projection has no such column — which is the same discipline
+                * `listRecentCasesForAdmin` follows: the overview cannot leak a
+                * phone number however it is rendered, and one case an admin
+                * typed the code for is the only place they appear.
+                *
+                * Collapsed, because most rows on this page are a person waiting
+                * for a decision and their history is not what the admin came for.
+                */}
+              <details style={{ margin: '0 0 0.75rem' }}>
+                <summary style={{ cursor: 'pointer', fontSize: '0.9rem' }}>
+                  {studentHistory.title} — {recordFor(row.id).total} · {studentHistory.treatedLabel}{' '}
+                  {recordFor(row.id).treated}
+                  {recordFor(row.id).active > 0 ? ` · شغّالة ${recordFor(row.id).active}` : ''}
+                </summary>
+                {recordFor(row.id).entries.length === 0 ? (
+                  <p style={{ fontSize: '0.85rem', opacity: 0.7 }}>{studentHistory.emptyTitle}</p>
+                ) : (
+                  <table style={{ width: '100%', fontSize: '0.85rem', marginTop: '0.5rem' }}>
+                    <thead>
+                      <tr style={{ textAlign: 'start', opacity: 0.7 }}>
+                        <th style={{ textAlign: 'start' }}>الرمز</th>
+                        <th style={{ textAlign: 'start' }}>{studentHistory.treatments}</th>
+                        <th style={{ textAlign: 'start' }}>الحالة</th>
+                        <th style={{ textAlign: 'start' }}>{studentHistory.claimedAt}</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {recordFor(row.id).entries.map((entry) => (
+                        <tr key={entry.claimId}>
+                          {/* A Latin reference code inside an RTL document needs
+                              its own direction or the digits re-order. */}
+                          <td dir="ltr" style={{ textAlign: 'start' }}>
+                            {entry.referenceCode}
+                          </td>
+                          <td>
+                            {entry.treatmentTypeIds
+                              .map((id) => nameOf(treatments, id))
+                              .join('، ')}
+                          </td>
+                          <td>
+                            {studentHistory.outcome[
+                              entry.claimStatus as keyof typeof studentHistory.outcome
+                            ] ?? entry.claimStatus}
+                          </td>
+                          <td>{formatCaseDate(entry.claimedAt)}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                )}
+              </details>
 
               {documentUrl ? (
                 <a

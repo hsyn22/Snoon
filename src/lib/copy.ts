@@ -982,6 +982,46 @@ export const studentActiveClaims = {
 
 /** The case a student is holding right now. */
 /**
+ * Notification settings — the one screen a student comes back to change.
+ *
+ * Two questions, and the second only if the first is yes: do you want to be
+ * told about new cases, and which treatments. Everything is on by default,
+ * because the alert is the thing that makes سنون reach a student rather than
+ * wait for them.
+ */
+export const studentNotifications = {
+  eyebrow: 'الإعدادات',
+  title: 'إشعارات الحالات الجديدة',
+  link: 'إعدادات الإشعارات',
+  intro:
+    'أول ما تنقدّم حالة تناسب مرحلتك وعيادتك، نرسللك إشعار بالتلگرام. تكدر توكف الإشعارات أو تختار أنواع العلاج اللي تريد إشعار عليها.',
+
+  enableLabel: 'تريد إشعارات للحالات الجديدة؟',
+  enableHint: 'إذا طفّيتها، الحالات تظل تظهرلك بالقائمة عادي — بس ما نرسللك إشعار.',
+
+  treatmentsTitle: 'أنواع العلاج',
+  treatmentsHint:
+    'كلها مؤشرة. شيل التأشير عن اللي ما تريد إشعار عليه. هذا يأثر على الإشعارات بس — الحالة تظل تظهرلك بالقائمة وتكدر تحجزها.',
+
+  /** Said plainly, because it is the question the checkboxes raise. */
+  stillVisible: 'مهم: هذي إعدادات إشعارات، مو فلتر. كل الحالات اللي تخص مرحلتك تظل تظهرلك.',
+
+  save: 'احفظ',
+  saving: 'قيد الحفظ…',
+  saved: 'انحفظت الإعدادات.',
+
+  /** Shown when the bot is not linked: the settings are real but nothing arrives. */
+  notLinkedTitle: 'تلگرام مو مربوط',
+  notLinkedBody: 'الإشعارات تنرسل بالتلگرام. اربط حسابك حتى توصلك.',
+
+  /** Admin-facing, on /admin/students. */
+  adminOn: 'إشعارات: مفعّلة',
+  adminOff: 'إشعارات: مطفية',
+  adminMuted: (n: number) => `مكتوم ${n} نوع علاج`,
+  adminAll: 'كل أنواع العلاج',
+} as const
+
+/**
  * The student's own record.
  *
  * A student is here because their college asks for a number of cases. "How many

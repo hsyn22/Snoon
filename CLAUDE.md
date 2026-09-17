@@ -2013,6 +2013,44 @@ and rarely finish, and its copy changed with it: it used to promise news about t
 verification decision and the contact deadline, which are things that happen *to* a student
 and no reason to open anything.
 
+### Notification settings, and the difference between silence and invisibility
+
+Haider's ask: a student is asked whether they want alerts for new cases, and if yes gets a
+list of every treatment with **everything ticked**, unticking what they do not want.
+`/student/notifications`.
+
+**The rule the whole feature rests on: this silences a message, it never hides a case.** A
+muted treatment still appears in the student's queue and is still theirs to claim, and the
+page says so in as many words. If the two ever merge, a checkbox somebody ticked a month
+ago quietly shrinks their queue — and neither they nor an admin would ever connect the two.
+It is the queue-disappearing bug in a slower form.
+
+Three decisions worth keeping:
+
+- **The stored value is the muted set, not the wanted set.** The form is built the other way
+  round — tick what you want — and the action saves what is left over. An inclusion list is
+  a snapshot of the treatment types that existed the day it was saved, so adding `fluoride`
+  next month would send its alerts to **nobody**. That is exactly the `ensureStageDefaults`
+  failure this file already records, and its symptom is an empty inbox that reads as "there
+  are no patients".
+- **A case is silenced only when *every* treatment on it is muted.** "Silence if any is
+  muted" is the easier condition and it loses a case wanting a cleaning and a root canal to
+  a student who muted cleanings — the root canal being the thing they were waiting for.
+- **Turning alerts off does not clear the per-treatment choices.** Otherwise a student who
+  turns them back on a week later silently gets everything again, including what they had
+  deliberately muted.
+
+The settings live on the **student**, not on the chat binding, so they survive relinking
+Telegram — and the student's Telegram binding was already per account rather than per case
+(`subjectType: 'STUDENT'`); it is the *patient's* that is per case, and has to be, since a
+patient has no account.
+
+**All of it is visible to an admin at `/admin/students`**, along with the student's clinic
+days, whether their bot is linked, and their full case record. Two batched queries do it —
+`summariseClaimsByStudent` and `listLinkedSubjectIds` — rather than one per row, because
+that page draws up to 200 students. The record carries **no contact columns**, the same
+discipline `listRecentCasesForAdmin` follows.
+
 Setup needs three environment variables (`TELEGRAM_BOT_TOKEN`, `TELEGRAM_BOT_USERNAME`,
 `TELEGRAM_WEBHOOK_SECRET`) from a bot created with @BotFather, and the webhook pointed at
 `/api/telegram/webhook`.

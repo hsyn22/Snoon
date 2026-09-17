@@ -355,6 +355,68 @@ export async function countTreatedCasesForStudent(studentId: string): Promise<nu
 }
 
 /**
+ * Every student's case record, for the admin, in one query.
+ *
+ * Haider asked for the history to be visible to an admin as well as to the
+ * student. The naive way is to call `listCaseHistoryForStudent` per row of
+ * `/admin/students`, which is 200 queries to draw one page — so this fetches
+ * every claim once and groups in memory. It is bounded by claims rather than by
+ * students, and at one or two cities that is a small number.
+ *
+ * **Same projection discipline as the student's own history: no contact
+ * columns.** The privacy rule binds inside the admin too, and
+ * `listRecentCasesForAdmin` already establishes the shape — the overview cannot
+ * leak a phone number however it is rendered, and `findCaseForAdmin` stays the
+ * only function that returns one, for a single case an admin typed the code for.
+ */
+export type AdminStudentRecord = {
+  total: number
+  treated: number
+  active: number
+  entries: StudentCaseHistoryEntry[]
+}
+
+export async function summariseClaimsByStudent(
+  limitPerStudent = 50,
+): Promise<Map<string, AdminStudentRecord>> {
+  const rows = await db
+    .select({
+      studentId: claims.studentId,
+      claimId: claims.id,
+      caseId: claims.caseId,
+      referenceCode: cases.referenceCode,
+      treatmentTypeIds: sql<string[]>`coalesce(${claims.treatedTreatmentIds}, ${cases.treatmentTypeIds})`,
+      // Read separately from the status, because a NO_SHOW closes the claim as
+      // COMPLETED too: the claim finished, the treatment did not.
+      treated: sql<boolean>`${claims.treatedTreatmentIds} is not null`,
+      claimStatus: claims.status,
+      caseStatus: cases.status,
+      releaseReason: claims.releaseReason,
+      claimedAt: claims.createdAt,
+      closedAt: claims.releasedAt,
+    })
+    .from(claims)
+    .innerJoin(cases, eq(cases.id, claims.caseId))
+    .orderBy(desc(claims.createdAt))
+
+  const byStudent = new Map<string, AdminStudentRecord>()
+  for (const row of rows) {
+    const record = byStudent.get(row.studentId) ?? { total: 0, treated: 0, active: 0, entries: [] }
+    record.total += 1
+    if (row.treated) record.treated += 1
+    if (row.claimStatus === 'ACTIVE') record.active += 1
+    // Counted before the cap, so the numbers stay true for a heavy student even
+    // though the list they sit above is trimmed.
+    if (record.entries.length < limitPerStudent) {
+      const { studentId: _studentId, treated: _treated, ...entry } = row
+      record.entries.push(entry)
+    }
+    byStudent.set(row.studentId, record)
+  }
+  return byStudent
+}
+
+/**
  * Claims where the student says they called and the patient never answered.
  *
  * The gap this fills: the product asks the patient to confirm, through Telegram
