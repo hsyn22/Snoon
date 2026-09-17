@@ -2144,6 +2144,37 @@ matters; it fails on the old code and passes on the new.
 real Chromium at a production build with R2 configured: 0 visible characters before, the
 Arabic login form after.
 
+**And the same fault had a second half, in the database, which the first fix did not
+touch.** The storage plugin keeps each file's prefix on the row, so it adds a `prefix`
+column to both upload collections — and by default it adds that column **only while the
+plugin is enabled**, which is only where the four `R2_*` variables are set. Migrations are
+generated on a development machine, which has none, so no migration ever wrote it.
+Production loaded the adapter and asked for a column that was not there:
+
+```
+column "prefix" does not exist
+```
+
+on every read and every write of `case-photos` and `student-documents`. No student could
+upload an enrolment document, no patient's photographs could be stored, `/admin/collections/
+case-photos` showed `Error: Failed`, and `pnpm payload:migrate` reported nothing to do while
+the build went green. It is the failure that produced Haider's queue of duplicate cases
+carrying no photographs — the case write succeeds, the photograph does not, and before the
+split `try` that was reported to the patient as a failed submission.
+
+**So the rule is wider than the import map.** Any committed, generated artefact whose
+contents depend on environment variables is correct on one machine and wrong on another,
+and the database schema is one of those artefacts. `alwaysInsertFields: true` is the fix —
+Payload provides it for exactly this and makes it the default in v4 — and
+`20260917_210000_upload_prefix.ts` is the column it now expects everywhere.
+`tests/upload-schema.test.ts` holds the property the same way the import-map test does: the
+upload collections declare the same fields with and without R2. It fails on the old code.
+
+The migration was written by hand, because `payload migrate:create` needs a TTY. Its
+statements are not guesses: they were read off what Payload's own `push` produced against a
+database at that revision, and the migrated schema was diffed against the pushed one until
+the two were identical.
+
 ### Local database
 
 Development needs a PostgreSQL reachable at `DATABASE_URL`. Copy `.env.example`

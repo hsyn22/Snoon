@@ -265,6 +265,7 @@ export interface StudentDocument {
    * ملاحظات داخلية. ما تظهر للطالب.
    */
   note?: string | null;
+  prefix?: string | null;
   updatedAt: string;
   createdAt: string;
   url?: string | null;
@@ -289,6 +290,7 @@ export interface CasePhoto {
    * ملاحظات داخلية. ما تظهر للمريض ولا للطالب.
    */
   note?: string | null;
+  prefix?: string | null;
   updatedAt: string;
   createdAt: string;
   url?: string | null;
@@ -498,6 +500,7 @@ export interface StageCapabilitiesSelect<T extends boolean = true> {
  */
 export interface StudentDocumentsSelect<T extends boolean = true> {
   note?: T;
+  prefix?: T;
   updatedAt?: T;
   createdAt?: T;
   url?: T;
@@ -516,6 +519,7 @@ export interface StudentDocumentsSelect<T extends boolean = true> {
  */
 export interface CasePhotosSelect<T extends boolean = true> {
   note?: T;
+  prefix?: T;
   updatedAt?: T;
   createdAt?: T;
   url?: T;

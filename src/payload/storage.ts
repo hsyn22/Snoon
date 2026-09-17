@@ -44,6 +44,26 @@ import { getStorageConfig, r2Endpoint, UPLOAD_PREFIX } from '@/lib/storage/confi
  * Disabled behaves exactly as no plugin did: no adapter, `disableLocalStorage`
  * untouched, uploads to `uploads/` on the local disk. Local development still
  * needs no cloud account.
+ *
+ * ## And the same argument again, for the database — `alwaysInsertFields`
+ *
+ * Fixing the import map fixed half of it. The plugin also **adds a `prefix`
+ * column** to every collection it manages, and by default it adds that column
+ * only while it is enabled. So the schema depended on the environment in
+ * exactly the way the admin's component list had: `pnpm payload:migrate` was
+ * generated on a machine with no R2 and wrote no `prefix`, production loaded
+ * the plugin and queried for it, and every single upload died on
+ * `column "prefix" does not exist` — a student's enrolment document and a
+ * patient's photographs alike.
+ *
+ * It fails worse than the blank admin did, because it fails *late*: the case is
+ * already written by the time the photograph is refused. That is the failure
+ * the split `try` in `submitCaseAction` now contains, and this is its cause.
+ *
+ * `alwaysInsertFields` is the option that exists for precisely this — Payload's
+ * own types say it becomes the default in v4. With it set, the collection has
+ * the same fields, and therefore the same tables, on every machine, and a
+ * migration generated anywhere is correct everywhere.
  */
 export function storagePlugins(): Plugin[] {
   const config = getStorageConfig()
@@ -52,6 +72,9 @@ export function storagePlugins(): Plugin[] {
     s3Storage({
       // Never conditional on this being non-null: see the note above.
       enabled: config !== null,
+
+      // Nor is the schema the environment's to decide. See the note above.
+      alwaysInsertFields: true,
 
       /**
        * The prefixes are not decoration. Without one the adapter stores a file
