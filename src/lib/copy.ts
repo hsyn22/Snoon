@@ -126,10 +126,70 @@ export const home = {
   forPatients: 'للمراجعين',
   forStudents: 'للطلبة',
 
+  /*
+   * The page is three bands: what سنون is, then the مراجع's side in green, then
+   * the student's side in orange. Haider's structure, and it settles an argument
+   * the page kept having with itself — every audience-neutral sentence was
+   * competing for the same column as two audience-specific ones, so whichever
+   * side you belonged to, most of the page was addressed past you.
+   *
+   * **The third-person rule survives, narrowed to where it came from.** The
+   * shared band still says "الطالب يتواصل وية المراجع" and never "يتواصل وياك",
+   * because a sentence there is read by both sides at once. Inside a band whose
+   * own heading names its audience, "شكد راح يكلفك؟" is addressed to exactly the
+   * person reading it — which is what the FAQ's two labelled groups have done
+   * since they were split, and this is the same device applied to the page.
+   */
+  patientsBandEyebrow: 'للمراجعين',
+  patientsBandTitle: 'إذا تدور علاج أسنان',
+  patientsBandBody:
+    'تقدّم حالتك بدقيقتين وبدون حساب، ويطلعلك رمز ورابط تتابع بيه حالتك. أول ما يحجز طالب حالتك يوصلك خبر، وهو اللي يتصل بيك.',
+
+  /*
+   * The guided questions, on the landing page at last.
+   *
+   * They were reachable from the footer and from inside the case form, which
+   * are both places you only arrive at after deciding what you want — and the
+   * whole reason the tree exists is the person who has not decided. Somebody
+   * whose tooth simply hurts was being handed a list of treatment checkboxes
+   * and nothing else.
+   *
+   * Worded as a question rather than as a feature, and it says plainly that it
+   * is not a diagnosis. That sentence is not decoration: the moment this reads
+   * as "tell us your symptoms and we will say what is wrong", سنون has become a
+   * care provider — see عالجني in CLAUDE.md.
+   */
+  guideTitle: 'ما تعرف شنو تحتاج بالضبط؟',
+  guideBody:
+    'جاوب على كم سؤال بسيط عن سنك، وبالآخر نوريك شنو العلاج اللي يشبه وصفك حتى تقدّم حالتك وانت عارف شتطلب. هذا مو تشخيص — الطالب هو اللي يشخّص بالعيادة.',
+  guideAction: 'ابدي بالأسئلة',
+
   studentsTitle: 'طالب طب أسنان؟',
   studentsBody:
     'شوف الحالات اللي تناسب مرحلتك وأيام دوامك بعيادتك، واحجز اللي تحتاجه لمتطلباتك. التسجيل يحتاج وثيقة تثبت إنك طالب.',
   studentsAction: 'دخول الطلبة',
+  studentsBandEyebrow: 'للطلبة',
+
+  /*
+   * Three points, and each one is something the code actually does — the same
+   * discipline as the safety section. A student deciding whether to register is
+   * deciding whether the queue will waste their time and whether سنون is going
+   * to charge them, and both are answered by mechanisms rather than by promises.
+   */
+  studentsPoints: [
+    {
+      title: 'حالات تناسب مرحلتك',
+      body: 'ما تشوف إلا حالات مدينة جامعتك، ومؤشّر عليها شنو تكدر تعالجه بمرحلتك وشنو لا.',
+    },
+    {
+      title: 'رقم المراجع ما يظهر إلا بعد الحجز',
+      body: 'قبل الحجز تشوف الحالة والصور والأيام. الاسم والرقم ما يبينون إلا للطالب اللي حاجز الحالة.',
+    },
+    {
+      title: 'الحالة الجديدة توصلك',
+      body: 'إذا ربطت حسابك بالتلغرام، يوصلك إشعار بأي حالة جديدة تناسبك، وتكدر تحجزها من نفس البوت.',
+    },
+  ],
 
   /* The closing band used to be a patient CTA on a page that already read as
      patient-only — which is Haider's objection in its clearest form: a student
