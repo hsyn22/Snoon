@@ -10,7 +10,12 @@ import { students } from '@/db/schema'
 import { auth } from '@/lib/auth'
 import { getStages, getUniversities } from '@/lib/config'
 import { studentProfile } from '@/lib/copy'
-import { validateProfile, type ProfileFieldErrors } from '@/lib/students/validation'
+import {
+  standingAfterProfileEdit,
+  validateProfile,
+  verifiedFieldsChanged,
+  type ProfileFieldErrors,
+} from '@/lib/students/validation'
 
 export type ProfileFormState = {
   errors?: ProfileFieldErrors
@@ -124,4 +129,94 @@ export async function submitProfileAction(
   }
 
   redirect('/student')
+}
+
+/**
+ * Correct an existing profile.
+ *
+ * Separate from `submitProfileAction` rather than a branch inside it, because
+ * the two do different things to a student's standing: one creates a record that
+ * has never been reviewed, the other may take a reviewed one back to PENDING.
+ * Folding them together is how the create path ends up quietly able to overwrite
+ * a verification.
+ *
+ * **Every check here is a rule, not a rendering decision.** The page hides the
+ * form from a suspended student, and that stops nobody: every export from a
+ * `'use server'` file is a public POST endpoint, so the suspension is enforced
+ * below as well — and `standingAfterProfileEdit` makes SUSPENDED absorbing a
+ * second time, in a pure function with its own tests.
+ *
+ * The document is not touched here. It has its own screen and its own intake
+ * rules, shared with the bot.
+ */
+export async function updateProfileAction(
+  _previous: ProfileFormState,
+  formData: FormData,
+): Promise<ProfileFormState> {
+  const session = await auth.api.getSession({ headers: await headers() })
+  if (!session) redirect('/student/login')
+
+  const fields = {
+    fullName: read(formData, 'fullName'),
+    universityId: read(formData, 'universityId'),
+    stageId: read(formData, 'stageId'),
+    clinicDays: formData.getAll('clinicDays').map(String),
+  }
+  const values = fields
+
+  const [existing] = await db
+    .select({
+      id: students.id,
+      fullName: students.fullName,
+      universityId: students.universityId,
+      stageId: students.stageId,
+      verificationStatus: students.verificationStatus,
+    })
+    .from(students)
+    .where(eq(students.authUserId, session.user.id))
+    .limit(1)
+
+  // No profile to correct: the create form is the right screen, not this one.
+  if (!existing) redirect('/student/profile')
+
+  // A suspension is a decision about a person, and an edit is not an appeal.
+  if (existing.verificationStatus === 'SUSPENDED') redirect('/student')
+
+  const [universities, stages] = await Promise.all([getUniversities(), getStages()])
+
+  // The same validator the create step uses, and deliberately so: a rule that
+  // holds when a profile is written must hold when it is rewritten, or the edit
+  // screen becomes the way around it.
+  const validated = validateProfile(fields, { universities, stages }, null)
+  if (!validated.ok) return { errors: validated.errors, values }
+
+  const changed = verifiedFieldsChanged(existing, validated.value)
+  const standing = standingAfterProfileEdit(existing.verificationStatus, changed)
+
+  try {
+    await db
+      .update(students)
+      .set({
+        fullName: validated.value.fullName,
+        universityId: validated.value.universityId,
+        stageId: validated.value.stageId,
+        clinicDays: validated.value.clinicDays,
+        verificationStatus: standing.status,
+        ...(standing.clearReviewer
+          ? { verificationReviewedBy: null, verificationReviewedAt: null }
+          : {}),
+        updatedAt: new Date(),
+      })
+      .where(eq(students.id, existing.id))
+  } catch (error) {
+    console.error(
+      'Student profile update failed:',
+      error instanceof Error ? error.message : 'unknown error',
+    )
+    return { formError: studentProfile.errors.generic, values }
+  }
+
+  // `saved` is a query string rather than state, so the confirmation survives
+  // the reload and says which of the two things happened.
+  redirect(`/student/profile?saved=${changed ? 'reverify' : '1'}`)
 }

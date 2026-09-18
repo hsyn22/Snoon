@@ -898,6 +898,50 @@ export const studentProfile = {
   submit: 'أرسل للمراجعة',
   submitting: 'قيد الإرسال…',
 
+  /*
+   * The profile page, for a student who already has one.
+   *
+   * `/student/profile` used to redirect away the moment a profile existed, so a
+   * fourth year who became a fifth year had no way to say so, a mistyped name
+   * was permanent, and there was no page anywhere that showed a student what
+   * سنون holds about them. The route now shows the record and lets it be
+   * corrected.
+   *
+   * `reverifyWarning` is the sentence that keeps the page honest, and it has to
+   * be read *before* somebody edits rather than after: three of these fields are
+   * what an admin verified, so changing one sends the account back to the queue.
+   * A student who discovers that afterwards has lost their access to fix a typo
+   * and was not warned.
+   */
+  /** One word per standing, for the chip on the profile. The student page's own
+      panels carry the full explanation; this only has to name the state. */
+  statusLabels: {
+    PENDING: 'قيد المراجعة',
+    VERIFIED: 'موثّق',
+    REJECTED: 'مرفوض',
+    SUSPENDED: 'موقوف',
+  },
+
+  viewTitle: 'حسابك',
+  viewLead: 'هذي المعلومات اللي عدنا عنك. تكدر تعدلها، وانتبه للملاحظة تحت.',
+  viewEyebrow: 'حسابك',
+  statusLabel: 'حالة التوثيق',
+  /* An empty `clinic_days` means "any day" — that is what every student
+     recorded before the field existed has, so it must never read as "no days".
+     An empty list shown as nothing at all is the empty-screen failure again. */
+  anyDay: 'كل الأيام',
+  editSection: 'عدّل معلوماتك',
+  reverifyWarning:
+    'اسمك وجامعتك ومرحلتك هي اللي تراجعها الإدارة. إذا غيّرت أي وحدة منهن، حسابك يرجع «قيد المراجعة» وما تشوف حالات لحد ما تنوافق مرة لخ. أيام دوامك تكدر تغيّرها وقت ما تريد وما تأثر على توثيقك.',
+  saved: 'انحفظت معلوماتك.',
+  savedReverify: 'انحفظت معلوماتك، وحسابك رجع قيد المراجعة.',
+  saveAction: 'احفظ التعديلات',
+  documentAction: 'وثيقة التسجيل',
+  /* A suspended student sees the record and no form. An edit is not an appeal,
+     and a page that lets them type would imply it is. */
+  suspendedNotice:
+    'حسابك موقوف، فما تكدر تعدّل معلوماتك من هنا. راجع إدارة سنون إذا تعتقد إنه اكو غلط.',
+
   /**
    * The form is closed because Payload has nothing to fill it with.
    *

@@ -181,3 +181,52 @@ export function validateVerificationDetails(
   if (Object.keys(errors).length > 0) return { ok: false, errors }
   return { ok: true, value: { fullName, universityId: fields.universityId } }
 }
+
+/**
+ * What an edit to an existing profile does to the student's standing.
+ *
+ * A profile used to be write-once: `/student/profile` redirected away the moment
+ * a student had one, so a fourth year who became a fifth year, or anybody who
+ * mistyped their name, had no way to correct it and no page that showed them
+ * what سنون held about them. Making it editable is the obvious fix and it is the
+ * dangerous one, because three of those fields are exactly what an admin
+ * verified: the queue a student sees is their university's city, what they may
+ * perform is their stage, and the document was matched against their name.
+ *
+ * **So editing any of the three re-opens verification.** A verified fourth year
+ * who edits their stage to the fifth does not become a fifth year; they become a
+ * student waiting on an admin again, and see nothing in the meantime. The
+ * alternative — trusting the edit — would make this page the way to grant
+ * yourself root canals on a queue nobody checked you against.
+ *
+ * **Clinic days never re-open it.** Nobody verifies which days somebody is in
+ * clinic, it changes with a timetable, and charging re-verification for it would
+ * teach students to leave it wrong — which silently costs them cases.
+ *
+ * **SUSPENDED is absorbing.** A suspension is a decision about a person, and an
+ * edit is not an appeal: without this line, a suspended student could change one
+ * letter of their name and be back in the review queue, and then in the queue.
+ */
+export type StudentStanding = 'PENDING' | 'VERIFIED' | 'REJECTED' | 'SUSPENDED'
+
+/** The fields an admin actually verifies. Clinic days are deliberately absent. */
+export type VerifiedFields = { fullName: string; universityId: string; stageId: string }
+
+export function verifiedFieldsChanged(before: VerifiedFields, after: VerifiedFields): boolean {
+  return (
+    normaliseFullName(before.fullName) !== normaliseFullName(after.fullName) ||
+    before.universityId !== after.universityId ||
+    before.stageId !== after.stageId
+  )
+}
+
+export function standingAfterProfileEdit(
+  current: StudentStanding,
+  changed: boolean,
+): { status: StudentStanding; clearReviewer: boolean } {
+  if (current === 'SUSPENDED') return { status: 'SUSPENDED', clearReviewer: false }
+  if (!changed) return { status: current, clearReviewer: false }
+  // Back to the queue, and the previous decision is cleared: it no longer
+  // describes what an admin is being asked to look at.
+  return { status: 'PENDING', clearReviewer: current !== 'PENDING' }
+}

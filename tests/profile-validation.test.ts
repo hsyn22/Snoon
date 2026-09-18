@@ -5,7 +5,9 @@ import {
   MAX_NAME_LENGTH,
   isTriplePartName,
   normaliseFullName,
+  standingAfterProfileEdit,
   validateProfile,
+  verifiedFieldsChanged,
   validateVerificationDetails,
   type ProfileFields,
   type ProfilePlaces,
@@ -298,5 +300,101 @@ describe('an unattached document', () => {
     const wrong = validateProfile(fields(), PLACES, { size: 1024, type: 'text/html' })
     expect(wrong.ok).toBe(false)
     if (!wrong.ok) expect(wrong.errors.document).toBe(studentProfile.errors.documentWrongType)
+  })
+})
+
+/**
+ * Editing a profile, and what it costs.
+ *
+ * The profile was write-once — `/student/profile` redirected away the moment one
+ * existed — so a fourth year who became a fifth year could not say so and a
+ * mistyped name was permanent. Making it editable is the obvious fix and it is
+ * the dangerous one: three of those fields are exactly what an admin verified.
+ * The queue a student sees is their university's city, what they may perform is
+ * their stage, and the document was matched against their name.
+ *
+ * These are the rules that stop the edit screen from being a way to grant
+ * yourself a queue nobody checked you against. They have no old code to fail on
+ * — the behaviour did not exist — so they are here to pin it.
+ */
+describe('standingAfterProfileEdit', () => {
+  it('sends a verified student back to the queue when a verified field changes', () => {
+    expect(standingAfterProfileEdit('VERIFIED', true)).toEqual({
+      status: 'PENDING',
+      clearReviewer: true,
+    })
+  })
+
+  /* A verified fourth year who edits their stage to the fifth does not become a
+     fifth year. They become a student waiting on an admin, seeing nothing. */
+  it('does not let an edit grant what an admin has not seen', () => {
+    expect(standingAfterProfileEdit('VERIFIED', true).status).not.toBe('VERIFIED')
+  })
+
+  it('leaves a standing alone when nothing an admin verifies changed', () => {
+    for (const standing of ['PENDING', 'VERIFIED', 'REJECTED'] as const) {
+      expect(standingAfterProfileEdit(standing, false)).toEqual({
+        status: standing,
+        clearReviewer: false,
+      })
+    }
+  })
+
+  it('puts a rejected student back in the queue when they correct something', () => {
+    expect(standingAfterProfileEdit('REJECTED', true)).toEqual({
+      status: 'PENDING',
+      clearReviewer: true,
+    })
+  })
+
+  /* Already in the queue: the status does not move, and there is no decision to
+     clear because nobody has made one. */
+  it('does not clear a reviewer a pending student never had', () => {
+    expect(standingAfterProfileEdit('PENDING', true)).toEqual({
+      status: 'PENDING',
+      clearReviewer: false,
+    })
+  })
+
+  /*
+   * The one that matters most. A suspension is a decision about a person, and an
+   * edit is not an appeal — without this, a suspended student changes one letter
+   * of their name, lands back in the review queue, and is one approval away from
+   * patients' phone numbers again.
+   */
+  it('never lets a suspended student edit their way out of a suspension', () => {
+    expect(standingAfterProfileEdit('SUSPENDED', true)).toEqual({
+      status: 'SUSPENDED',
+      clearReviewer: false,
+    })
+    expect(standingAfterProfileEdit('SUSPENDED', false).status).toBe('SUSPENDED')
+  })
+})
+
+describe('verifiedFieldsChanged', () => {
+  const before = { fullName: 'أحمد علي حسين', universityId: 'uni-a', stageId: 'stage-4' }
+
+  it('sees a changed name, university or stage', () => {
+    expect(verifiedFieldsChanged(before, { ...before, fullName: 'أحمد علي كاظم' })).toBe(true)
+    expect(verifiedFieldsChanged(before, { ...before, universityId: 'uni-b' })).toBe(true)
+    expect(verifiedFieldsChanged(before, { ...before, stageId: 'stage-5' })).toBe(true)
+  })
+
+  it('sees no change in the same values', () => {
+    expect(verifiedFieldsChanged(before, { ...before })).toBe(false)
+  })
+
+  /* Retyping the same name with different spacing is not a change, or a student
+     would lose their verification to a stray space. */
+  it('does not count re-spacing a name as a change', () => {
+    expect(verifiedFieldsChanged(before, { ...before, fullName: ' أحمد   علي حسين ' })).toBe(false)
+  })
+
+  /* Clinic days are absent on purpose: nobody verifies which days somebody is in
+     clinic, it changes with a timetable, and charging re-verification for it
+     would teach students to leave it wrong — which silently costs them cases.
+     If this list ever grows a fourth field, that decision has moved. */
+  it('is about the three fields an admin actually verifies', () => {
+    expect(Object.keys(before).sort()).toEqual(['fullName', 'stageId', 'universityId'])
   })
 })

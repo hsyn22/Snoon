@@ -10,6 +10,7 @@ import {
   studentAuth,
   studentHistory,
   studentNotifications,
+  studentProfile,
   studentStatus,
   studentTelegram,
 } from '@/lib/copy'
@@ -220,6 +221,19 @@ export default async function StudentHomePage({
             />
           </>
         )}
+        {/* The way into the profile, for anybody who has one.
+            It sits outside the verified-only row below because it is the one
+            link a *pending* or rejected student needs most: their record is what
+            an admin is deciding on, and until this existed there was no page
+            that showed it to them or let them fix a typo in it. */}
+        {profile ? (
+          <div className="mt-4">
+            <ButtonLink href="/student/profile" variant="secondary" className="text-sm">
+              {studentProfile.viewTitle}
+            </ButtonLink>
+          </div>
+        ) : null}
+
         {/* Only once verified: before that there is nothing to have a record of,
             and the student has a more pressing step in front of them. */}
         {profile?.verificationStatus === 'VERIFIED' ? (
