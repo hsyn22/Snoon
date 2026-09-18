@@ -17,6 +17,19 @@ import { studentProfile } from '@/lib/copy'
  */
 
 export type ProfileFields = {
+  /**
+   * The student's name as it is written on their enrolment document.
+   *
+   * **It used to be taken from the Google account and never asked for.** A
+   * display name is whatever somebody typed into Google years ago — one word, a
+   * nickname, or Latin script — and an admin at `/admin/students` was being
+   * asked to decide whether a document naming أحمد علي حسين belongs to an
+   * account called "Ahmed". That is not a judgement anybody can make, so the
+   * check it stands for was decorative: the one step keeping unverified people
+   * away from patients' phone numbers rested on comparing a name against
+   * nothing in particular.
+   */
+  fullName: string
   universityId: string
   stageId: string
   /**
@@ -27,6 +40,32 @@ export type ProfileFields = {
 }
 
 export type ProfileFieldErrors = Partial<Record<keyof ProfileFields | 'document', string>>
+
+/** Long enough for four or five parts; short enough that nothing else fits. */
+export const MAX_NAME_LENGTH = 120
+
+/**
+ * The three-part name, checked as loosely as it can be while still doing its job.
+ *
+ * **At least three parts, not exactly three.** Plenty of Iraqi names run to four,
+ * and عبد الله is one name written as two words — a rule demanding exactly three
+ * would refuse real names, and a student refused by a form does not write in to
+ * explain, they leave. Three is the floor because that is what distinguishes a
+ * name from a Google display name, which is the whole reason the field exists.
+ *
+ * Nothing here checks the script. Requiring Arabic would be the same mistake as
+ * putting a `pattern` on the phone input: the person who can actually tell
+ * whether this matches the document is the admin reading both, and a form that
+ * guesses at it can only be wrong in the direction that blocks somebody.
+ */
+export function normaliseFullName(raw: string): string {
+  return raw.replace(/\s+/g, ' ').trim()
+}
+
+export function isTriplePartName(name: string): boolean {
+  const parts = normaliseFullName(name).split(' ')
+  return parts.length >= 3 && parts.every((part) => part.length >= 2)
+}
 
 export type ProfileValidationResult =
   | { ok: true; value: ProfileFields }
@@ -56,6 +95,11 @@ export function validateProfile(
   const errors: ProfileFieldErrors = {}
   const e = studentProfile.errors
 
+  const fullName = normaliseFullName(fields.fullName)
+  if (!fullName) errors.fullName = e.nameRequired
+  else if (fullName.length > MAX_NAME_LENGTH) errors.fullName = e.nameTooLong
+  else if (!isTriplePartName(fullName)) errors.fullName = e.nameNotTriple
+
   if (!fields.universityId) errors.universityId = e.universityRequired
   else if (!places.universities.some((u) => u.id === fields.universityId)) {
     errors.universityId = e.universityUnknown
@@ -70,8 +114,15 @@ export function validateProfile(
   // Optional: a student may send it to the bot instead, which is easier on a
   // cheap phone. If they attach nothing here, the student page asks for it. What
   // is NOT optional is that an admin sees one before the student is verified.
-  if (document && document.size > MAX_DOCUMENT_BYTES) errors.document = e.documentTooBig
-  else if (document && !(ALLOWED_DOCUMENT_TYPES as readonly string[]).includes(document.type)) {
+  //
+  // **A zero-byte file is nothing attached, not a file of the wrong type.** An
+  // empty `<input type="file">` posts a File with size 0 and an empty type, and
+  // reading that as a rejected upload is how "optional" became "required, and
+  // refused with a message about a file you never chose". The caller filters it
+  // too; this is the layer that must not depend on the caller remembering.
+  const attached = document && document.size > 0 ? document : null
+  if (attached && attached.size > MAX_DOCUMENT_BYTES) errors.document = e.documentTooBig
+  else if (attached && !(ALLOWED_DOCUMENT_TYPES as readonly string[]).includes(attached.type)) {
     errors.document = e.documentWrongType
   }
 
@@ -80,9 +131,53 @@ export function validateProfile(
   return {
     ok: true,
     value: {
+      fullName,
       universityId: fields.universityId,
       stageId: fields.stageId,
       clinicDays: fields.clinicDays,
     },
   }
+}
+
+/**
+ * The verification step on its own — the name and the university, without the
+ * study details a profile already carries.
+ *
+ * `/student/profile/document` is reached by a student who has a profile and is
+ * waiting on, or has been refused, a decision. What an admin needs from them
+ * there is the two things they will compare against the document in front of
+ * them, so those two are asked again rather than assumed: a name Google
+ * supplied and a university chosen before the document existed are exactly the
+ * values most likely to be wrong.
+ *
+ * The stage is deliberately **not** here. It decides which treatments a student
+ * may perform, and the page it belongs on is the profile, where changing it
+ * re-opens verification. Letting it be edited beside the document would make
+ * the upload step the quiet way to change what somebody is allowed to treat.
+ */
+export type VerificationFields = { fullName: string; universityId: string }
+
+export type VerificationValidationResult =
+  | { ok: true; value: VerificationFields }
+  | { ok: false; errors: ProfileFieldErrors }
+
+export function validateVerificationDetails(
+  fields: VerificationFields,
+  universities: readonly University[],
+): VerificationValidationResult {
+  const errors: ProfileFieldErrors = {}
+  const e = studentProfile.errors
+
+  const fullName = normaliseFullName(fields.fullName)
+  if (!fullName) errors.fullName = e.nameRequired
+  else if (fullName.length > MAX_NAME_LENGTH) errors.fullName = e.nameTooLong
+  else if (!isTriplePartName(fullName)) errors.fullName = e.nameNotTriple
+
+  if (!fields.universityId) errors.universityId = e.universityRequired
+  else if (!universities.some((u) => u.id === fields.universityId)) {
+    errors.universityId = e.universityUnknown
+  }
+
+  if (Object.keys(errors).length > 0) return { ok: false, errors }
+  return { ok: true, value: { fullName, universityId: fields.universityId } }
 }

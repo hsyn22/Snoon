@@ -857,6 +857,19 @@ export const studentProfile = {
   title: 'معلومات دراستك',
   intro: 'حدد وين تدرس وارفع وثيقة تثبت إنك طالب، وإدارة سنون راح تراجعها.',
 
+  /*
+   * The name, asked for rather than taken from Google.
+   *
+   * The hint is the field's whole job: an admin is holding a document and
+   * deciding whether it belongs to this account, and the only thing that makes
+   * that decision possible is the name being the one printed on it. So the
+   * label says الثلاثي and the hint says "مثل ما هو بالوثيقة" — not "your full
+   * name", which is what somebody answers with whatever they are called.
+   */
+  nameLabel: 'الاسم الثلاثي',
+  nameHint: 'اكتب اسمك مثل ما هو مكتوب بوثيقة التسجيل، حتى الإدارة تكدر تطابقه وياها.',
+  namePlaceholder: 'الاسم الأول واسم الأب واسم الجد',
+
   universityLabel: 'الجامعة',
   universityPlaceholder: 'اختر جامعتك',
 
@@ -871,6 +884,16 @@ export const studentProfile = {
   documentLabel: 'وثيقة التسجيل',
   documentHint: 'صورة هوية الطالب أو وثيقة تسجيل. صورة أو PDF، وما تزيد عن 5 ميغا.',
   documentPrivacy: 'الوثيقة تنشاف بس من إدارة سنون، وما تظهر لأي أحد ثاني.',
+
+  /** The name and university, beside the document the admin compares them with. */
+  verifySection: 'اسمك وجامعتك',
+  /*
+   * A student who sent their document to the bot already has one on record, and
+   * making them photograph it a second time just to correct their name is the
+   * kind of step people give up on — this is the screen students drop off at.
+   * So the upload becomes optional once a document exists, and says so.
+   */
+  documentOnRecord: 'وثيقتك واصلتنا. إذا ما تريد تبدلها، خلّي حقل الملف فارغ.',
 
   submit: 'أرسل للمراجعة',
   submitting: 'قيد الإرسال…',
@@ -897,6 +920,12 @@ export const studentProfile = {
   notReadyStages: 'ما مضافة أي مرحلة دراسية لحد هسه.',
 
   errors: {
+    nameRequired: 'اكتب اسمك الثلاثي.',
+    /* Says what is missing and why, not that the value is "invalid". A student
+       reading "الاسم مو صحيح" about their own name has been told they typed it
+       wrong; what is actually being asked for is more of it. */
+    nameNotTriple: 'اكتب اسمك الثلاثي مثل ما هو بالوثيقة — الاسم واسم الأب واسم الجد.',
+    nameTooLong: 'الاسم طويل كلش.',
     universityRequired: 'اختر جامعتك.',
     universityUnknown: 'هاي الجامعة مو متوفرة.',
     stageRequired: 'اختر مرحلتك.',

@@ -49,6 +49,29 @@ export function ProfileForm({
   return (
     <form action={formAction} onInput={onInput} className="space-y-5" noValidate>
       <FormSection title={studentProfile.studySection}>
+        {/* The name is asked for here rather than lifted off the Google account.
+            It is the value an admin holds a document up against, and a display
+            name — "Ahmed", or whatever somebody typed into Google years ago —
+            makes that comparison impossible to do honestly. */}
+        <div>
+          <label htmlFor="fullName" className={labelClass}>
+            {studentProfile.nameLabel}
+          </label>
+          <p className={hintClass}>{studentProfile.nameHint}</p>
+          <input
+            id="fullName"
+            name="fullName"
+            type="text"
+            autoComplete="name"
+            placeholder={studentProfile.namePlaceholder}
+            defaultValue={state.values?.fullName ?? ''}
+            className={controlClass}
+            aria-invalid={Boolean(errors.fullName)}
+            aria-describedby={errors.fullName ? 'fullName-error' : undefined}
+          />
+          <FieldError id="fullName-error" message={errorFor('fullName', errors.fullName)} />
+        </div>
+
         <div>
           <label htmlFor="universityId" className={labelClass}>
             {studentProfile.universityLabel}

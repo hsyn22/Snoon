@@ -17,6 +17,7 @@ export type ProfileFormState = {
   formError?: string
   /** Handed back so a rejected submission does not empty the form. */
   values?: {
+    fullName?: string
     universityId?: string
     stageId?: string
     clinicDays?: string[]
@@ -36,13 +37,26 @@ export async function submitProfileAction(
   if (!session) redirect('/student/login')
 
   const fields = {
+    fullName: read(formData, 'fullName'),
     universityId: read(formData, 'universityId'),
     stageId: read(formData, 'stageId'),
     clinicDays: formData.getAll('clinicDays').map(String),
   }
   const values = fields
   const document = formData.get('document')
-  const file = document instanceof File ? document : null
+  /*
+   * An empty file input still posts a File — size 0, type `''` — and this used
+   * to pass it straight to the validator, which refused the empty string as a
+   * disallowed type. So a student who left the document out, which the whole
+   * flow documents as allowed because sending it to the bot is easier on a cheap
+   * phone, was told "نوع الملف مو مقبول" about a file they had not chosen.
+   *
+   * It is the failure this codebase keeps meeting: nothing errored, the message
+   * was about something the student could not see, and it sat on the one step
+   * students already drop off at. `/case/new` has filtered on `size > 0` since
+   * it was written; this path never did.
+   */
+  const file = document instanceof File && document.size > 0 ? document : null
 
   const [universities, stages] = await Promise.all([
     getUniversities(),
@@ -91,7 +105,9 @@ export async function submitProfileAction(
 
     await db.insert(students).values({
       authUserId: session.user.id,
-      fullName: session.user.name,
+      // Typed by the student, in the form an admin can hold the document up
+      // against — not the Google display name this used to take.
+      fullName: validated.value.fullName,
       universityId: validated.value.universityId,
       stageId: validated.value.stageId,
       clinicDays: validated.value.clinicDays,

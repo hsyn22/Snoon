@@ -5,6 +5,7 @@ import { redirect } from 'next/navigation'
 import { db } from '@/db'
 import { students } from '@/db/schema'
 import { auth } from '@/lib/auth'
+import { getUniversities } from '@/lib/config'
 import { PageShell } from '@/components/site-chrome'
 import { PageHeader } from '@/components/ui/section'
 import { studentProfile } from '@/lib/copy'
@@ -18,7 +19,12 @@ export default async function UploadDocumentPage() {
   if (!session) redirect('/student/login')
 
   const [student] = await db
-    .select({ verificationStatus: students.verificationStatus })
+    .select({
+      fullName: students.fullName,
+      universityId: students.universityId,
+      verificationStatus: students.verificationStatus,
+      verificationDocumentPath: students.verificationDocumentPath,
+    })
     .from(students)
     .where(eq(students.authUserId, session.user.id))
     .limit(1)
@@ -32,6 +38,8 @@ export default async function UploadDocumentPage() {
     redirect('/student')
   }
 
+  const universities = await getUniversities()
+
   return (
     <PageShell>
       <>
@@ -40,7 +48,17 @@ export default async function UploadDocumentPage() {
           title={studentProfile.documentLabel}
           lead={studentProfile.documentLead}
         />
-        <DocumentForm />
+        {/* The name and the university come with the document, because they are
+            what an admin compares it against. Pre-filled from the profile and
+            editable: the values most likely to be wrong at this point are a name
+            Google supplied and a university picked before the document was in
+            front of them. */}
+        <DocumentForm
+          universities={universities}
+          currentName={student.fullName}
+          currentUniversityId={student.universityId}
+          hasDocument={Boolean(student.verificationDocumentPath)}
+        />
       </>
     </PageShell>
   )
