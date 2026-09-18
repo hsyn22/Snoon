@@ -1,4 +1,4 @@
-import { readFileSync } from 'node:fs'
+import { readFileSync, readdirSync } from 'node:fs'
 import { join } from 'node:path'
 import { describe, expect, it } from 'vitest'
 import * as copy from '../src/lib/copy'
@@ -87,6 +87,51 @@ describe('numerals', () => {
     // their phone number in Western digits, and the product mixes the two on the
     // same screen. CLAUDE.md picks one: 1234.
     const offenders = strings(copy).filter((text) => /[\u0660-\u0669]/.test(text))
+    expect(offenders).toEqual([])
+  })
+})
+
+/**
+ * The word is مراجع, never مريض.
+ *
+ * "مريض" labels somebody as ill, which is not what a person filling in a form is
+ * there to be told — and it is the kind of rule that erodes one well-meaning edit
+ * at a time rather than breaking, which is why it is a test and not a paragraph.
+ *
+ * It failed when this was written: the Payload admin said it in nine places —
+ * every settings description an administrator reads, the case lookup's own lead
+ * ("اللي يكَرّاه المريض بالتلفون"), the stuck-claim panel and the photo
+ * collection. The rule had only ever been applied to the site.
+ *
+ * Two exclusions, both deliberate:
+ *
+ * - **`src/lib/cases/reasons.ts`** is written into the case event log and is
+ *   effectively an API. Changing one splits the audit trail in two.
+ * - **Test fixtures** may name a patient anything; what is forbidden is سنون
+ *   saying the word to somebody, not a row in a database having it as a value.
+ */
+describe('the word for a patient', () => {
+  it('is مراجع everywhere سنون speaks, including the admin', () => {
+    const root = join(import.meta.dirname, '..', 'src')
+    const offenders: string[] = []
+
+    const walk = (dir: string) => {
+      for (const entry of readdirSync(dir, { withFileTypes: true })) {
+        const path = join(dir, entry.name)
+        if (entry.isDirectory()) {
+          walk(path)
+          continue
+        }
+        if (!/\.(ts|tsx)$/.test(entry.name)) continue
+        // The event log's reasons are an API, not copy — see above.
+        if (path.endsWith(join('lib', 'cases', 'reasons.ts'))) continue
+        if (readFileSync(path, 'utf8').includes('مريض')) {
+          offenders.push(path.slice(root.length + 1))
+        }
+      }
+    }
+
+    walk(root)
     expect(offenders).toEqual([])
   })
 })

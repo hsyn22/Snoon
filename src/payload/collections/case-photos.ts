@@ -64,7 +64,7 @@ export const CasePhotos: CollectionConfig = {
       name: 'note',
       type: 'textarea',
       label: 'ملاحظة الإدارة',
-      admin: { description: 'ملاحظات داخلية. ما تظهر للمريض ولا للطالب.' },
+      admin: { description: 'ملاحظات داخلية. ما تظهر للمراجع ولا للطالب.' },
     },
   ],
 }

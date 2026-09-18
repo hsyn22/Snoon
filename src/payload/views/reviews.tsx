@@ -4,6 +4,7 @@ import config from '@payload-config'
 import { listReviewsForAdmin, summariseReviews } from '@/db/queries/reviews'
 import { reviewCopy } from '@/lib/copy'
 import { formatCaseDate } from '@/lib/dates'
+import { AdminPage, Empty } from './ui'
 
 /**
  * Reviews of سنون, inside the Payload admin.
@@ -24,13 +25,15 @@ import { formatCaseDate } from '@/lib/dates'
  * contact details live and where they are shown one case at a time.
  */
 
-const BORDER = '1px solid rgba(128,128,128,0.35)'
+/* Payload's theme variables rather than literals, so this page follows the
+   admin's light and dark themes — see `views/ui.tsx`. */
+const BORDER = '1px solid var(--theme-elevation-150)'
 
 /** Enough colour to scan by. Never the only signal: the number is beside it. */
 function toneFor(rating: number): string {
-  if (rating >= 4) return '#116149'
-  if (rating === 3) return '#8a6d00'
-  return '#9b1c1c'
+  if (rating >= 4) return 'var(--theme-success-750)'
+  if (rating === 3) return 'var(--theme-warning-750)'
+  return 'var(--theme-error-750)'
 }
 
 function Summary({
@@ -111,9 +114,7 @@ export default async function ReviewsView() {
   ])
 
   return (
-    <div style={{ padding: '2rem', maxWidth: '60rem', margin: '0 auto' }} dir="rtl">
-      <h1 style={{ marginBottom: '0.5rem' }}>{reviewCopy.adminTitle}</h1>
-      <p style={{ opacity: 0.7, marginBottom: '2rem' }}>{reviewCopy.adminIntro}</p>
+    <AdminPage title={reviewCopy.adminTitle} lead={reviewCopy.adminIntro}>
 
       <div
         style={{
@@ -128,7 +129,7 @@ export default async function ReviewsView() {
         <Summary title={reviewCopy.adminFromStudent} summary={fromStudents} />
       </div>
 
-      {reviews.length === 0 ? <p style={{ opacity: 0.7 }}>{reviewCopy.adminEmpty}</p> : null}
+      {reviews.length === 0 ? <Empty reason={reviewCopy.adminEmpty} /> : null}
 
       <div style={{ display: 'grid', gap: '0.75rem' }}>
         {reviews.map((review) => (
@@ -169,6 +170,6 @@ export default async function ReviewsView() {
           </section>
         ))}
       </div>
-    </div>
+    </AdminPage>
   )
 }

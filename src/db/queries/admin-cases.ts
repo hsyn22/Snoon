@@ -49,6 +49,54 @@ export async function listRecentCasesForAdmin(limit = 25): Promise<AdminCaseList
 }
 
 /**
+ * The browsable list of مراجعين, page by page.
+ *
+ * **This is a list of cases, and it is not a list of people — deliberately.**
+ * What identifies a مراجع in سنون is their phone number, and the rule that
+ * contact details never appear in a list is the reason an admin overview cannot
+ * leak one however it is rendered. So this projection has no `patientName` and
+ * no `patientPhone`, exactly like `listRecentCasesForAdmin`, and an admin who
+ * needs to reach somebody opens the one case by its reference code, where
+ * `findCaseForAdmin` is the only function that returns them.
+ *
+ * `status` narrows the list and is checked against the real set by the caller;
+ * anything else returns everything rather than nothing, because an unrecognised
+ * filter value producing an empty page reads as "there are no cases".
+ */
+export async function listCasesForAdmin({
+  status,
+  limit = 50,
+  offset = 0,
+}: {
+  status?: string
+  limit?: number
+  offset?: number
+} = {}): Promise<{ items: AdminCaseListItem[]; total: number }> {
+  const where = status ? eq(cases.status, status as typeof cases.status.enumValues[number]) : undefined
+
+  const [items, [totals]] = await Promise.all([
+    db
+      .select({
+        id: cases.id,
+        referenceCode: cases.referenceCode,
+        status: cases.status,
+        cityId: cases.cityId,
+        treatmentTypeIds: cases.treatmentTypeIds,
+        createdAt: cases.createdAt,
+        updatedAt: cases.updatedAt,
+      })
+      .from(cases)
+      .where(where)
+      .orderBy(desc(cases.createdAt))
+      .limit(limit)
+      .offset(offset),
+    db.select({ total: count() }).from(cases).where(where),
+  ])
+
+  return { items, total: Number(totals?.total ?? 0) }
+}
+
+/**
  * How many cases sit in each status.
  *
  * Worth having in front of an admin because of the consequence recorded under

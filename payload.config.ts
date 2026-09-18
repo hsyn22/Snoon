@@ -51,6 +51,17 @@ export default buildConfig({
           path: '/cases',
         },
 
+        // The same cases, browsable rather than looked up one at a time. Split
+        // from the view above because the two answer different questions: that
+        // one answers "what happened to SN-4KP7QW", read out over the phone;
+        // this one answers "who has come in this week". Its projection carries
+        // no contact columns at all, so the list cannot leak a number however it
+        // is rendered — the lookup stays the only screen that shows one.
+        patientList: {
+          Component: '@/payload/views/patient-list#default',
+          path: '/patients',
+        },
+
         // Reviews of سنون — the service, never the people. Read-only: an admin
         // editing a review would be editing what somebody said.
         reviews: {

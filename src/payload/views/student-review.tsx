@@ -1,18 +1,21 @@
-import { desc } from 'drizzle-orm'
 import { headers as nextHeaders } from 'next/headers'
 import { getPayload } from 'payload'
 import config from '@payload-config'
-import { db } from '@/db'
-import { students } from '@/db/schema'
+import {
+  countStudentsByStatus,
+  isStudentStatus,
+  listStudentsForAdmin,
+} from '@/db/queries/admin-students'
 import { getAllTreatmentTypes, getStages, getUniversities } from '@/lib/config'
 import { summariseClaimsByStudent } from '@/db/queries/claims'
 import { listLinkedSubjectIds } from '@/db/queries/telegram'
 import { caseForm, studentHistory, studentNotifications } from '@/lib/copy'
 import { formatCaseDate } from '@/lib/dates'
 import { decideStudentVerification } from './student-review-actions'
+import { AdminPage, Empty, FilterLinks, Panel, Stat, StatRow, Tag, type Tone } from './ui'
 
 /**
- * Student verification, inside the Payload admin.
+ * The students, and the decision an admin makes about each of them.
  *
  * Students live in the `snoon` Drizzle schema, not in Payload — they have
  * invariants and an audit trail, and Payload must never own that. But the person
@@ -25,23 +28,48 @@ import { decideStudentVerification } from './student-review-actions'
  * asked. Without the check below, `curl /admin/students` returned every
  * student's name, university and document reference to anyone. Query nothing
  * until the caller is known to be an admin.
+ *
+ * **Names are shown here on purpose**, and they are the exception rather than a
+ * relaxation: verification *is* the act of comparing a name against a document,
+ * so a page that hid it would make the job impossible. No contact column appears
+ * — there is none in the projection — and a student's email stays in Better Auth
+ * where nothing on this page reaches for it.
  */
 
-const STATUS_LABEL: Record<string, string> = {
+const STATUS_LABEL = {
   PENDING: 'قيد المراجعة',
   VERIFIED: 'موثّق',
   REJECTED: 'مرفوض',
   SUSPENDED: 'موقوف',
+} as const satisfies Record<string, string>
+
+/* Colour is never the only signal: every tag carries its Arabic label too. */
+const STATUS_TONE: Record<string, Tone> = {
+  PENDING: 'warning',
+  VERIFIED: 'success',
+  REJECTED: 'danger',
+  SUSPENDED: 'neutral',
 }
 
-const STATUS_COLOUR: Record<string, string> = {
-  PENDING: '#8a6d00',
-  VERIFIED: '#116149',
-  REJECTED: '#9b1c1c',
-  SUSPENDED: '#6b7280',
+const DECISIONS = [
+  ['VERIFIED', 'وثّق', 'var(--theme-success-500)'],
+  ['REJECTED', 'ارفض', 'var(--theme-error-500)'],
+  ['SUSPENDED', 'أوقف', 'var(--theme-elevation-500)'],
+] as const
+
+function readParam(
+  params: { [key: string]: string | string[] | undefined } | undefined,
+  key: string,
+): string {
+  const raw = params?.[key]
+  return (Array.isArray(raw) ? raw[0] : raw) ?? ''
 }
 
-export default async function StudentReviewView() {
+export default async function StudentReviewView({
+  searchParams,
+}: {
+  searchParams?: { [key: string]: string | string[] | undefined }
+}) {
   const payload = await getPayload({ config })
 
   const { user } = await payload.auth({ headers: await nextHeaders() })
@@ -51,39 +79,31 @@ export default async function StudentReviewView() {
     return null
   }
 
+  /*
+   * The filter is validated rather than passed through, and an unrecognised
+   * value falls back to everything. A blank list reads as "there are no
+   * students", which is the expensive kind of wrong here.
+   */
+  const requested = readParam(searchParams, 'status')
+  const status = isStudentStatus(requested) ? requested : ''
+
   // Students store slugs; an admin should read names. Falls back to the slug so a
-  // student attached to a since-deleted college still shows something.
-  const [universities, stages, treatments, records, linkedStudentIds] = await Promise.all([
-    getUniversities(),
-    getStages(),
-    getAllTreatmentTypes(),
-    // One query for every student's case record, rather than one per row: this
-    // page draws up to 200 students.
-    summariseClaimsByStudent(),
-    listLinkedSubjectIds('STUDENT'),
-  ])
+  // student attached to a since-deleted university still shows something.
+  const [universities, stages, treatments, records, linkedStudentIds, rows, counts] =
+    await Promise.all([
+      getUniversities(),
+      getStages(),
+      getAllTreatmentTypes(),
+      // One query for every student's case record, rather than one per row: this
+      // page draws up to 200 students.
+      summariseClaimsByStudent(),
+      listLinkedSubjectIds('STUDENT'),
+      listStudentsForAdmin({ status: status || undefined }),
+      countStudentsByStatus(),
+    ])
+
   const nameOf = (list: readonly { id: string; nameAr: string }[], id: string) =>
     list.find((entry) => entry.id === id)?.nameAr ?? id
-
-  const rows = await db
-    .select({
-      id: students.id,
-      fullName: students.fullName,
-      universityId: students.universityId,
-      stageId: students.stageId,
-      clinicDays: students.clinicDays,
-      notifyNewCases: students.notifyNewCases,
-      mutedTreatmentTypeIds: students.mutedTreatmentTypeIds,
-      verificationStatus: students.verificationStatus,
-      verificationDocumentPath: students.verificationDocumentPath,
-      verificationReviewedBy: students.verificationReviewedBy,
-      verificationReviewedAt: students.verificationReviewedAt,
-      verificationNote: students.verificationNote,
-      createdAt: students.createdAt,
-    })
-    .from(students)
-    .orderBy(desc(students.createdAt))
-    .limit(200)
 
   // Resolve each document id to its URL. Payload's access rules still gate the
   // file itself, so a link here is not a way around them.
@@ -101,51 +121,74 @@ export default async function StudentReviewView() {
     }
   }
 
-  const pending = rows.filter((row) => row.verificationStatus === 'PENDING')
-
   /** A student with no claims has a record too — it is simply empty. */
   const recordFor = (studentId: string) =>
     records.get(studentId) ?? { total: 0, treated: 0, active: 0, entries: [] }
 
+  const everything = Object.values(counts).reduce((sum, n) => sum + n, 0)
+  const hrefFor = (value: string) => (value ? `/admin/students?status=${value}` : '/admin/students')
+
   return (
-    <div style={{ padding: '2rem', maxWidth: '60rem', margin: '0 auto' }} dir="rtl">
-      <h1 style={{ marginBottom: '0.5rem' }}>توثيق الطلبة</h1>
-      <p style={{ opacity: 0.7, marginBottom: '2rem' }}>
-        راجع وثيقة التسجيل وقرر. الطالب ما يشوف أي حالة إلا بعد ما يتوثّق.
-      </p>
+    <AdminPage
+      wide
+      title="الطلبة"
+      lead="راجع وثيقة التسجيل وقارنها بالاسم والجامعة، وقرر. الطالب ما يشوف أي حالة إلا بعد ما يتوثّق."
+    >
+      <StatRow>
+        <Stat label="كل الطلبة" value={everything} />
+        <Stat label={STATUS_LABEL.PENDING} value={counts.PENDING ?? 0} tone="warning" />
+        <Stat label={STATUS_LABEL.VERIFIED} value={counts.VERIFIED ?? 0} tone="success" />
+        <Stat label={STATUS_LABEL.REJECTED} value={counts.REJECTED ?? 0} tone="danger" />
+        <Stat label={STATUS_LABEL.SUSPENDED} value={counts.SUSPENDED ?? 0} />
+      </StatRow>
+
+      <Panel title="حسب حالة التوثيق">
+        <FilterLinks
+          current={status}
+          hrefFor={hrefFor}
+          options={[
+            { value: '', label: 'الكل', count: everything },
+            ...Object.entries(STATUS_LABEL).map(([key, label]) => ({
+              value: key,
+              label,
+              count: counts[key] ?? 0,
+            })),
+          ]}
+        />
+      </Panel>
 
       {rows.length === 0 ? (
-        <p style={{ opacity: 0.7 }}>ما أكو طلبة مسجّلين لحد الآن.</p>
-      ) : null}
-
-      {pending.length === 0 && rows.length > 0 ? (
-        <p style={{ opacity: 0.7, marginBottom: '2rem' }}>ما أكو طلبات بانتظار المراجعة.</p>
+        /* Which list is empty, by name. An admin filtered to "موقوف" who sees
+           nothing must be able to tell that from having no students at all. */
+        <Empty
+          reason={
+            everything === 0
+              ? 'ما أكو طلبة مسجّلين لحد الآن.'
+              : `ما أكو طالب بحالة «${status ? STATUS_LABEL[status] : 'الكل'}». جرّب «الكل».`
+          }
+        />
       ) : null}
 
       <div style={{ display: 'grid', gap: '1rem' }}>
         {rows.map((row) => {
           const documentUrl = documents.get(row.id)
           return (
-            <section
-              key={row.id}
-              style={{
-                border: '1px solid rgba(128,128,128,0.35)',
-                borderRadius: '0.5rem',
-                padding: '1rem',
-              }}
-            >
+            <Panel key={row.id} style={{ marginBottom: 0 }}>
               <div
                 style={{
                   display: 'flex',
                   justifyContent: 'space-between',
                   gap: '1rem',
                   flexWrap: 'wrap',
+                  alignItems: 'center',
+                  marginBottom: '0.75rem',
                 }}
               >
                 <strong style={{ fontSize: '1.05rem' }}>{row.fullName}</strong>
-                <span style={{ color: STATUS_COLOUR[row.verificationStatus], fontWeight: 600 }}>
-                  {STATUS_LABEL[row.verificationStatus] ?? row.verificationStatus}
-                </span>
+                <Tag
+                  label={STATUS_LABEL[row.verificationStatus]}
+                  tone={STATUS_TONE[row.verificationStatus] ?? 'neutral'}
+                />
               </div>
 
               <dl
@@ -153,27 +196,31 @@ export default async function StudentReviewView() {
                   display: 'grid',
                   gridTemplateColumns: 'auto 1fr',
                   gap: '0.25rem 1rem',
-                  margin: '0.75rem 0',
+                  margin: '0 0 0.75rem',
                   fontSize: '0.9rem',
                 }}
               >
-                <dt style={{ opacity: 0.7 }}>الجامعة</dt>
+                <dt style={{ color: 'var(--theme-elevation-600)' }}>الجامعة</dt>
                 <dd style={{ margin: 0 }}>{nameOf(universities, row.universityId)}</dd>
-                <dt style={{ opacity: 0.7 }}>المرحلة</dt>
+                <dt style={{ color: 'var(--theme-elevation-600)' }}>المرحلة</dt>
                 <dd style={{ margin: 0 }}>{nameOf(stages, row.stageId)}</dd>
+                <dt style={{ color: 'var(--theme-elevation-600)' }}>سجّل بتاريخ</dt>
+                <dd style={{ margin: 0 }} dir="ltr">
+                  {formatCaseDate(row.createdAt)}
+                </dd>
                 {row.verificationReviewedBy ? (
                   <>
-                    <dt style={{ opacity: 0.7 }}>راجعها</dt>
+                    <dt style={{ color: 'var(--theme-elevation-600)' }}>راجعها</dt>
                     <dd style={{ margin: 0 }}>{row.verificationReviewedBy}</dd>
                   </>
                 ) : null}
                 {row.verificationNote ? (
                   <>
-                    <dt style={{ opacity: 0.7 }}>ملاحظة</dt>
+                    <dt style={{ color: 'var(--theme-elevation-600)' }}>ملاحظة</dt>
                     <dd style={{ margin: 0 }}>{row.verificationNote}</dd>
                   </>
                 ) : null}
-                <dt style={{ opacity: 0.7 }}>أيام الدوام</dt>
+                <dt style={{ color: 'var(--theme-elevation-600)' }}>أيام الدوام</dt>
                 <dd style={{ margin: 0 }}>
                   {row.clinicDays.length === 0
                     ? 'كل الأيام'
@@ -183,9 +230,9 @@ export default async function StudentReviewView() {
                         )
                         .join('، ')}
                 </dd>
-                <dt style={{ opacity: 0.7 }}>تلگرام</dt>
+                <dt style={{ color: 'var(--theme-elevation-600)' }}>تلگرام</dt>
                 <dd style={{ margin: 0 }}>{linkedStudentIds.has(row.id) ? 'مربوط' : 'مو مربوط'}</dd>
-                <dt style={{ opacity: 0.7 }}>الإشعارات</dt>
+                <dt style={{ color: 'var(--theme-elevation-600)' }}>الإشعارات</dt>
                 <dd style={{ margin: 0 }}>
                   {row.notifyNewCases
                     ? `${studentNotifications.adminOn} — ${
@@ -197,7 +244,7 @@ export default async function StudentReviewView() {
                   {/* Named rather than counted when muted, because "3 muted" is
                       not something an admin can act on and the names are. */}
                   {row.notifyNewCases && row.mutedTreatmentTypeIds.length > 0 ? (
-                    <span style={{ opacity: 0.7 }}>
+                    <span style={{ color: 'var(--theme-elevation-600)' }}>
                       {' '}
                       ({row.mutedTreatmentTypeIds.map((id) => nameOf(treatments, id)).join('، ')})
                     </span>
@@ -225,15 +272,25 @@ export default async function StudentReviewView() {
                   {recordFor(row.id).active > 0 ? ` · شغّالة ${recordFor(row.id).active}` : ''}
                 </summary>
                 {recordFor(row.id).entries.length === 0 ? (
-                  <p style={{ fontSize: '0.85rem', opacity: 0.7 }}>{studentHistory.emptyTitle}</p>
+                  <p style={{ fontSize: '0.85rem', color: 'var(--theme-elevation-600)' }}>
+                    {studentHistory.emptyTitle}
+                  </p>
                 ) : (
                   <table style={{ width: '100%', fontSize: '0.85rem', marginTop: '0.5rem' }}>
                     <thead>
-                      <tr style={{ textAlign: 'start', opacity: 0.7 }}>
-                        <th style={{ textAlign: 'start' }}>الرمز</th>
-                        <th style={{ textAlign: 'start' }}>{studentHistory.treatments}</th>
-                        <th style={{ textAlign: 'start' }}>الحالة</th>
-                        <th style={{ textAlign: 'start' }}>{studentHistory.claimedAt}</th>
+                      <tr style={{ textAlign: 'start', color: 'var(--theme-elevation-600)' }}>
+                        <th scope="col" style={{ textAlign: 'start' }}>
+                          الرمز
+                        </th>
+                        <th scope="col" style={{ textAlign: 'start' }}>
+                          {studentHistory.treatments}
+                        </th>
+                        <th scope="col" style={{ textAlign: 'start' }}>
+                          الحالة
+                        </th>
+                        <th scope="col" style={{ textAlign: 'start' }}>
+                          {studentHistory.claimedAt}
+                        </th>
                       </tr>
                     </thead>
                     <tbody>
@@ -245,9 +302,7 @@ export default async function StudentReviewView() {
                             {entry.referenceCode}
                           </td>
                           <td>
-                            {entry.treatmentTypeIds
-                              .map((id) => nameOf(treatments, id))
-                              .join('، ')}
+                            {entry.treatmentTypeIds.map((id) => nameOf(treatments, id)).join('، ')}
                           </td>
                           <td>
                             {studentHistory.outcome[
@@ -272,7 +327,12 @@ export default async function StudentReviewView() {
                   افتح وثيقة التسجيل
                 </a>
               ) : (
-                <span style={{ fontSize: '0.9rem', opacity: 0.6 }}>ما أكو وثيقة مرفوعة.</span>
+                /* Not merely absent — say what is missing, to the person who can
+                   chase it. A row with no document is the commonest reason a
+                   student sits in the queue unreviewed. */
+                <span style={{ fontSize: '0.9rem', color: 'var(--theme-elevation-600)' }}>
+                  ما أكو وثيقة مرفوعة — الطالب لازم يرفعها من حسابه أو يدزها للبوت.
+                </span>
               )}
 
               <form
@@ -299,19 +359,13 @@ export default async function StudentReviewView() {
                   style={{
                     padding: '0.5rem',
                     borderRadius: '0.35rem',
-                    border: '1px solid rgba(128,128,128,0.35)',
-                    background: 'transparent',
+                    border: '1px solid var(--theme-elevation-150)',
+                    background: 'var(--theme-input-bg)',
                     color: 'inherit',
                   }}
                 />
                 <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
-                  {(
-                    [
-                      ['VERIFIED', 'وثّق', '#116149'],
-                      ['REJECTED', 'ارفض', '#9b1c1c'],
-                      ['SUSPENDED', 'أوقف', '#6b7280'],
-                    ] as const
-                  ).map(([decision, label, colour]) => (
+                  {DECISIONS.map(([decision, label, colour]) => (
                     <button
                       key={decision}
                       type="submit"
@@ -333,10 +387,10 @@ export default async function StudentReviewView() {
                   ))}
                 </div>
               </form>
-            </section>
+            </Panel>
           )
         })}
       </div>
-    </div>
+    </AdminPage>
   )
 }

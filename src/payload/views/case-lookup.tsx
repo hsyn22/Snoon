@@ -1,10 +1,10 @@
+import Link from 'next/link'
 import { headers as nextHeaders } from 'next/headers'
 import { getPayload } from 'payload'
 import config from '@payload-config'
 import {
   countCasesByStatus,
   findCaseForAdmin,
-  listRecentCasesForAdmin,
   type AdminCaseView,
 } from '@/db/queries/admin-cases'
 import { listActivePhoneBlocks, type PhoneBlockRow } from '@/db/queries/phone-blocks'
@@ -21,6 +21,7 @@ import { describeReason } from '@/lib/cases/reasons'
 import { caseForm, caseStatus, common } from '@/lib/copy'
 import { formatAppointment, formatCaseDate, formatCaseDateTime } from '@/lib/dates'
 import { normaliseReferenceCode } from '@/lib/reference-code'
+import { AdminPage, Panel } from './ui'
 
 /**
  * Case lookup, inside the Payload admin.
@@ -47,26 +48,29 @@ const CLAIM_STATUS_LABEL: Record<string, string> = {
 }
 
 const ACTOR_LABEL: Record<string, string> = {
-  PATIENT: 'المريض',
+  PATIENT: 'المراجع',
   STUDENT: 'الطالب',
   ADMIN: 'الإدارة',
   SYSTEM: 'النظام',
 }
 
 const STATUS_COLOUR: Record<string, string> = {
-  REQUESTED: '#8a6d00',
-  MATCHED: '#1d4ed8',
-  CONTACTED: '#1d4ed8',
-  APPOINTMENT_CONFIRMED: '#116149',
-  COMPLETED: '#116149',
-  NO_CONTACT: '#9b1c1c',
-  RETURNED_TO_QUEUE: '#8a6d00',
-  NO_SHOW: '#9b1c1c',
-  CANCELLED: '#6b7280',
-  EXPIRED: '#6b7280',
+  REQUESTED: 'var(--theme-warning-750)',
+  MATCHED: 'var(--theme-elevation-800)',
+  CONTACTED: 'var(--theme-elevation-800)',
+  APPOINTMENT_CONFIRMED: 'var(--theme-success-750)',
+  COMPLETED: 'var(--theme-success-750)',
+  NO_CONTACT: 'var(--theme-error-750)',
+  RETURNED_TO_QUEUE: 'var(--theme-warning-750)',
+  NO_SHOW: 'var(--theme-error-750)',
+  CANCELLED: 'var(--theme-elevation-500)',
+  EXPIRED: 'var(--theme-elevation-500)',
 }
 
-const BORDER = '1px solid rgba(128,128,128,0.35)'
+/* Payload's own theme variables rather than literals, so this page follows the
+   admin's light and dark themes instead of fighting them — the same reason
+   `views/ui.tsx` names no colour of its own. */
+const BORDER = '1px solid var(--theme-elevation-150)'
 
 const statusLabel = (status: string) =>
   caseStatus[status as keyof typeof caseStatus] ?? status
@@ -146,21 +150,20 @@ export default async function CaseLookupView({
   // Only one case's contact details are ever loaded, and only for a code the
   // admin typed. The overview list below cannot contain them.
   const record: AdminCaseView | null = normalised ? await findCaseForAdmin(normalised) : null
-  const [recent, counts, blocks, stuck] = record
-    ? [[], {} as Record<string, number>, [] as PhoneBlockRow[], [] as ClaimAwaitingPatient[]]
-    : await Promise.all([
-        listRecentCasesForAdmin(25),
-        countCasesByStatus(),
-        listActivePhoneBlocks(),
-        listClaimsAwaitingPatient(),
-      ])
+  // The twenty-five most recent cases used to be fetched here just to be listed
+  // at the bottom. They have their own page now, so this one asks for the counts
+  // it already needed and nothing more.
+  const [counts, blocks, stuck] = record
+    ? [{} as Record<string, number>, [] as PhoneBlockRow[], [] as ClaimAwaitingPatient[]]
+    : await Promise.all([countCasesByStatus(), listActivePhoneBlocks(), listClaimsAwaitingPatient()])
+
+  const totalCases = Object.values(counts).reduce((sum, n) => sum + n, 0)
 
   return (
-    <div style={{ padding: '2rem', maxWidth: '60rem', margin: '0 auto' }} dir="rtl">
-      <h1 style={{ marginBottom: '0.5rem' }}>الحالات</h1>
-      <p style={{ opacity: 0.7, marginBottom: '1.5rem' }}>
-        دوّر على حالة برمزها — مثلاً اللي يكَرّاه المريض بالتلفون — وشوف وين وصلت ومنو آخذها.
-      </p>
+    <AdminPage
+      title="دوّر على حالة"
+      lead="اكتب رمز الحالة — مثلاً اللي يكَرّاه المراجع بالتلفون — وشوف وين وصلت ومنو آخذها. هذي الصفحة الوحيدة اللي تظهر بيها معلومات التواصل."
+    >
 
       <form method="get" style={{ display: 'flex', gap: '0.5rem', marginBottom: '2rem' }}>
         <input
@@ -183,7 +186,7 @@ export default async function CaseLookupView({
             padding: '0.6rem 1.25rem',
             borderRadius: '0.35rem',
             border: 'none',
-            background: '#1d4ed8',
+            background: 'var(--theme-elevation-800)',
             color: 'white',
             cursor: 'pointer',
           }}
@@ -193,13 +196,13 @@ export default async function CaseLookupView({
       </form>
 
       {query && !normalised ? (
-        <p style={{ color: '#9b1c1c' }}>
+        <p style={{ color: 'var(--theme-error-750)' }}>
           هذا مو رمز حالة. الرمز يتكوّن من SN- وستة حروف أو أرقام.
         </p>
       ) : null}
 
       {normalised && !record ? (
-        <p style={{ color: '#9b1c1c' }}>
+        <p style={{ color: 'var(--theme-error-750)' }}>
           ما لكينا حالة بالرمز <Ltr>{normalised}</Ltr>.
         </p>
       ) : null}
@@ -241,12 +244,12 @@ export default async function CaseLookupView({
           {stuck.length > 0 ? (
             <section style={{ marginBottom: '2rem' }}>
               <h2 style={{ fontSize: '1rem', marginBottom: '0.25rem' }}>
-                تنتظر قرارك — المريض ما رد
+                تنتظر قرارك — المراجع ما رد
               </h2>
               <p style={{ opacity: 0.7, fontSize: '0.85rem', margin: '0 0 0.75rem' }}>
-                الطالب كَال إنه اتصل، وسألنا المريض بتلگرام وبرابط المتابعة وما رد على
+                الطالب كَال إنه اتصل، وسألنا المراجع بتلگرام وبرابط المتابعة وما رد على
                 الاثنين. ما نكدر نأكد التواصل بكلام الطالب لحاله، وما نكدر نسحب الحالة من
-                طالب سوّى اللي عليه. اتصل بالمريض وقرر.
+                طالب سوّى اللي عليه. اتصل بالمراجع وقرر.
               </p>
 
               <div style={{ display: 'grid', gap: '0.75rem' }}>
@@ -293,7 +296,7 @@ export default async function CaseLookupView({
                             padding: '0.4rem 0.9rem',
                             borderRadius: '0.35rem',
                             border: 'none',
-                            background: '#116149',
+                            background: 'var(--theme-success-500)',
                             color: 'white',
                             cursor: 'pointer',
                           }}
@@ -387,42 +390,25 @@ export default async function CaseLookupView({
             </section>
           ) : null}
 
-          {recent.length > 0 ? (
-            <section>
-              <h2 style={{ fontSize: '1rem', marginBottom: '0.75rem' }}>آخر الحالات</h2>
-              <div style={{ display: 'grid', gap: '0.5rem' }}>
-                {recent.map((row) => (
-                  <a
-                    key={row.id}
-                    href={`?ref=${encodeURIComponent(row.referenceCode)}`}
-                    style={{
-                      border: BORDER,
-                      borderRadius: '0.5rem',
-                      padding: '0.75rem 1rem',
-                      display: 'flex',
-                      justifyContent: 'space-between',
-                      gap: '1rem',
-                      flexWrap: 'wrap',
-                      color: 'inherit',
-                      textDecoration: 'none',
-                    }}
-                  >
-                    <strong>
-                      <Ltr>{row.referenceCode}</Ltr>
-                    </strong>
-                    <span>{nameOf(cities, row.cityId)}</span>
-                    <span style={{ opacity: 0.7 }}>{formatCaseDate(row.createdAt)}</span>
-                    <span style={{ color: STATUS_COLOUR[row.status], fontWeight: 600 }}>
-                      {statusLabel(row.status)}
-                    </span>
-                  </a>
-                ))}
-              </div>
-            </section>
+          {/*
+            * The twenty-five most recent cases used to be listed here, which was
+            * the only way to browse anything at all. They have their own page now
+            * — filterable, paged and with the same contact-free projection — so
+            * this is a link rather than a second, shorter copy of it. Two screens
+            * showing overlapping slices of the same list is how they drift.
+            */}
+          {totalCases > 0 ? (
+            <Panel title="كل الحالات">
+              <p style={{ margin: '0 0 0.75rem', color: 'var(--theme-elevation-600)' }}>
+                عدنا <span dir="ltr">{totalCases}</span> حالة. تكدر تتصفحها كلها وتفلترها حسب
+                حالتها بصفحة المراجعين.
+              </p>
+              <Link href="/admin/patients">افتح قائمة المراجعين</Link>
+            </Panel>
           ) : null}
         </>
       )}
-    </div>
+    </AdminPage>
   )
 }
 
@@ -484,7 +470,7 @@ function CaseDetail({
               .join('، ')}
           </Field>
           <Field label="تاريخ التقديم">{formatCaseDateTime(record.createdAt)}</Field>
-          {record.notes ? <Field label="ملاحظات المريض">{record.notes}</Field> : null}
+          {record.notes ? <Field label="ملاحظات المراجع">{record.notes}</Field> : null}
           <Field label="إشعارات تلگرام">{record.telegramLinked ? 'مفعّلة' : 'مو مفعّلة'}</Field>
           {record.trackingTokenRevokedAt ? (
             <Field label="رابط المتابعة">
