@@ -92,19 +92,34 @@ student half of the site cannot be tested.
       which tooth and sends molars to a dentist instead of into the queue.
 - [x] **The landing page stopped addressing only patients.** The shared sections and the
       closing band are neutral, and the closing band offers both doors.
-- [ ] **The FAQ still addresses only patients.** Label it as the patients' FAQ and add a
-      students' one beside it — "شنو أحتاج حتى أسجل؟", "شلون أعرف الحالة تناسب مرحلتي؟",
-      "شنو يصير إذا ما كدرت أكمل الحالة؟". This is the clearest remaining place a student
-      finds nothing addressed to them.
+- [x] **The FAQ addresses both sides.** Two labelled groups, and the students' one answers
+      registration, which cases appear and what happens to a case they cannot finish — every
+      answer something the code actually does (`339457c`). The two groups have since moved
+      apart into their own bands; see below.
 - [x] **Step scenes instead of step icons**, taken from ClinMatch — the one thing in their
       two recordings that is genuinely better than what سنون had.
-- [ ] **A colour per audience.** Both competitors run one colour for patients and another for
-      students throughout. سنون already has accent and warm doing this inside the bridge
-      diagram; extending it across the student pages would answer "nothing talks to students"
-      more thoroughly than copy changes alone.
-- [ ] **A real student surface.** Right now the student side is one block on the landing page
-      and a login. It needs its own page explaining verification, what a case looks like, and
-      what the stages may treat — the thing that actually recruits students.
+- [x] **A colour per audience.** `.student-area` re-points the accent tokens at the orange
+      ramp, so every `/student` page — and now the landing page's student band — turns orange
+      without one component learning that audiences have colours (`8bed87e`).
+- [x] **A real student surface** — as a band rather than a page. The landing page is now
+      three bands: what سنون is, in the third person for both sides; the مراجع's side in
+      green; the student's in orange, with what the queue shows, when a phone number appears,
+      the Telegram alert, and the students' FAQ. A separate `/students` page is still worth
+      having if the band is not enough to recruit, but it is no longer the gap it was.
+
+- [x] **The guided questions are on the landing page**, under the treatment list — the one
+      place somebody discovers their problem is not on it. They were reachable only from the
+      footer and from inside the case form, both of which you reach after deciding what to
+      ask for, so the visitor the tree was built for never saw it.
+
+- [x] **Students can see and correct their own record.** `/student/profile` was write-once and
+      redirected away once a profile existed. It is a profile page now; editing the name,
+      university or stage re-opens verification, clinic days do not, and a suspension cannot
+      be edited away.
+
+- [x] **The three-part name is asked for** rather than lifted off the Google account, on the
+      profile step and beside the document. An admin comparing a document against a display
+      name called "Ahmed" was being asked to make a judgement nobody can make.
 - [x] **The triage tree became three layers** — emergency screen, age, then needs — after
       Haider walked AsnanLink's flow. The red flags used to be answers inside branches, so
       only somebody who picked the right branch ever saw them.
@@ -127,7 +142,18 @@ one, which is why the product still reads as a form once you leave the front doo
 - [ ] `/student` and the student dashboard — a tool, per CLAUDE.md: density and speed, not novelty.
 - [ ] `/student/profile`, `/student/profile/document` — where students drop off.
 - [ ] `/case/find`, `/case/mine`, `/case/guide` — short pages, quick wins.
-- [ ] The Payload admin views (`/admin/students`, `/admin/cases`) — last, and deliberately plain.
+- [x] The Payload admin — a shared vocabulary in `src/payload/views/ui.tsx`, colours from
+      Payload's own theme variables so the pages follow light and dark, a browsable
+      **المراجعين** list with no contact columns, and a **الطلبة** list with a count and a
+      filter per standing. Still deliberately plain.
+
+## 2b. Design — what is left
+
+- [ ] `/student/profile/document` is the thinnest screen in the product and sits on the step
+      students drop off at. The native file input still renders its own button text in the
+      browser's language, so an Arabic page shows "Choose File" — fixable with a label-styled
+      control, at the cost of the chosen filename with no JavaScript.
+- [ ] A students' own page (`/students`), if the landing band turns out not to recruit.
 
 ## 3. Still open, and waiting on him
 

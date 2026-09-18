@@ -68,10 +68,11 @@ docs/competitors.md      ClinMatch, AsnanLink, عالجني
 
 **Patient** (no account, ever): `/` · `/case/new` · `/case/guide` · `/case/track/[token]` ·
 `/case/find` · `/case/mine` (optional Google account)
-**Student**: `/student` (queue) · `/student/profile` · `/student/profile/document` ·
-`/student/case/[caseId]` · `/student/history` · `/student/notifications` · login/signup
-**Admin**: `/admin` plus three custom views — `/admin/cases`, `/admin/students`,
-`/admin/reviews`
+**Student**: `/student` (queue) · `/student/profile` (the record, and editing it) ·
+`/student/profile/document` · `/student/case/[caseId]` · `/student/history` ·
+`/student/notifications` · login/signup
+**Admin**: `/admin` plus four custom views — `/admin/patients`, `/admin/cases`,
+`/admin/students`, `/admin/reviews`
 
 ### Local setup
 
@@ -169,11 +170,14 @@ A bare "سنون" beside a hospital's name reads as a clinic, and the one thing 
 mistaken for is the place the treatment happens. `site.name` stays the bare word for running
 text where سنون is the subject of a sentence.
 
-**Never write `مريض` in user-facing copy. The word is `مراجع`.** "مريض" labels somebody as
+**Never write `مريض` anywhere سنون speaks. The word is `مراجع`.** "مريض" labels somebody as
 ill, which is not what a person filling in a form is there to be told. Applies to `copy.ts`,
-`legal.ts` and every component. **`src/lib/cases/reasons.ts` is deliberately excluded** — those
-strings are written into the case event log and are effectively an API, so changing one splits
-the audit trail in two.
+`legal.ts`, every component **and the admin** — the Payload field descriptions and the custom
+views are read by Haider, and they said `مريض` in nine places until `tests/copy.test.ts`
+started walking `src/` and failing on it. **`src/lib/cases/reasons.ts` is deliberately
+excluded** — those strings are written into the case event log and are effectively an API, so
+changing one splits the audit trail in two. Test fixtures may name a patient anything: what is
+forbidden is سنون saying the word, not a row having it as a value.
 
 **The shared pages address neither side directly.** On any surface both audiences see — the
 landing page, the fee sentence, the FAQ, the privacy section — write the two roles in the
@@ -184,6 +188,15 @@ them.
 This does **not** apply inside the patient-only pages. `/case/new`, the tracking page and link
 recovery are read by one person whose role is not in doubt, and the third person there reads
 like a policy document.
+
+**Nor inside an audience band whose own heading names its reader.** Haider's structure for the
+landing page is three bands — what سنون is, then the مراجع's side in green, then the student's
+in orange — and inside a band headed `إذا تدور علاج أسنان` or `طالب طب أسنان؟` there is no
+ambiguity left for the third person to protect against. The FAQ's two labelled groups have
+worked this way since they were split, and the page now does the same. The **shared** band at
+the top is unchanged and is where the rule still binds: a sentence read by both sides at once
+stays in the third person. Recorded rather than quietly widened, because the rule above was
+stated flatly and somebody will otherwise "correct" a band's copy back.
 
 ---
 
@@ -236,9 +249,27 @@ readable in the database and survive the config being edited, re-seeded or resto
 
 ### Custom admin views
 
-Three read across into Drizzle: `/admin/students` (verification), `/admin/cases` (look a case
-up by the reference code a patient reads out over the phone) and `/admin/reviews`. They get no
-nav entry of their own, so all three are linked from `beforeNavLinks`.
+Four read across into Drizzle: `/admin/students` (the students, and the verification decision),
+`/admin/patients` (every case, browsable), `/admin/cases` (look one case up by the reference
+code a patient reads out over the phone) and `/admin/reviews`. They get no nav entry of their
+own, so all four are linked from `beforeNavLinks`, grouped by audience.
+
+**`src/payload/views/ui.tsx` is the admin's shared vocabulary** — page frame, panel, tag, stat,
+table, filter strip, empty state. Build from it rather than restyling locally, exactly as on
+the site. Two things about it are not preferences:
+
+- **It cannot use Tailwind.** The admin owns its own root layout and the site's stylesheet is
+  not loaded there, so inline styles are the only thing that reaches.
+- **Every colour is a Payload `--theme-*` variable, never a literal**, so these pages follow
+  the admin's light and dark themes. The hardcoded greens and reds they used to carry were
+  unreadable in one of the two.
+
+**`/admin/patients` is a list of cases, and it is not a list of people.** What identifies a
+مراجع is their phone number, so the projection behind it carries no contact column at all and
+the page structurally cannot show a name or a number however it is rendered. `/admin/cases`
+stays the only screen that shows contact details, for one case whose code an admin typed. The
+page says this under its heading, because an admin who cannot see a name should know that is a
+decision rather than missing data.
 
 **A custom Payload admin view must authorise itself.** Payload's admin gates the *interface*,
 but a custom view is still server-rendered — anything it queries lands in the HTML whoever
@@ -740,6 +771,40 @@ routes end in `attachVerificationDocument`, so the rules live in one place:
 
 **Telegram never decides anything.** It carries the photograph; the admin still approves.
 Manual review is correct at this scale — **do not build automated document checking.**
+
+**The name the admin compares the document against is typed by the student, never taken from
+Google.** `students.full_name` used to be `session.user.name` — a display name somebody set
+years ago, often one word or Latin script — so an admin was being asked whether a document
+naming أحمد علي حسين belongs to an account called "Ahmed". That is not a judgement anybody can
+make, and manual review is the one step keeping unverified people away from patients' phone
+numbers, so a check nobody can perform is the same as no check. Asked on the profile step and
+again beside the document, with the university, because those two are what an admin holds the
+paper up against. **At least three parts, not exactly three** — plenty of Iraqi names run to
+four and عبد الله is one name written as two words. **Nothing checks the script**: the person
+who can tell whether it matches is the admin reading both, and a form that guesses can only be
+wrong in the direction that blocks somebody. Same reasoning as the `pattern` rule on the phone
+input.
+
+### The student's own record — `/student/profile`
+
+The profile was write-once: the route redirected away the moment one existed, so a fourth year
+who became a fifth year could not say so and a mistyped name was permanent. It shows the record
+and lets it be corrected. Three rules, and they are what stop an edit screen from being a way
+around verification:
+
+- **Editing the name, university or stage re-opens verification.** Those three are exactly what
+  an admin checked — the queue is the university's city, what may be performed is the stage,
+  and the document was matched against the name. A verified fourth year who edits their stage
+  to the fifth becomes a student waiting on an admin, not a fifth year.
+- **Clinic days never re-open it.** Nobody verifies a timetable, and charging re-verification
+  for it would teach students to leave it wrong, which silently costs them cases.
+- **`SUSPENDED` is absorbing**, in `standingAfterProfileEdit`, in the action and in the page,
+  which shows a suspended student their record and no form at all. A suspension is a decision
+  about a person and an edit is not an appeal; without the rule, one changed letter puts them
+  back in the review queue.
+
+The warning about all this sits **above** the fields. A student who learns it after saving has
+already lost the access they came to fix a typo with.
 
 Sign-up does not reveal whether an address is already registered, and creates no session while
 verification is required. Both shape the flow: sign-up redirects to a "check your email" page
