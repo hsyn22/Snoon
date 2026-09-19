@@ -1,8 +1,10 @@
 # Logo
 
-Five rounds so far. The live one is **round five** — `round5.png`, with the recommended
-direction worked through in `chosen.png`. Nothing is wired into the product yet: `src/`
-still says `سنون / SNOON`, and it stays that way until a direction is picked.
+Eight rounds so far, **all rejected**. Nothing is wired into the product: `src/` still
+says `سنون / SNOON`, and it stays that way until a direction is picked.
+
+**Read "Where this leaves it" at the bottom before starting a ninth round.** The machinery
+is no longer the problem and another sheet of guesses is not the answer.
 
 ## Where this stands
 
@@ -269,3 +271,71 @@ molar. سِنّ is a tooth and the name's own last letter turns out to be one.
 
 `outline.py` reads TTFs, so the woff2 files fetched into `fonts/` are converted into
 `fonts/ttf/` first — fontTools does it with `brotli` installed.
+
+## Rounds six to eight — the word makes the shape
+
+Round five was rejected with the sharpest note in the whole file, and it is the one to
+keep:
+
+> اكو فرق كبير بين الي عدنا و بين chipped tooth — مالتنا سن بداخله كلمة، مالتهم ال outline
+> مال السن مصنوع بسبب تركيب الكلمة داخله
+
+Exactly right. On CHIPPED TOOTH the tooth's outline is **a consequence of how the lettering
+is arranged**. Every round up to five was either a drawn shape with a word dropped inside
+it, or a shape stuck onto a letter — "adding spikes at letters", in his words.
+
+Three rounds chased that, and each one established something:
+
+**Round six — `round6.png`. Bending.** `warp.py` bends the extracted outlines around a
+circle, from a faint curve to a closed horseshoe. It works and the letters survive it, but
+a bent word still reads as *a bent word*: a word has gaps, gaps mean there is no single
+mass, and no single mass means there is no silhouette to shape.
+
+**Round seven — `round7.png`. Welding.** Thicken the letterforms until neighbours touch and
+the word becomes one mass, then cut the name back out of it. Now there *is* an outline and
+it is made entirely by the letters. But سَنّون on one line is 2.2 times wider than it is
+tall, and no amount of bending turns that into a tooth.
+
+**Round eight — `round8.png`. Fitting.** `fit.py` describes a silhouette as a profile — its
+half-width at every height — and stretches each line of type across the full width the
+profile allows at its own band. Two or three lines (منصة / سَنّون / SNOON) give the block
+roughly a tooth's proportions, which one line never can. This is CHIPPED TOOTH's actual
+construction.
+
+**And it still is not right.** The construction is correct and the result reads as a retro
+sticker badge rather than as a tooth. Recorded plainly so the ninth round does not spend
+itself rediscovering a technique that already works.
+
+### What these three rounds leave behind, and it is worth keeping
+
+- `warp.py` — flattening and warping of real outlines. Curves are flattened *before*
+  warping; warping a Bezier's control points is what makes bent type go lumpy, because the
+  control points are not on the curve.
+- `fit.py` — silhouettes as half-width profiles, and the stretch that fills them.
+- `outline.word_contours` — the whole name as flattened contours. It decomposes composite
+  glyphs first: a pen that ignores `addComponent` silently dropped the seen and the final
+  noon, and a word missing two letters is the exact failure this pipeline exists to stop.
+- The letters are still never drawn. Everything above moves points that came out of the
+  font, and `verify.mjs` still passes.
+
+## Where this leaves it
+
+**Eight rounds, all rejected, and the last three were not short of technique.** The
+capability is now real: any silhouette can be described as a profile and the actual
+letterforms stretched to fill it, safely. What keeps missing is the *choice of shape and
+register*, and that is taste, not machinery.
+
+The reference sheet is not one idea, it is **four different crafts**, and a round aimed at
+the average of them will keep landing where these did:
+
+1. **Negative space** — Black Cat Cafe, and the cup's void is the cat. Untried.
+2. **Two objects fused into one silhouette** — coffeecat, CATWALK. The bean *is* the cat.
+3. **One letter replaced by an object** — كتاب, حلاق, ليمون, قهوة, fish. Tried in rounds
+   four and five; the Arabic versions of this keep making the word read as a different
+   word, which rounds five's three rejected marks document.
+4. **Lettering arranged into a silhouette** — CHIPPED TOOTH, and the two calligraphy
+   pieces arranged into a star and a ribbon. Rounds six to eight.
+
+**So the next round should be aimed at one of those four, named by Haider**, not at the set.
+That is the same lesson this file already recorded once — one reference is worth thirty
+guesses — one level further down.

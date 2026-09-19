@@ -3,3 +3,4 @@
 fonts/
 fonts.css
 *.html
+__pycache__/

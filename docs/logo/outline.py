@@ -109,3 +109,57 @@ if __name__ == "__main__":
             print(f"{k}: FAILED {e}", file=sys.stderr)
     with open("outlines.json", "w") as fh:
         json.dump(out, fh, indent=1)
+
+
+def word_contours(path, weight=400, text=NAME):
+    """
+    The whole name as flattened contours, in the same space `outlines()` uses:
+    a 1000-unit em, y down, baseline 0, x running 0..advance.
+
+    Flattened rather than left as curves because the warps in `warp.py` move
+    points, and a Bezier's control points are not on the curve.
+    """
+    from warp import FlattenPen
+    from fontTools.pens.recordingPen import DecomposingRecordingPen
+
+    with open(path, "rb") as fh:
+        data = fh.read()
+    face = hb.Face(data)
+    font = hb.Font(face)
+    upem = face.upem
+    font.scale = (upem, upem)
+    font.set_variations({"wght": weight})
+
+    buf = hb.Buffer()
+    buf.add_str(text)
+    buf.guess_segment_properties()
+    hb.shape(font, buf)
+
+    tt = TTFont(path, fontNumber=0)
+    if "fvar" in tt:
+        from fontTools.varLib import instancer
+        tt = instancer.instantiateVariableFont(tt, {"wght": weight}, inplace=False)
+    glyphset = tt.getGlyphSet()
+    order = tt.getGlyphOrder()
+
+    if any(i.codepoint == 0 for i in buf.glyph_infos):
+        raise SystemExit(f"{path}: font has no glyph for part of the name")
+
+    s = 1000.0 / upem
+    contours, x, y = [], 0.0, 0.0
+    for info, pos in zip(buf.glyph_infos, buf.glyph_positions):
+        # Several of these glyphs are composites — a noon is its bowl plus a
+        # referenced dot — and a pen that ignores addComponent silently drops
+        # them. The first run came back with the seen and the final noon simply
+        # missing, and a word missing two of its letters is the one failure this
+        # whole pipeline exists to prevent.
+        rec = DecomposingRecordingPen(glyphset)
+        glyphset[order[info.codepoint]].draw(rec)
+        pen = FlattenPen()
+        t = Transform(s, 0, 0, -s, (x + pos.x_offset) * s, -(y + pos.y_offset) * s)
+        rec.replay(TransformPen(pen, t))
+        pen.closePath()
+        contours += pen.contours
+        x += pos.x_advance
+        y += pos.y_advance
+    return contours, round(x * s, 2)
