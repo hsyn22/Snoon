@@ -1,12 +1,17 @@
 # Logo
 
-Four rounds so far, in `concepts-round-2.png`, `concepts-round-3.png` and `round4.png`.
-Nothing is chosen yet and nothing is wired into the product: `src/` still says
-`سنون / SNOON`, and it stays that way until a direction is picked.
+Five rounds so far. The live one is **round five** — `round5.png`, with the recommended
+direction worked through in `chosen.png`. Nothing is wired into the product yet: `src/`
+still says `سنون / SNOON`, and it stays that way until a direction is picked.
 
 ## Where this stands
 
-**Round four is on the table and waiting on a pick.** See `round4.png` for the seven
+**Round four was rejected: "none of the generated logos is close to anything I've sent".**
+That was correct, and the diagnosis is the whole of round five — see below. What follows
+under this heading is the round-four reasoning, kept because the reference reading still
+holds.
+
+**Round four's sheet is still on the table only as reference.** See `round4.png` for the seven
 directions and `insitu.png` for the two strongest shown at the size they are actually met
 at — a site header and an app icon, not a hero.
 
@@ -192,3 +197,75 @@ ships there will not match whatever the installed `playwright` expects.
 **Audition first, always.** `audition.png` is ten faces set in the real string `سَنّون`;
 all ten spell it correctly. Three of the fifteen faces tried in round three did not, and a
 face is never judged on sample text.
+
+## Round five — the shape and the letter are one shape
+
+**What was wrong with round four, in one line:** every logo in the reference sheet fuses
+the object *into* the letterform — the kaf **is** the book, the alif **is** the scissors,
+the tentacle **is** the traffic light — and round four set the name in a font and parked a
+small shape beside it. Those are different things, and only one of them was asked for.
+
+Round four could not have done otherwise, and this is the part worth recording: **live
+text cannot be fused with anything.** The rule that Arabic is typeset and never drawn had
+become a rule that no mark could ever be more than a word with an ornament next to it.
+
+### The rule is kept, by machine instead of by care
+
+The rule exists for a real reason — a generated logo once misspelled the name because
+somebody drew the letterforms by hand. So the letters are still never drawn. They are
+**extracted from the font**:
+
+- `outline.py` shapes the real string with **HarfBuzz** — the same engine the browser
+  uses — and pulls each glyph's outline out of the font's own glyph table. No hand touches
+  a letter. It refuses outright if the face has no glyph for part of the name.
+- `verify.mjs` then fills those paths on a canvas beside **the browser's own rendering** of
+  the same string, same face, same size, and fails on any disagreement past the
+  antialiased edge. All six faces pass at about 0.1%.
+
+That check is what makes the outlines safe to build on, and it is not optional: run it
+after any change to the extraction. It has already caught a real fault — four of the six
+faces are variable fonts, and extracting their default instance while the browser rendered
+the requested weight put them **78% out**.
+
+### The rule round five earns
+
+> **Add below the baseline. Never touch a letter's own skeleton.**
+
+Five directions were built; three were thrown away, and all three failed the same way —
+they altered a letterform and it came back reading as a *different letter*:
+
+- a tooth welded over the seen's middle upright made the word read as `بهنّون`;
+- the same tooth on its entry stroke read as an alif before the name, `اسنّون`;
+- a highlight carved into the waw to make it a mouth mirror read as a hamza.
+
+The two that survived only ever add **below the baseline**, where no Arabic letterform
+sits, so nothing can be misread.
+
+### The four on the sheet
+
+| | | |
+|---|---|---|
+| **النون ضرس** | the final noon's bowl is a crown; two roots weld to its floor | **recommended** |
+| السين أسنان | the seen's three uprights — called *أسنان* in Arabic type — grow roots | |
+| الكلمة باللثة | a gum welded to the word's own baseline | weakest; it swallows the letters' feet |
+| الاسم داخل السن | the name knocked out of a tooth, CHIPPED TOOTH | the stamp and the app icon |
+
+**النون ضرس is the recommendation**, and `chosen.png` is it worked through: the wordmark
+on cream, dark and teal; at 92 / 56 / 34 / 22 / 15 px; as an app icon at 56 / 32 / 16; as a
+clinic stamp; and in the site header. The letter is untouched — the noon's dot stays where
+the font puts it — and the icon is the same letter alone, which is still a noon and still a
+molar. سِنّ is a tooth and the name's own last letter turns out to be one.
+
+### Rebuilding round five
+
+    pip install uharfbuzz fonttools brotli
+    pnpm add -D -w playwright          # remove again when finished
+    python3 -c "from fontTools.ttLib import TTFont; ..."   # woff2 → ttf, see below
+    python3 outline.py                 # → outlines.json
+    node verify.mjs                    # MUST pass before anything is built on it
+    node uprights.mjs                  # → uprights.json
+    node sheet5.mjs && node shot.mjs sheet5.html round5.png 1500 1100
+    node chosen.mjs && node shot.mjs chosen.html chosen.png 1200 1100
+
+`outline.py` reads TTFs, so the woff2 files fetched into `fonts/` are converted into
+`fonts/ttf/` first — fontTools does it with `brotli` installed.
