@@ -1,6 +1,7 @@
 # Logo
 
-Eight rounds so far, **all rejected**. Nothing is wired into the product: `src/` still
+Ten rounds so far. Rounds one to eight were rejected; **round ten is the first with
+something in it** — see "Round nine and ten" at the bottom. Nothing is wired into the product: `src/` still
 says `سنون / SNOON`, and it stays that way until a direction is picked.
 
 **Read "Where this leaves it" at the bottom before starting a ninth round.** The machinery
@@ -339,3 +340,63 @@ the average of them will keep landing where these did:
 **So the next round should be aimed at one of those four, named by Haider**, not at the set.
 That is the same lesson this file already recorded once — one reference is worth thirty
 guesses — one level further down.
+
+## Rounds nine and ten — kashida, and the first thing worth developing
+
+Haider's brief for these, and it reframes the whole problem:
+
+> All of these references are things that **already have a shape** — a star, a book, a
+> galaxy, a lime, scissors. سَنّون does not have that quality. So it has to be drawn into
+> something that gives off dentistry vibes. It doesn't have to be a tooth — it could be a
+> smile, or a smiley face.
+
+And three instructions that changed what was allowed: **the Arabic word alone** (no منصة,
+no SNOON), the word may be **twisted, overlapped, stretched or compressed**, and a letter
+may be **replaced by a dental object**. Plus the one that mattered most — نجمة, read
+top → right → down → left, where the connected word *is* the star.
+
+### What the two sweeps established
+
+`sweep.png` and `sweep2.png` are the working, kept because they rule things out:
+
+- **Warping the word continuously along a shape** (`along.py`) draws the shape and destroys
+  the reading — every letter is bent through a large angle. The molar at 0.18–0.24 really
+  does read as a tooth, and not at all as a word.
+- **Placing the letters rigidly at stations** (`stations.py`) keeps every letter perfectly
+  readable and draws nothing: they sit apart and form no shape.
+- **Closed shapes fail either way.** Going round a loop puts half the letters upside down.
+  نجمة gets away with it because its four letters are separate; سَنّون has to stay joined.
+
+### The way out is kashida, and it is not a trick
+
+The connecting stroke in Arabic may be extended to any length without touching the letters.
+So the letters keep their own shapes and stay readable, and the **stretched joins become
+the shape's outline**. That is what نجمة is doing, and `stations.kashida` is it.
+
+It also means the joins are real: سَنّون joins seen→noon and noon→waw, and **not**
+waw→noon. That gap is how the word is written, not a hole to close.
+
+**And the word owns something nobody noticed for nine rounds: both of its noons carry a
+dot.** Two dots already sit above the line. On a smile they read as eyes with nothing
+drawn at all.
+
+### Where it landed
+
+`round10.png`. Open curves work and closed ones do not, and a mouth is an open curve. The
+**smile** family is the first result in this whole file that reads as a designed wordmark
+rather than as an artifact of a technique — the word dips in the middle, lifts at the
+corners, and the long kashida carries the curve.
+
+**Not finished.** The letters sit at slightly restless angles, the kashida's weight does not
+yet match the letters' strokes, and the two dots are not yet placed to read as eyes. Those
+are the things to develop if this is the direction.
+
+### Machinery added
+
+- `along.py` — lay the word along any path; spines for incisor, molar, arch, smile, arcup,
+  drop, lens, ring. `warp.bend` is the special case where the spine is a circle.
+- `stations.py` — `groups()` binds each diacritic to its base letter (or the fatha and the
+  shadda wander off around the shape on their own), `place()` sets each letter down rigidly
+  at its station, `kashida()` runs the connecting strokes along the spine between them.
+- `outline.glyph_contours` — the name as contours grouped per glyph, with each glyph's
+  advance, which is how a mark is told from a letter.

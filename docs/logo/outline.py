@@ -163,3 +163,60 @@ def word_contours(path, weight=400, text=NAME):
         x += pos.x_advance
         y += pos.y_advance
     return contours, round(x * s, 2)
+
+
+def glyph_contours(path, weight=400, text=NAME):
+    """
+    The name as flattened contours **grouped per glyph**, with each glyph's own
+    origin, in the same 1000-em y-down space.
+
+    Needed for the نجمة construction, where a letter is not stretched along the
+    shape but kept intact and turned to face its station on it.
+    """
+    from warp import FlattenPen
+    from fontTools.pens.recordingPen import DecomposingRecordingPen
+
+    with open(path, "rb") as fh:
+        data = fh.read()
+    face = hb.Face(data)
+    font = hb.Font(face)
+    upem = face.upem
+    font.scale = (upem, upem)
+    font.set_variations({"wght": weight})
+
+    buf = hb.Buffer()
+    buf.add_str(text)
+    buf.guess_segment_properties()
+    hb.shape(font, buf)
+
+    tt = TTFont(path, fontNumber=0)
+    if "fvar" in tt:
+        from fontTools.varLib import instancer
+        tt = instancer.instantiateVariableFont(tt, {"wght": weight}, inplace=False)
+    glyphset = tt.getGlyphSet()
+    order = tt.getGlyphOrder()
+
+    if any(i.codepoint == 0 for i in buf.glyph_infos):
+        raise SystemExit(f"{path}: font has no glyph for part of the name")
+
+    s = 1000.0 / upem
+    out, x, y = [], 0.0, 0.0
+    for info, pos in zip(buf.glyph_infos, buf.glyph_positions):
+        rec = DecomposingRecordingPen(glyphset)
+        glyphset[order[info.codepoint]].draw(rec)
+        pen = FlattenPen()
+        t = Transform(s, 0, 0, -s, (x + pos.x_offset) * s, -(y + pos.y_offset) * s)
+        rec.replay(TransformPen(pen, t))
+        pen.closePath()
+        if pen.contours:
+            xs = [p[0] for c in pen.contours for p in c]
+            ys = [p[1] for c in pen.contours for p in c]
+            out.append({
+                "name": order[info.codepoint],
+                "contours": pen.contours,
+                "bbox": (min(xs), min(ys), max(xs), max(ys)),
+                "advance": pos.x_advance * s,
+            })
+        x += pos.x_advance
+        y += pos.y_advance
+    return out, round(x * s, 2)
