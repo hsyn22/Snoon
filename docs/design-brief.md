@@ -51,8 +51,15 @@ convince a frightened patient. That tension is the whole design problem.
 
 ## The name, and how to write it
 
-- Arabic **سنون** is primary. Latin **SNOON** is secondary.
-- **Never write سَنّون.** With a shadda it is a different word. No diacritics, ever.
+- Arabic **سَنّون** is primary. Latin **SNOON** is secondary.
+- **The name carries a fatha and a shadda: `سَنّون`, six code points.** This file said the
+  opposite — "never write سَنّون, no diacritics, ever" — and that rule was **reversed by
+  Haider**, whose childhood nickname it is. Corrected here rather than quietly deleted,
+  because it was stated as a hard rule and somebody will otherwise change it back. See
+  "Brand and language" in `CLAUDE.md`.
+- **The diacritics are typed, never drawn.** Set the name in a real Arabic face and let the
+  font shape it. Hand-drawing the letterforms is exactly how a generated logo ended up
+  spelling a word that does not exist.
 - The Arabic is the brand. If only one form can appear, it is the Arabic one.
 
 ---

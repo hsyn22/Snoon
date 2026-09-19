@@ -1,31 +1,34 @@
 # Logo
 
-Eight directions, rendered in `concepts-round-2.png`. Nothing here is chosen yet, and
-nothing here is wired into the product: `src/` still says `سنون / SNOON`, and it stays
-that way until a direction is picked.
-
-Three rounds so far, in `concepts-round-*.png`. Nothing is chosen yet and nothing is
-wired into the product: `src/` still says `سنون / SNOON`, and it stays that way until a
-direction is picked.
+Four rounds so far, in `concepts-round-2.png`, `concepts-round-3.png` and `round4.png`.
+Nothing is chosen yet and nothing is wired into the product: `src/` still says
+`سنون / SNOON`, and it stays that way until a direction is picked.
 
 ## Where this stands
 
-**Three rounds, twenty-eight directions, all rejected.** Round three was rejected in one
-word. Generating a fourth batch the same way is not a plan — the problem was never a
-shortage of ideas, it is that every round has been a guess at one person's taste with no
-reference to guess from.
+**Round four is on the table and waiting on a pick.** See `round4.png` for the seven
+directions and `insitu.png` for the two strongest shown at the size they are actually met
+at — a site header and an app icon, not a hero.
 
-So the next round waits on Haider sending two or three logos he likes, from any field. One
-reference is worth more than another thirty guesses.
+Rounds one to three were rejected, and the reason was recorded at the time: every round
+had been a guess at one person's taste with no reference to guess from. **That block is
+now cleared.** Haider sent fourteen logos he likes, and they say one thing consistently —
+**every one of them merges a shape with the name**, and the Arabic ones do it inside the
+letters themselves: the kaf of «كتاب» is a book, the alif of «حلاق» is a scissor blade, a
+coffee pot sits in «قهوة», a lime slice fills a counter in «ليمون», and CHIPPED TOOTH sets
+its lettering inside a tooth. Round four is built from that and from nothing else.
 
-Two things checked and closed off, so nobody tries them again: **Canva's design generation
-is disabled on his team**, and his **Figma seat is View-only on the starter tier**, so
-neither can be handed the job from a session like this one.
+**The two signals agree, which is the useful part.** Round two's only signal was that he
+liked **Lalezar** and **Aref Ruqaa** as ways of writing the name. The new reference sheet's
+Arabic logos are heavy rounded display faces — «ليمون» is Lalezar's register almost
+exactly. So the face he picked and the references he sent point the same way, and round
+four is mostly Lalezar.
 
-The one piece of signal from three rounds is in round two: he liked **Lalezar** and
-**Aref Ruqaa** as ways of writing the name, and nothing about any mark. Start there.
+Still true, so nobody tries them again: **Canva's design generation is disabled on his
+team**, and his **Figma seat is View-only on the starter tier**.
 
-Nothing about the logo blocks launch. `src/` says `سنون / SNOON` and works.
+Nothing about the logo blocks launch. `src/` still says `سنون / SNOON` and works, and it
+stays that way until a direction is picked.
 
 ## Round one — eight drawn marks. All rejected.
 
@@ -117,3 +120,75 @@ Because a logo is not the large version. Each card shows the mark large, reverse
 brand teal, at 32px and 16px, and in a single ink — the app icon on a dark home screen and
 the rubber stamp on a clinic form are both real, and a mark that only works at 150px has
 not been tested.
+
+## Round four — a shape merged with the name
+
+Seven directions in `round4.png`, built from the reference sheet. Each is **one typeset
+word plus one drawn object**, and which letter the object meets is the idea:
+
+| | | |
+|---|---|---|
+| 01 | **الجذر** — the final noon grows roots and *is* a molar | Lalezar |
+| 02 | **السن في السين** — one of the seen's own uprights is a real tooth | Lalezar |
+| 03 | **خط اللثة** — the word stands on gums | Baloo Bhaijaan 2 |
+| 04 | **الاسم داخل السن** — the name knocked out of a tooth | Lalezar |
+| 05 | **المرآة** — a mouth mirror in the waw's counter | Lemonada |
+| 06 | **القوس** — the name set along the dental arch | Marhey |
+| 07 | **الرقعة على اللثة** — the same, in the calligraphic hand | Aref Ruqaa |
+
+**01 is the recommendation.** It is the only one where the letter *becomes* the object
+rather than carrying one — the kaf-is-a-book move — and it is the only one that survives
+both tests in `insitu.png`: legible as a wordmark in a 26px header, and distinctive as an
+app icon down to 18px.
+
+**04 is an icon, not a lockup, and `insitu.png` is what settles it.** At 30px in a header
+the knocked-out name is a smudge. It is the best stamp on the sheet and it needs a
+separate wordmark beside it.
+
+Weaker, and said plainly rather than left for him to work out: **02** still reads as a
+smudge on the seen, **05**'s mirror is too small to carry its highlight at any size the
+header would use, and **07**'s gum crests read as bread rolls.
+
+### Nothing here is placed by eye
+
+The first pass put the tooth through the middle of the word, because a letter's box says
+nothing about where the strokes inside it are — the seen's three uprights sit in its right
+two thirds and its tail sweeps out under the rest. So the geometry is measured and
+committed, and every object is positioned off it:
+
+- `glyphs.mjs` → `glyph-positions.json` — each letter's box, from a Range in the browser.
+- `profile.mjs` → `ink-profile.json` — the ink skyline, whose peaks are the uprights
+  inside a letter. This is what locates the seen's three teeth, the shadda, the waw and
+  the two walls of the final noon's bowl.
+- `measure.mjs` → `measurements.json` — the enclosed counters, found by flooding the
+  background inward from outside the canvas. This is what ruled Lalezar out for the mirror
+  direction and Lemonada in: Lemonada's waw counter has **fifteen times** the area.
+
+Change the face and the objects move with the letters, because they are placed in em units
+off these files rather than typed in as coordinates.
+
+### `shapes.mjs` may never draw a letter
+
+It holds the incisor, the molar, the roots, the mirror head and the gum line, and that is
+all it is allowed to hold. The rule above — Arabic is typeset, never drawn — is the one
+that keeps the name from turning into a word that does not exist, and a shape file is
+exactly where it would erode.
+
+### Rebuilding round four
+
+`playwright` is deliberately **not** a dependency of the product: it is a docs tool, and
+the app should not carry it. Install it alongside, fetch the faces into `fonts/` with a
+`fonts.css` beside them, then:
+
+    pnpm add -D -w playwright     # remove again when finished
+    node audition.mjs             # every face against the real string, first
+    node glyphs.mjs && node profile.mjs && node measure.mjs
+    node sheet4.mjs  && node shot.mjs sheet4.html round4.png 1500 1200
+    node insitu.mjs  && node shot.mjs insitu.html insitu.png 1240 900
+
+`browser.mjs` names the sandbox's Chromium explicitly, because the browser build that
+ships there will not match whatever the installed `playwright` expects.
+
+**Audition first, always.** `audition.png` is ten faces set in the real string `سَنّون`;
+all ten spell it correctly. Three of the fifteen faces tried in round three did not, and a
+face is never judged on sample text.

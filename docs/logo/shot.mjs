@@ -1,7 +1,7 @@
-import { chromium } from 'playwright'
+import { launch } from './browser.mjs'
 import fs from 'node:fs'
 const [,, htmlPath, outPath, w, h] = process.argv
-const b = await chromium.launch()
+const b = await launch()
 const p = await b.newPage({ viewportSize: { width: +(w||1400), height: +(h||900) }, deviceScaleFactor: 2 })
 await p.goto('file://' + fs.realpathSync(htmlPath))
 await p.evaluate(() => document.fonts.ready)

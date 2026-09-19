@@ -1,0 +1,5 @@
+# The faces are ~700KB of woff2 fetched from Google Fonts, and the sheets are
+# generated. Both are rebuilt by the commands in README.md.
+fonts/
+fonts.css
+*.html

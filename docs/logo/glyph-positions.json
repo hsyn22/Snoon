@@ -1,0 +1,170 @@
+{
+  "Lalezar": {
+    "wordWidth": 2.144,
+    "wordHeight": 1.5667,
+    "letters": [
+      {
+        "label": "seen",
+        "fromRight": 0,
+        "width": 0.7751,
+        "centreFromRight": 0.3875
+      },
+      {
+        "label": "fatha",
+        "fromRight": 0,
+        "width": 0.7751,
+        "centreFromRight": 0.3875
+      },
+      {
+        "label": "noon",
+        "fromRight": 0.775,
+        "width": 0.316,
+        "centreFromRight": 0.933
+      },
+      {
+        "label": "shadda",
+        "fromRight": 0.775,
+        "width": 0.316,
+        "centreFromRight": 0.933
+      },
+      {
+        "label": "waw",
+        "fromRight": 1.091,
+        "width": 0.3941,
+        "centreFromRight": 1.288
+      },
+      {
+        "label": "noon-final",
+        "fromRight": 1.485,
+        "width": 0.659,
+        "centreFromRight": 1.8145
+      }
+    ]
+  },
+  "Baloo": {
+    "wordWidth": 2.402,
+    "wordHeight": 1.7133,
+    "letters": [
+      {
+        "label": "seen",
+        "fromRight": 0,
+        "width": 0.8091,
+        "centreFromRight": 0.4045
+      },
+      {
+        "label": "fatha",
+        "fromRight": 0,
+        "width": 0.8091,
+        "centreFromRight": 0.4045
+      },
+      {
+        "label": "noon",
+        "fromRight": 0.809,
+        "width": 0.361,
+        "centreFromRight": 0.9895
+      },
+      {
+        "label": "shadda",
+        "fromRight": 0.809,
+        "width": 0.361,
+        "centreFromRight": 0.9895
+      },
+      {
+        "label": "waw",
+        "fromRight": 1.17,
+        "width": 0.5221,
+        "centreFromRight": 1.431
+      },
+      {
+        "label": "noon-final",
+        "fromRight": 1.692,
+        "width": 0.71,
+        "centreFromRight": 2.047
+      }
+    ]
+  },
+  "Lemonada": {
+    "wordWidth": 3.315,
+    "wordHeight": 2,
+    "letters": [
+      {
+        "label": "seen",
+        "fromRight": 0,
+        "width": 1.076,
+        "centreFromRight": 0.538
+      },
+      {
+        "label": "fatha",
+        "fromRight": 0,
+        "width": 1.076,
+        "centreFromRight": 0.538
+      },
+      {
+        "label": "noon",
+        "fromRight": 1.076,
+        "width": 0.481,
+        "centreFromRight": 1.3165
+      },
+      {
+        "label": "shadda",
+        "fromRight": 1.076,
+        "width": 0.481,
+        "centreFromRight": 1.3165
+      },
+      {
+        "label": "waw",
+        "fromRight": 1.557,
+        "width": 0.8241,
+        "centreFromRight": 1.969
+      },
+      {
+        "label": "noon-final",
+        "fromRight": 2.381,
+        "width": 0.934,
+        "centreFromRight": 2.848
+      }
+    ]
+  },
+  "Marhey": {
+    "wordWidth": 2.584,
+    "wordHeight": 1.74,
+    "letters": [
+      {
+        "label": "seen",
+        "fromRight": 0,
+        "width": 0.9701,
+        "centreFromRight": 0.485
+      },
+      {
+        "label": "fatha",
+        "fromRight": 0,
+        "width": 0.9701,
+        "centreFromRight": 0.485
+      },
+      {
+        "label": "noon",
+        "fromRight": 0.97,
+        "width": 0.3801,
+        "centreFromRight": 1.16
+      },
+      {
+        "label": "shadda",
+        "fromRight": 0.97,
+        "width": 0.3801,
+        "centreFromRight": 1.16
+      },
+      {
+        "label": "waw",
+        "fromRight": 1.35,
+        "width": 0.5401,
+        "centreFromRight": 1.62
+      },
+      {
+        "label": "noon-final",
+        "fromRight": 1.89,
+        "width": 0.694,
+        "centreFromRight": 2.237
+      }
+    ]
+  }
+}
